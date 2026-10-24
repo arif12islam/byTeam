@@ -176,7 +176,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] `GET /iclock/getrequest`: return next pending command or `OK`
 - [x] `POST /iclock/devicecmd`: mark command done or failed
 - [x] Queue a user-update command when an employee is created or edited
-- [ ] Unmatched punches (unknown emp_code) listed for HR
+- [x] Unmatched punches (unknown emp_code) listed for HR
 - [x] `scripts/simulator.ts`: handshake, live punches, delayed offline burst, duplicate resend
 - [ ] Tests: parser handles tabs, extra fields, blank lines; dedup holds
 

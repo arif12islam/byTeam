@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { describeAge, deviceStatus, listDevices, OFFLINE_AFTER_MINUTES, type DeviceStatus } from "@/lib/devices/devices";
+import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
 import { formatOfficeDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -62,7 +65,8 @@ function StatusBadge({ status, active }: { status: DeviceStatus; active: boolean
 async function DevicesContent() {
   await requireRole("owner", "hr");
 
-  const list = await listDevices(getDb());
+  const db = getDb();
+  const [list, unmatched] = await Promise.all([listDevices(db), listUnmatchedCodes(db)]);
   const now = new Date();
 
   return (
@@ -110,6 +114,40 @@ async function DevicesContent() {
           );
         })
       )}
+
+      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+        <h2 className="text-base font-semibold">Punches from unknown employee codes</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          These codes punched on a device but no employee has them. Usually someone was enrolled at the device and not
+          added here yet. Add them with the same code and their punches count automatically.
+        </p>
+        {unmatched.length === 0 ? (
+          <p className="mt-4 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+            None. Every punch received so far belongs to an employee.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-border rounded-md border border-border">
+            {unmatched.map((row) => (
+              <li key={row.empCode} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Code {row.empCode}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {row.punches === 1 ? "1 punch" : `${row.punches} punches`}, last{" "}
+                    {formatOfficeDateTime(row.lastPunchAt)}
+                    {row.devices.length > 0 ? ` on ${row.devices.join(", ")}` : ""}
+                  </p>
+                </div>
+                <Link
+                  href={`/employees/new?code=${encodeURIComponent(row.empCode)}`}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  Add employee with this code
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
