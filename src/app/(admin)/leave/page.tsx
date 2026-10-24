@@ -12,6 +12,7 @@ import { requireRole } from "@/lib/session";
 import { formatOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
+import { DecisionButtons } from "./decision-buttons";
 import { LeaveForm } from "./leave-form";
 
 export const metadata: Metadata = { title: "Leave" };
@@ -102,6 +103,7 @@ async function LeaveContent() {
                     {r.unpaidDays > 0 ? `, ${r.unpaidDays} unpaid` : ""}
                   </p>
                   {r.note ? <p className="text-sm text-muted-foreground">{r.note}</p> : null}
+                  <DecisionButtons id={r.id} status={r.status} />
                 </div>
                 <p
                   className={cn(

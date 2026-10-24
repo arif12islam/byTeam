@@ -115,7 +115,7 @@ export type LeaveRequestRow = {
 };
 
 /** Pending requests first, then the newest leave. */
-export async function listLeaveRequests(db: Db, options: { status?: LeaveStatus; limit?: number } = {}): Promise<LeaveRequestRow[]> {
+export async function listLeaveRequests(db: Db, options: { status?: LeaveStatus; employeeId?: string; limit?: number } = {}): Promise<LeaveRequestRow[]> {
   return db
     .select({
       id: leaveRequests.id,
@@ -136,7 +136,12 @@ export async function listLeaveRequests(db: Db, options: { status?: LeaveStatus;
     .from(leaveRequests)
     .innerJoin(employees, eq(employees.id, leaveRequests.employeeId))
     .innerJoin(leaveTypes, eq(leaveTypes.id, leaveRequests.leaveTypeId))
-    .where(options.status ? eq(leaveRequests.status, options.status) : undefined)
+    .where(
+      and(
+        options.status ? eq(leaveRequests.status, options.status) : undefined,
+        options.employeeId ? eq(leaveRequests.employeeId, options.employeeId) : undefined,
+      ),
+    )
     .orderBy(sql`(${leaveRequests.status} = 'pending') desc`, desc(leaveRequests.fromDate), asc(employees.name))
     .limit(options.limit ?? 200);
 }

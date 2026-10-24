@@ -1,8 +1,10 @@
-import { and, asc, between, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, between, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 
 import type { getDb } from "@/db";
-import { attendanceAdjustments, attendanceDays, companySettings, employees, holidays, rawPunches, shifts } from "@/db/schema";
+import { attendanceAdjustments, attendanceDays, companySettings, employees, holidays, leaveRequests, leaveTypes, rawPunches, shifts } from "@/db/schema";
 import { eachDate, nextDate, officeDateTimeToInstant } from "@/lib/time";
+
+import { leaveWorkingDates, splitUnpaid } from "@/lib/leave/days";
 
 import { computeDay, type DayResult } from "./compute-day";
 import { effectiveOverrides, type AdjustmentRow } from "./overrides";
@@ -31,6 +33,58 @@ const BATCH_SIZE = 500;
 
 function key(employeeId: string, date: string): string {
   return `${employeeId}|${date}`;
+}
+
+/**
+ * Approved leave for the employees, as one entry per employee and working day
+ * the leave covers. A request is counted across its whole range (not only the
+ * part inside the window) so that "the last days are unpaid" lands on the same
+ * dates whatever window is being recomputed. Leave on a weekly off day or a
+ * holiday never gets an entry: those days stay what they are.
+ */
+async function loadLeaveByDay(
+  reader: Reader,
+  employeeIds: string[],
+  scope: RecalcScope,
+  weeklyOffDays: readonly number[],
+): Promise<Map<string, { paid: boolean }>> {
+  const requests = await reader
+    .select({
+      employeeId: leaveRequests.employeeId,
+      fromDate: leaveRequests.fromDate,
+      toDate: leaveRequests.toDate,
+      unpaidDays: leaveRequests.unpaidDays,
+      isPaid: leaveTypes.isPaid,
+    })
+    .from(leaveRequests)
+    .innerJoin(leaveTypes, eq(leaveTypes.id, leaveRequests.leaveTypeId))
+    .where(
+      and(
+        inArray(leaveRequests.employeeId, employeeIds),
+        eq(leaveRequests.status, "approved"),
+        lte(leaveRequests.fromDate, scope.to),
+        gte(leaveRequests.toDate, scope.from),
+      ),
+    );
+
+  const result = new Map<string, { paid: boolean }>();
+  if (requests.length === 0) return result;
+
+  // Holidays across every request's full range, in one query.
+  const first = requests.reduce((min, r) => (r.fromDate < min ? r.fromDate : min), requests[0].fromDate);
+  const last = requests.reduce((max, r) => (r.toDate > max ? r.toDate : max), requests[0].toDate);
+  const holidayRows = await reader.select({ date: holidays.date }).from(holidays).where(between(holidays.date, first, last));
+  const holidayDates = new Set(holidayRows.map((h) => h.date));
+
+  for (const request of requests) {
+    const working = leaveWorkingDates(request.fromDate, request.toDate, { weeklyOffDays, holidayDates });
+    const { paid } = splitUnpaid(working, request.unpaidDays);
+    const paidDates = new Set(paid);
+    for (const date of working) {
+      result.set(key(request.employeeId, date), { paid: request.isPaid && paidDates.has(date) });
+    }
+  }
+  return result;
 }
 
 export type DayRow = { employeeId: string; date: string; result: DayResult };
@@ -103,6 +157,8 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
     adjustmentsByDay.set(k, list);
   }
 
+  const leaveByDay = await loadLeaveByDay(reader, ids, scope, weeklyOffDays);
+
   const toSave: DayRow[] = [];
   const toRemove = new Map<string, string[]>();
 
@@ -119,7 +175,7 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
         weeklyOffDays,
         isHoliday: holidayDates.has(date),
         punches,
-        leave: null,
+        leave: leaveByDay.get(key(person.id, date)) ?? null,
         overrides: effectiveOverrides(adjustmentsByDay.get(key(person.id, date)) ?? []),
       });
       if (result) toSave.push({ employeeId: person.id, date, result });
