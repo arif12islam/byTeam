@@ -147,7 +147,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Add Drizzle + Neon connection, first empty migration
 - [x] Add Vitest with one sample test
 - [x] GitHub Actions: install, lint, typecheck, test on every PR
-- [ ] Connect repo to Vercel, set env vars, confirm preview deploys
+- [x] Connect repo to Vercel, set env vars, confirm preview deploys
 - [x] `README.md` with local setup steps
 - [x] Copy design doc into `docs/DESIGN.md`
 
@@ -231,7 +231,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Clock drift check: compare device time with received time, flag device if over 5 minutes
 - [x] Rate limit `/iclock` routes
 - [x] Audit log screen with filters
-- [ ] Empty states, loading states, error messages on all screens
+- [x] Empty states, loading states, error messages on all screens
 - [x] Review all role checks on server actions
 
 **Done when:** a simulated outage day produces no wrong late or absent marks, and an HR user cannot finalize, unlock or edit rules.
