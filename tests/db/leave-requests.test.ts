@@ -152,12 +152,13 @@ describe.skipIf(!testDatabaseUrl)("creating leave requests", () => {
     if (!old.ok || !recent.ok) throw new Error("setup failed");
     await db.update(leaveRequests).set({ status: "approved", decidedBy: userId, decidedAt: new Date() }).where(eq(leaveRequests.id, recent.requestId));
 
-    const mine = (await listLeaveRequests(db)).filter((r) => r.employeeId === e.id);
+    // Filtered in the query: the table keeps every run's requests, and an unfiltered list is capped.
+    const mine = await listLeaveRequests(db, { employeeId: e.id });
     expect(mine.map((r) => [r.id, r.status])).toEqual([
       [old.requestId, "pending"],
       [recent.requestId, "approved"],
     ]);
     expect(mine[0]).toMatchObject({ employeeName: e.name, empCode: e.empCode, isPaid: true, days: 1 });
-    expect((await listLeaveRequests(db, { status: "approved" })).every((r) => r.status === "approved")).toBe(true);
+    expect((await listLeaveRequests(db, { status: "approved", employeeId: e.id })).map((r) => r.id)).toEqual([recent.requestId]);
   });
 });
