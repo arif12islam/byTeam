@@ -238,7 +238,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 
 ### M7: Real device and pilot
 
-- [ ] Write `docs/DEVICE_SETUP.md`: network, ADMS server address, poll interval 30 to 60 s, real-time upload on
+- [x] Write `docs/DEVICE_SETUP.md`: network, ADMS server address, poll interval 30 to 60 s, real-time upload on
 - [ ] LAN test: app on laptop, device pointed at laptop IP and port
 - [ ] Compare real ATTLOG lines with the simulator, fix parser if needed
 - [ ] Test enroll, punch, Wi-Fi off and on, server restart, user push from app

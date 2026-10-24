@@ -62,6 +62,8 @@ The simulator behaves like the face and fingerprint device: it announces itself,
 
 The same command works against a deployed preview: point `--url` at it and register the serial number there.
 
+To connect the real device, follow `docs/DEVICE_SETUP.md`. It covers the Vercel deployment, where the device must speak HTTPS.
+
 ## Project layout
 
 ```
