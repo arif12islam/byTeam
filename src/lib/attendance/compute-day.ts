@@ -8,6 +8,8 @@ import { officeMinuteOfDay, timeToMinutes, toOfficeDate, weekdayOf } from "@/lib
  */
 export const MIN_PUNCH_SPAN_MINUTES = 5;
 
+export type DayOutage = { startTime: string; endTime: string };
+
 export type DayShift = {
   /** "HH:MM" */
   startTime: string;
@@ -35,6 +37,8 @@ export type DayInput = {
   punches: readonly Date[];
   /** Approved leave covering the date, if any. */
   leave: { paid: boolean } | null;
+  /** Office outages on this date (power or device down), as "HH:MM" times. */
+  outages?: readonly DayOutage[];
   overrides?: DayOverrides;
 };
 
@@ -50,6 +54,31 @@ export type DayResult = {
   isManual: boolean;
 };
 
+/** The outage windows as minutes after midnight, dropping any that are not valid times. */
+function outageMinutes(outages: readonly DayOutage[] | undefined): { from: number; to: number }[] {
+  const windows: { from: number; to: number }[] = [];
+  for (const o of outages ?? []) {
+    const from = timeToMinutes(o.startTime);
+    const to = timeToMinutes(o.endTime);
+    if (from !== null && to !== null && to > from) windows.push({ from, to });
+  }
+  return windows.sort((a, b) => a.from - b.from);
+}
+
+/**
+ * The last minute at which arriving still counts as on time: the shift start
+ * plus grace. When an outage was on at that moment nobody could punch, so the
+ * limit moves to the end of the outage plus the usual grace, and again if
+ * another outage covers the new limit.
+ */
+export function onTimeLimit(startMinutes: number, graceMinutes: number, windows: readonly { from: number; to: number }[]): number {
+  let limit = startMinutes + graceMinutes;
+  for (const w of windows) {
+    if (w.from <= limit && limit < w.to) limit = w.to + graceMinutes;
+  }
+  return limit;
+}
+
 /**
  * Works out one employee's day from its inputs and nothing else, so any day can
  * be recomputed safely. Returns null for a date before the join date or after
@@ -61,8 +90,11 @@ export type DayResult = {
  * 3. A working day with no punch is absent. Punches on a holiday or weekly off
  *    day keep the day type and set workedOnOffDay.
  * 4. Late when the first punch, by the office clock to the minute, is after the
- *    shift start plus grace. lateMinutes counts from the shift start. Early when
- *    the last punch is before the shift end. Earlier than the start is not late.
+ *    shift start plus grace (moved to the end of an office outage that covers
+ *    that moment, see `onTimeLimit`). lateMinutes counts from the shift start.
+ *    Early when the last punch is before the shift end. Earlier than the start
+ *    is not late. A working day with no punch is not absent when an outage
+ *    covers the whole shift: nobody could punch, so it counts as present.
  * 5. Approved leave on a working day makes it leave_paid or leave_unpaid. Status
  *    priority is holiday and weekly off, then leave, then present or late, then
  *    absent.
@@ -120,7 +152,7 @@ export function computeDay(input: DayInput): DayResult | null {
 
     status = "present";
     const arrived = officeMinuteOfDay(firstIn!);
-    if (arrived > start + shift.graceMinutes) {
+    if (arrived > onTimeLimit(start, shift.graceMinutes, outageMinutes(input.outages))) {
       status = "late";
       lateMinutes = arrived - start;
     }
@@ -129,7 +161,10 @@ export function computeDay(input: DayInput): DayResult | null {
       if (left < end) earlyMinutes = end - left;
     }
   } else {
-    status = "absent";
+    const start = timeToMinutes(shift.startTime);
+    const end = timeToMinutes(shift.endTime);
+    const wholeShiftOut = start !== null && end !== null && outageMinutes(input.outages).some((w) => w.from <= start && w.to >= end);
+    status = wholeShiftOut ? "present" : "absent";
   }
 
   if (overrides?.status) {

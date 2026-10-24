@@ -6,6 +6,7 @@ import { getDb } from "@/db";
 import type { FormState } from "@/components/field";
 import { formError } from "@/lib/form";
 import { isUniqueViolation } from "@/lib/db-errors";
+import { createOutage, removeOutage } from "@/lib/attendance/outages";
 import { companySettingsSchema, saveCompanySettings } from "@/lib/settings/company";
 import { addHoliday, holidaySchema, removeHoliday } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
@@ -48,4 +49,38 @@ export async function removeHolidayAction(formData: FormData): Promise<void> {
 
   await removeHoliday(getDb(), id, user.id);
   revalidatePath("/settings");
+}
+
+export async function addOutageAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const result = await createOutage(
+    getDb(),
+    {
+      date: String(formData.get("date") ?? ""),
+      startTime: String(formData.get("startTime") ?? ""),
+      endTime: String(formData.get("endTime") ?? ""),
+      reason: String(formData.get("reason") ?? ""),
+    },
+    user.id,
+  );
+  if (!result.ok) return formError(formData, result.error);
+
+  revalidatePath("/settings");
+  revalidatePath("/attendance");
+  return { message: "Outage recorded. Late and absent marks it caused are lifted." };
+}
+
+export async function removeOutageAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const id = formData.get("id");
+  if (typeof id !== "string" || id === "") return { error: "Reload the page and try again." };
+
+  const result = await removeOutage(getDb(), id, user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/settings");
+  revalidatePath("/attendance");
+  return { message: "Outage removed." };
 }

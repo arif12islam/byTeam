@@ -1,7 +1,7 @@
 import { and, asc, between, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 
 import type { getDb } from "@/db";
-import { attendanceAdjustments, attendanceDays, companySettings, employees, holidays, leaveRequests, leaveTypes, rawPunches, shifts } from "@/db/schema";
+import { attendanceAdjustments, attendanceDays, companySettings, employees, holidays, leaveRequests, leaveTypes, officeOutages, rawPunches, shifts } from "@/db/schema";
 import { eachDate, nextDate, officeDateTimeToInstant } from "@/lib/time";
 
 import { leaveWorkingDates, splitUnpaid } from "@/lib/leave/days";
@@ -127,6 +127,14 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
 
   const holidayRows = await reader.select({ date: holidays.date }).from(holidays).where(between(holidays.date, scope.from, scope.to));
   const holidayDates = new Set(holidayRows.map((h) => h.date));
+  const outageRows = await reader
+    .select({ date: officeOutages.date, startTime: officeOutages.startTime, endTime: officeOutages.endTime })
+    .from(officeOutages)
+    .where(between(officeOutages.date, scope.from, scope.to));
+  const outagesByDate = new Map<string, { startTime: string; endTime: string }[]>();
+  for (const o of outageRows) {
+    outagesByDate.set(o.date, [...(outagesByDate.get(o.date) ?? []), { startTime: o.startTime.slice(0, 5), endTime: o.endTime.slice(0, 5) }]);
+  }
 
   const shiftRows = await reader.select().from(shifts).where(inArray(shifts.id, [...new Set(people.map((p) => p.shiftId))]));
   const shiftById = new Map(shiftRows.map((s) => [s.id, s]));
@@ -175,6 +183,7 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
         shift: { startTime: shift.startTime, endTime: shift.endTime, graceMinutes: shift.graceMinutes },
         weeklyOffDays,
         isHoliday: holidayDates.has(date),
+        outages: outagesByDate.get(date),
         punches,
         leave: leaveByDay.get(key(person.id, date)) ?? null,
         overrides: effectiveOverrides(adjustmentsByDay.get(key(person.id, date)) ?? []),

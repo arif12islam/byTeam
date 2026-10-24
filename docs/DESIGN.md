@@ -141,6 +141,13 @@ One pure function, `computeDay(employee, date)`, rebuilds an `attendance_days` r
 
 **Status priority:** holiday and weekly off, then leave, then present or late, then absent.
 
+**Office outages.** HR records a date and a time window (Settings, Office outages) when the power or the device was off and people could not punch. It changes two steps for everyone that day, and writes one audit row:
+
+- Late: if an outage was on at the moment the shift start plus grace passes, the on-time limit moves to the end of that outage plus the usual grace (and again if a second outage covers the new limit). An outage that began after that moment, or ended before it, changes nothing.
+- Absent: a working day with no punch is not absent when one outage covers the whole shift. It counts as present. A partial outage never excuses a full absence.
+
+Adding or removing an outage recomputes that date. A date in a finalized payroll month is refused.
+
 Times before shift start count from shift start. Night shifts that cross midnight are out of scope, so a day's punches are its calendar date.
 
 ## Leave module
