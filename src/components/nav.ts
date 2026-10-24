@@ -2,6 +2,7 @@ import {
   CalendarDays,
   CalendarMinus,
   Clock,
+  Timer,
   History,
   Settings,
   SlidersHorizontal,
@@ -38,6 +39,7 @@ export const navGroups: NavGroup[] = [
     label: "Setup",
     items: [
       { href: "/employees", label: "Employees", icon: Users },
+      { href: "/shifts", label: "Shifts", icon: Timer },
       { href: "/rules", label: "Pay rules", icon: SlidersHorizontal },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
