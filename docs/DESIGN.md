@@ -215,7 +215,17 @@ Eight screens cover the MVP. HR runs the daily work; only the Owner changes rule
 | Payroll | Runs by month, draft review, bonuses and advances, payslips, salary sheet | Draft only | Finalize, unlock |
 | Settings | Company, holidays, shifts, leave types, devices | Yes | Yes |
 | Rules | Late policy and deduction rule sets with effective month | View | Edit |
+| Reports | The month in numbers: attendance rate, punctuality, day-by-day chart, teams, most late and absent, payroll cost, six-month net pay trend, CSV download | Yes | Yes |
 | Audit log | Every manual change, approval, rule change, finalize and unlock | View | View |
+
+### Reports figures
+
+Worked out from the monthly attendance grid by pure functions in `src/lib/reports/`, nothing is stored.
+
+- **Attendance rate:** days attended (late days included) over days attended plus days absent. Leave is left out of both sides, so leave never counts against anyone.
+- **On time:** arrivals that were not late over all arrivals.
+- **A day off** in the day-by-day chart is a day where every row is a weekly off day or holiday. A day with no rows yet is shown as not happened.
+- **Payroll cost** reads the run for the month (draft or finalized) and adds gross and net per department in paisa. The six-month trend reads each month's run total.
 
 ## Jobs, security, audit
 

@@ -163,7 +163,7 @@ describe("pages, downloads and the other routes are guarded in their own code", 
 
   it("every download route checks sign in and role", () => {
     const routes = find(ADMIN, (f) => f.endsWith("route.ts"));
-    expect(routes.map((r) => path.relative(ADMIN, r)).sort()).toEqual(["attendance/export/route.ts", "payroll/export/route.ts", "payroll/payslip/route.ts"]);
+    expect(routes.map((r) => path.relative(ADMIN, r)).sort()).toEqual(["attendance/export/route.ts", "payroll/export/route.ts", "payroll/payslip/route.ts", "reports/export/route.ts"]);
     for (const route of routes) {
       const source = read(route);
       expect(source, path.relative(SRC, route)).toContain("getCurrentUser()");
