@@ -1,10 +1,9 @@
 import { CalendarMinus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
+import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
-import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { getLeaveYearBasis, listLeaveTypes } from "@/lib/leave/types";
 import { requireRole } from "@/lib/session";
@@ -17,16 +16,8 @@ export const metadata: Metadata = { title: "Leave types" };
 export default function LeaveTypesPage() {
   return (
     <>
-      <PageHeader
-        icon={CalendarMinus}
-        title="Leave types"
-        description="The kinds of leave and how many days each person gets a year."
-        actions={
-          <Link href="/leave" className={buttonVariants({ variant: "outline" })}>
-            Back to leave
-          </Link>
-        }
-      />
+      <BackLink href="/leave">Back to leave</BackLink>
+      <PageHeader icon={CalendarMinus} title="Leave types" description="The kinds of leave and how many days each person gets a year." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading leave types</p>}>
         <LeaveTypesContent />
       </Suspense>

@@ -57,8 +57,8 @@ export function CompanyForm({ name, weeklyOffDays, timezone, currency }: Props) 
       </p>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : "Save company settings"}
+        <Button type="submit" pending={pending}>
+          Save company settings
         </Button>
         <FormMessage state={state} />
       </div>

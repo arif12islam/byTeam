@@ -62,8 +62,8 @@ export function AdjustForm({ employeeId, date }: Props) {
         />
       </Field>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : "Save correction"}
+        <Button type="submit" pending={pending}>
+          Save correction
         </Button>
         <FormMessage state={state} />
       </div>

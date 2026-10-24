@@ -59,8 +59,8 @@ export function LeaveForm({ employees, leaveTypes }: Props) {
         <Input id="leave-note" name="note" defaultValue={fieldValue(state, "note")} maxLength={300} />
       </Field>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : "Record leave"}
+        <Button type="submit" pending={pending}>
+          Record leave
         </Button>
         <FormMessage state={state} />
       </div>

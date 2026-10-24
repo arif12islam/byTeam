@@ -33,8 +33,8 @@ export function DeviceControls({ device }: Props) {
             />
           </Field>
         </div>
-        <Button type="submit" variant="outline" disabled={pending}>
-          {pending ? "Saving" : "Save name"}
+        <Button type="submit" variant="outline" pending={pending}>
+          Save name
         </Button>
       </form>
       <FormMessage state={state} />
@@ -43,8 +43,8 @@ export function DeviceControls({ device }: Props) {
         <div>
           <form action={sendAction} className="flex flex-wrap items-center gap-3">
             <input type="hidden" name="serialNo" value={device.serialNo} />
-            <Button type="submit" variant="outline" size="sm" disabled={sending}>
-              {sending ? "Queuing" : "Send all employees to this device"}
+            <Button type="submit" variant="outline" size="sm" pending={sending}>
+              Send all employees to this device
             </Button>
             <p className="text-xs text-muted-foreground">
               New and renamed employees are sent automatically. Use this for people added before the device was.
@@ -59,7 +59,7 @@ export function DeviceControls({ device }: Props) {
       <form action={setDeviceActiveAction}>
         <input type="hidden" name="id" value={device.id} />
         <input type="hidden" name="active" value={device.active ? "false" : "true"} />
-        <Button type="submit" variant="ghost" size="sm">
+        <Button type="submit" variant="outline" size="sm" className={device.active ? "border-danger/40 text-danger hover:bg-danger-soft" : undefined}>
           {device.active ? "Stop accepting this device" : "Accept this device again"}
         </Button>
       </form>

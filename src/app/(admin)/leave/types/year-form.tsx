@@ -28,8 +28,8 @@ export function YearBasisForm({ basis }: { basis: "calendar" | "anniversary" }) 
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : "Save leave year"}
+        <Button type="submit" pending={pending}>
+          Save leave year
         </Button>
         <FormMessage state={state} />
       </div>

@@ -3,7 +3,7 @@
 import {
   AlarmClock,
   CalendarOff,
-  ChevronDown,
+  ChevronRight,
   Hourglass,
   Plane,
   Search,
@@ -13,10 +13,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Ring, type RingSegment } from "@/components/ui/ring";
 import type { Tone } from "@/components/ui/tone";
@@ -81,17 +82,15 @@ const sections: { group: TodayGroup; title: string; hint?: string; icon: LucideI
   { group: "on_leave", title: "On leave", icon: Plane },
 ];
 
-function Row({ entry, date, open, onToggle }: { entry: BoardEntry; date: string; open: boolean; onToggle: () => void }) {
-  const panelId = `punches-${entry.id}`;
-  // Everyone not in yet has the same story, so the shift time waits in the opened row on phones.
+function Row({ entry, onOpen }: { entry: BoardEntry; onOpen: (entry: BoardEntry, trigger: HTMLElement) => void }) {
+  // Everyone not in yet has the same story, so the shift time waits in the sheet on phones.
   const quietOnPhone = entry.group === "not_in_yet" || entry.group === "absent";
   return (
-    <li className={cn("border-b border-border/60", open && "xl:col-span-2")}>
+    <li className="border-b border-border/60">
       <button
         type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={panelId}
+        onClick={(event) => onOpen(entry, event.currentTarget)}
+        aria-haspopup="dialog"
         className="-mx-1.5 flex w-[calc(100%+0.75rem)] items-center gap-2.5 rounded-lg px-1.5 py-2 text-left transition-colors hover:bg-secondary/60"
       >
         <Avatar name={entry.name} className="size-8 text-xs" />
@@ -110,31 +109,93 @@ function Row({ entry, date, open, onToggle }: { entry: BoardEntry; date: string;
             <p className={cn("text-[11px] leading-tight tabular-nums text-muted-foreground", quietOnPhone && "hidden sm:block")}>{entry.detail}</p>
           ) : null}
         </div>
-        <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </button>
-      {open ? (
-        <div id={panelId} className="mb-2 ml-[2.625rem] rounded-xl bg-secondary/70 p-2.5 text-sm">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Punches today</span>
-            {entry.punches.length === 0 ? (
-              <span className="text-xs text-muted-foreground">None yet, shift {entry.shiftLabel}</span>
-            ) : (
-              <ul className="flex flex-wrap gap-1">
-                {entry.punches.map((time, i) => (
-                  <li key={`${time}-${i}`} className="rounded-md bg-card px-1.5 py-0.5 text-xs font-medium tabular-nums shadow-sm">
-                    {time}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <Link href={`/attendance/${entry.id}/${date}`} className="ml-auto text-xs font-medium text-primary underline underline-offset-2">
-              Open this day
-            </Link>
-          </div>
-          {entry.missingOut ? <p className="mt-1.5 text-xs text-warning">No leaving punch yet.</p> : null}
-        </div>
-      ) : null}
     </li>
+  );
+}
+
+/**
+ * One person's day, floating over the page: a sheet from the bottom on a
+ * phone, a card in the middle on a bigger screen. It opens over the list
+ * instead of inside it, so nothing behind it moves.
+ */
+function PersonSheet({ entry, date, onClose }: { entry: BoardEntry; date: string; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <button type="button" aria-label="Close" tabIndex={-1} className="absolute inset-0 bg-black/45" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={entry.name}
+        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-card p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card md:inset-auto md:left-1/2 md:top-1/2 md:w-[26rem] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-5"
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border md:hidden" aria-hidden />
+        <div className="flex items-center gap-3">
+          <Avatar name={entry.name} className="size-12" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-semibold">{entry.name}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              Code {entry.empCode}
+              {entry.department ? `, ${entry.department}` : ""}
+            </p>
+          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary hover:bg-secondary/70"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Badge tone={entry.tone}>{entry.badge}</Badge>
+          {entry.detail ? <span className="text-sm tabular-nums text-muted-foreground">{entry.detail}</span> : null}
+        </div>
+
+        <dl className="mt-4 grid gap-3 text-sm">
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground">Shift</dt>
+            <dd className="mt-0.5">{entry.shiftLabel}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground">Punches today</dt>
+            <dd className="mt-1">
+              {entry.punches.length === 0 ? (
+                <span className="text-muted-foreground">None yet</span>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {entry.punches.map((time, i) => (
+                    <li key={`${time}-${i}`} className="rounded-lg bg-secondary px-2 py-1 text-sm font-medium tabular-nums">
+                      {time}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </dd>
+          </div>
+        </dl>
+        {entry.missingOut ? <p className="mt-3 text-sm text-warning">No leaving punch yet.</p> : null}
+
+        <Link href={`/attendance/${entry.id}/${date}`} className={cn(buttonVariants({ variant: "outline" }), "mt-5 w-full")}>
+          Open this day
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -164,7 +225,8 @@ export function TodayBoard({
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("");
-  const [openId, setOpenId] = useState<string | null>(null);
+  // The person whose sheet is open, and the row to give focus back to when it closes.
+  const [selected, setSelected] = useState<{ id: string; trigger: HTMLElement } | null>(null);
 
   const departments = useMemo(
     () => [...new Set(entries.map((e) => e.department).filter((d): d is string => Boolean(d)))].sort((a, b) => a.localeCompare(b)),
@@ -181,16 +243,23 @@ export function TodayBoard({
   const narrowed = filter !== "all" || needle !== "" || department !== "";
   const active = chips.find((c) => c.filter === filter);
 
+  // Read from the latest data, so a live refresh updates an open sheet.
+  const selectedEntry = selected ? entries.find((e) => e.id === selected.id) : undefined;
+
   const clear = () => {
     setFilter("all");
     setQuery("");
     setDepartment("");
   };
-  const toggle = (id: string) => setOpenId((current) => (current === id ? null : id));
+  const open = (entry: BoardEntry, trigger: HTMLElement) => setSelected({ id: entry.id, trigger });
+  const close = () => {
+    selected?.trigger.focus();
+    setSelected(null);
+  };
   const rows = (list: BoardEntry[]) => (
     <ul className="grid xl:grid-cols-2 xl:gap-x-6">
       {list.map((entry) => (
-        <Row key={entry.id} entry={entry} date={date} open={openId === entry.id} onToggle={() => toggle(entry.id)} />
+        <Row key={entry.id} entry={entry} onOpen={open} />
       ))}
     </ul>
   );
@@ -245,45 +314,56 @@ export function TodayBoard({
       <div className="grid items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="grid grid-cols-1 gap-3">
           {entries.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="relative min-w-40 flex-1">
-                <span className="sr-only">Search by name or code</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search people"
-                  className="block h-10 w-full rounded-xl border border-input bg-card pl-9 pr-3 text-base sm:text-sm"
-                />
-              </label>
-              {departments.length > 1 ? (
-                <label>
-                  <span className="sr-only">Department</span>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="block h-10 rounded-xl border border-input bg-card px-3 text-base sm:text-sm"
-                  >
-                    <option value="">All departments</option>
-                    {departments.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
+            <div>
+              <div className="flex items-center gap-2">
+                <label className="relative min-w-0 flex-1">
+                  <span className="sr-only">Search by name or code</span>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search people"
+                    className="block h-10 w-full rounded-xl border border-input bg-card pl-9 pr-3 text-base sm:text-sm"
+                  />
                 </label>
-              ) : null}
-              {narrowed ? (
+                {departments.length > 1 ? (
+                  <label className="w-40 shrink-0 sm:w-48">
+                    <span className="sr-only">Department</span>
+                    <select
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className="block h-10 w-full rounded-xl border border-input bg-card px-3 text-base sm:text-sm"
+                    >
+                      <option value="">All departments</option>
+                      {departments.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+              {/* A line of fixed height: the count is always there and the reset button only fades in, so the list below never jumps. */}
+              <div className="mt-1.5 flex h-7 items-center justify-between px-1 text-xs text-muted-foreground">
+                <span role="status" className="tabular-nums">
+                  Showing {visible.length} of {entries.length} {entries.length === 1 ? "person" : "people"}
+                </span>
                 <button
                   type="button"
                   onClick={clear}
-                  className="inline-flex h-10 items-center gap-1 rounded-xl px-2.5 text-sm font-medium text-primary hover:bg-accent"
+                  tabIndex={narrowed ? 0 : -1}
+                  aria-hidden={!narrowed}
+                  className={cn(
+                    "inline-flex h-7 items-center gap-1 rounded-lg px-2 font-medium text-primary transition-opacity hover:bg-accent",
+                    narrowed ? "opacity-100" : "pointer-events-none opacity-0",
+                  )}
                 >
-                  <X className="size-4" aria-hidden />
+                  <X className="size-3.5" aria-hidden />
                   Show everyone
                 </button>
-              ) : null}
+              </div>
             </div>
           ) : null}
 
@@ -337,6 +417,7 @@ export function TodayBoard({
 
         <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:sticky lg:top-6">{aside}</div>
       </div>
+      {selectedEntry ? <PersonSheet entry={selectedEntry} date={date} onClose={close} /> : null}
     </div>
   );
 }

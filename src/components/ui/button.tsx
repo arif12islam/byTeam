@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -29,18 +30,31 @@ const buttonVariants = cva(
   },
 );
 
+/**
+ * `pending` shows a spinner over the label and turns the button off while a
+ * save is running. The label stays in place but see-through, so the button
+ * keeps its exact size and nothing around it moves.
+ */
 function Button({
   className,
   variant,
   size,
+  pending = false,
+  disabled,
+  children,
   ...props
-}: React.ComponentProps<"button"> & VariantProps<typeof buttonVariants>) {
+}: React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { pending?: boolean }) {
   return (
     <button
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={pending || undefined}
+      disabled={disabled || pending}
+      className={cn(buttonVariants({ variant, size, className }), pending && "relative")}
       {...props}
-    />
+    >
+      {pending ? <Loader2 aria-hidden className="absolute inset-0 m-auto animate-spin" /> : null}
+      <span className={cn("inline-flex items-center justify-center gap-2", pending && "opacity-0")}>{children}</span>
+    </button>
   );
 }
 

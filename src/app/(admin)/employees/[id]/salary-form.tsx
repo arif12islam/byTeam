@@ -81,8 +81,8 @@ export function SalaryForm({ employeeId, start }: Props) {
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : "Save salary"}
+        <Button type="submit" pending={pending}>
+          Save salary
         </Button>
         <FormMessage state={state} />
       </div>

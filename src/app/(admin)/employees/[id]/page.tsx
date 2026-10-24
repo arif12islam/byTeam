@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 
+import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
@@ -37,14 +37,11 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
 
   return (
     <>
+      <BackLink href="/employees">Back to employees</BackLink>
       <PageHeader
+        avatar={employee.name}
         title={employee.name}
         description={`Code ${employee.empCode}${employee.active ? "" : " · Inactive"}`}
-        actions={
-          <Link href="/employees" className="text-sm text-muted-foreground hover:text-foreground">
-            Back to employees
-          </Link>
-        }
       />
 
       <div className="mt-6 grid max-w-3xl gap-6">
