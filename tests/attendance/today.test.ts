@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { DayResult } from "@/lib/attendance/compute-day";
-import { buildTodayBoard, type TodayInput } from "@/lib/attendance/today";
+import { arrivalBuckets, buildTodayBoard, type TodayInput } from "@/lib/attendance/today";
 import { officeDateTimeToInstant } from "@/lib/time";
 
 const DAY = "2031-03-04";
@@ -86,5 +86,54 @@ describe("buildTodayBoard", () => {
       counts: { in: 0, late: 0, onLeave: 0, notInYet: 0, absent: 0 },
       entries: [],
     });
+  });
+});
+
+describe("arrivalBuckets", () => {
+  const board = (inputs: TodayInput[]) => buildTodayBoard(inputs, at("11:00")).entries;
+
+  it("groups first punches in 15 minute buckets and counts the late ones", () => {
+    const entries = board([
+      person("Ana", { status: "present", firstIn: at("08:50"), punchCount: 1 }),
+      person("Bela", { status: "present", firstIn: at("08:55"), punchCount: 1 }),
+      person("Chand", { status: "late", firstIn: at("09:20"), lateMinutes: 20, punchCount: 1 }),
+    ]);
+    expect(arrivalBuckets(entries)).toEqual([
+      { label: "08:45", count: 2, late: 0 },
+      { label: "09:00", count: 0, late: 0 },
+      { label: "09:15", count: 1, late: 1 },
+    ]);
+  });
+
+  it("leaves out people who have not punched, are on leave, or are off", () => {
+    const entries = board([
+      person("Ana", { status: "absent" }),
+      person("Bela", { status: "leave_paid" }),
+      person("Chand", { status: "weekly_off" }),
+    ]);
+    expect(arrivalBuckets(entries)).toEqual([]);
+  });
+
+  it("counts people who came in on a day off", () => {
+    const entries = board([
+      person("Ana", { status: "weekly_off", workedOnOffDay: true, firstIn: at("10:05"), punchCount: 1 }),
+    ]);
+    expect(arrivalBuckets(entries)).toEqual([{ label: "10:00", count: 1, late: 0 }]);
+  });
+
+  it("puts a punch on a bucket edge in the later bucket", () => {
+    const entries = board([person("Ana", { status: "present", firstIn: at("09:15"), punchCount: 1 })]);
+    expect(arrivalBuckets(entries)).toEqual([{ label: "09:15", count: 1, late: 0 }]);
+  });
+
+  it("supports other bucket sizes", () => {
+    const entries = board([
+      person("Ana", { status: "present", firstIn: at("08:10"), punchCount: 1 }),
+      person("Bela", { status: "present", firstIn: at("08:50"), punchCount: 1 }),
+    ]);
+    expect(arrivalBuckets(entries, 30).map((b) => [b.label, b.count])).toEqual([
+      ["08:00", 1],
+      ["08:30", 1],
+    ]);
   });
 });
