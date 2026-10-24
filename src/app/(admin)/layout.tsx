@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { MobileNav, Sidebar } from "@/components/sidebar";
+import { MobileTabBar, MobileTopBar, Sidebar } from "@/components/sidebar";
 import { UserMenu } from "@/components/user-menu";
 import { requireUser } from "@/lib/session";
 
@@ -16,7 +16,12 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
 }
 
 export default function AdminLayout({ children }: LayoutProps<"/">) {
-  const account = (
+  const sidebarAccount = (
+    <Suspense fallback={null}>
+      <UserMenu onDark />
+    </Suspense>
+  );
+  const sheetAccount = (
     <Suspense fallback={null}>
       <UserMenu />
     </Suspense>
@@ -25,19 +30,20 @@ export default function AdminLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-dvh">
       {/* usePathname in the nav needs a boundary on routes with dynamic segments. */}
-      <Suspense fallback={<aside className="hidden w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:block" />}>
-        <Sidebar account={account} />
+      <Suspense fallback={<aside className="hidden w-64 shrink-0 bg-sidebar md:block" />}>
+        <Sidebar account={sidebarAccount} />
       </Suspense>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Suspense fallback={<header className="h-24 border-b border-border bg-sidebar md:hidden" />}>
-          <MobileNav account={account} />
-        </Suspense>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-10 md:py-10">
+        <MobileTopBar />
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 md:px-10 md:pb-12 md:pt-10">
           <Suspense fallback={null}>
             <SignedIn>{children}</SignedIn>
           </Suspense>
         </main>
       </div>
+      <Suspense fallback={null}>
+        <MobileTabBar account={sheetAccount} />
+      </Suspense>
     </div>
   );
 }

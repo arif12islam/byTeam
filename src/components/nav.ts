@@ -51,3 +51,8 @@ export const navGroups: NavGroup[] = [
     items: [{ href: "/audit", label: "Audit log", icon: History }],
   },
 ];
+
+/** The four screens on the phone tab bar. Everything else is under More. */
+export const primaryTabHrefs = ["/today", "/attendance", "/leave", "/payroll"] as const;
+
+export const allNavItems: NavItem[] = navGroups.flatMap((group) => group.items);
