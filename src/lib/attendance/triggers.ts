@@ -108,3 +108,19 @@ export async function recalcAfterWeeklyOffChange(db: Db, today = toOfficeDate(ne
 export async function recalcDay(db: Db, employeeId: string, date: string): Promise<void> {
   await safely("an adjustment", () => recalc(db, { employeeIds: [employeeId], from: date, to: date }));
 }
+
+/**
+ * Leave was approved or an approved request was cancelled: every covered day
+ * from the first day up to today. Days still to come are filled in by the
+ * nightly job as they pass.
+ */
+export async function recalcAfterLeaveChange(
+  db: Db,
+  employeeId: string,
+  from: string,
+  to: string,
+  today = toOfficeDate(new Date()),
+): Promise<void> {
+  if (from > today) return;
+  await safely("a leave decision", () => recalcInWindows(db, [employeeId], from, to < today ? to : today));
+}

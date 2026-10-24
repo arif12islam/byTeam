@@ -203,7 +203,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Schema: `leave_types`, `leave_requests`
 - [x] Leave types screen: name, yearly quota, paid or unpaid
 - [x] Leave request form for HR, day count skipping off days and holidays
-- [ ] Approve, reject, cancel; each triggers recalc for the covered dates
+- [x] Approve, reject, cancel; each triggers recalc for the covered dates
 - [ ] Balance per employee per type for the calendar year
 - [ ] Block approval beyond balance unless recorded as unpaid
 - [ ] Tests: balance math, leave overriding absent, off days not counted

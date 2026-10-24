@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { FormState } from "@/components/field";
 import { getDb } from "@/db";
 import { formError } from "@/lib/form";
+import { decideLeave, LEAVE_DECISIONS, type LeaveDecision } from "@/lib/leave/decisions";
 import { createLeaveRequest } from "@/lib/leave/requests";
 import { requireRole } from "@/lib/session";
 
@@ -32,4 +33,20 @@ export async function createLeaveRequestAction(_previous: FormState, formData: F
 
   revalidatePath("/leave");
   return { message: `Recorded ${result.days} ${result.days === 1 ? "working day" : "working days"}. It is waiting for approval.` };
+}
+
+/** Approve, reject or cancel one request. The server decides what is allowed, not the buttons. */
+export async function decideLeaveAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const decision = text(formData, "decision");
+  if (!(LEAVE_DECISIONS as readonly string[]).includes(decision)) return { error: "That is not something you can do to a leave request." };
+
+  const result = await decideLeave(getDb(), text(formData, "id"), decision as LeaveDecision, user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/leave");
+  revalidatePath("/attendance", "layout");
+  revalidatePath("/today");
+  return { message: { approve: "Leave approved.", reject: "Leave rejected.", cancel: "Leave cancelled." }[decision as LeaveDecision] };
 }
