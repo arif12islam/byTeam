@@ -174,7 +174,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] `POST /iclock/cdata?table=ATTLOG`: parse lines, adapter to standard punch, insert with `onConflictDoNothing`, reply `OK`
 - [x] Accept and log `OPERLOG` without using it
 - [x] `GET /iclock/getrequest`: return next pending command or `OK`
-- [ ] `POST /iclock/devicecmd`: mark command done or failed
+- [x] `POST /iclock/devicecmd`: mark command done or failed
 - [ ] Queue a user-update command when an employee is created or edited
 - [ ] Unmatched punches (unknown emp_code) listed for HR
 - [ ] `scripts/simulator.ts`: handshake, live punches, delayed offline burst, duplicate resend

@@ -2,7 +2,7 @@ import { and, asc, eq, gte, lt, or, sql } from "drizzle-orm";
 
 import type { getDb } from "@/db";
 import { deviceCommands } from "@/db/schema";
-import { MAX_ATTEMPTS, RESEND_AFTER_SECONDS } from "@/lib/adms/commands";
+import { MAX_ATTEMPTS, RESEND_AFTER_SECONDS, type CommandResult } from "@/lib/adms/commands";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -51,4 +51,29 @@ export async function claimNextCommand(db: Db, serialNo: string, now: Date): Pro
       .where(eq(deviceCommands.id, next.id));
     return next;
   });
+}
+
+/**
+ * Records what the device reported for a command it was sent: done when the
+ * return code is 0 or more, failed when it is negative. A device can only
+ * report on its own commands, and only on ones still waiting for a reply, so a
+ * repeated report changes nothing. Returns whether a command was updated.
+ */
+export async function completeCommand(db: Db, serialNo: string, result: CommandResult, now: Date): Promise<boolean> {
+  const rows = await db
+    .update(deviceCommands)
+    .set({
+      status: result.returnCode >= 0 ? "done" : "failed",
+      result: `Return=${result.returnCode}`,
+      completedAt: now,
+    })
+    .where(
+      and(
+        eq(deviceCommands.id, result.id),
+        eq(deviceCommands.deviceSn, serialNo),
+        eq(deviceCommands.status, "sent"),
+      ),
+    )
+    .returning({ id: deviceCommands.id });
+  return rows.length > 0;
 }
