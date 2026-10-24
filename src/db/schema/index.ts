@@ -5,3 +5,4 @@
 export * from "./setup";
 export * from "./auth";
 export * from "./device";
+export * from "./attendance";
