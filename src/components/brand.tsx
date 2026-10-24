@@ -7,7 +7,7 @@ export function BrandMark({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn("grid size-8 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-emerald-400 to-cyan-600 shadow-md shadow-emerald-900/30", className)}
+      className={cn("grid size-8 shrink-0 place-items-center rounded-[10px] bg-emerald-500 shadow-sm", className)}
     >
       <svg viewBox="0 0 32 32" className="size-full p-[18%]">
         <path d="M6 17l6.5 6.5L26 9.5" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />

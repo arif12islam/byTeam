@@ -55,10 +55,7 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
         {!paused ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-lime-300 opacity-70 motion-reduce:animate-none" /> : null}
         <span className={cn("relative inline-flex size-2.5 rounded-full", paused ? "bg-white/50" : "bg-lime-300")} />
       </span>
-      {/* A fixed width, so the text changing from "just now" to "12 s ago" does not push the buttons around. */}
-      <span role="status" aria-live="off" className="inline-block min-w-[6.5rem] tabular-nums">
-        {paused ? "Paused" : "Live"}, {describeAge(seconds)}
-      </span>
+
       <button
         type="button"
         onClick={() => startTransition(() => router.refresh())}
@@ -77,6 +74,10 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
       >
         {paused ? <Play className="size-3.5" aria-hidden /> : <Pause className="size-3.5" aria-hidden />}
       </button>
+      {/* After the buttons, so the text changing from "just now" to "12 s ago" never moves them. */}
+      <span role="status" aria-live="off" className="tabular-nums">
+        {paused ? "Paused" : "Live"}, {describeAge(seconds)}
+      </span>
     </div>
   );
 }

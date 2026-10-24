@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Pay rules" };
 export default function RulesPage() {
   return (
     <>
-      <PageHeader icon={SlidersHorizontal} accent="orange" title="Pay rules" description="How lates, absences and unpaid leave affect salary." />
+      <PageHeader icon={SlidersHorizontal} title="Pay rules" description="How lates, absences and unpaid leave affect salary." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading pay rules</p>}>
         <RulesContent />
       </Suspense>

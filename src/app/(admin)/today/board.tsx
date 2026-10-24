@@ -266,9 +266,7 @@ export function TodayBoard({
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:gap-4">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-3.5 text-white shadow-card sm:rounded-3xl sm:p-5">
-        <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-lime-300/30 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-16 left-1/3 size-48 rounded-full bg-sky-300/30 blur-3xl" />
+      <section className="relative overflow-hidden rounded-2xl bg-forest p-3.5 text-white shadow-card sm:rounded-3xl sm:p-5">
         <div className="relative flex items-center gap-4">
           <Ring size={88} thickness={10} track="stroke-white/20" segments={hero.segments}>
             <div>
@@ -296,15 +294,16 @@ export function TodayBoard({
                   aria-pressed={pressed}
                   onClick={() => setFilter(pressed ? "all" : f)}
                   className={cn(
-                    "relative flex h-full w-full flex-col items-center overflow-hidden rounded-xl px-1 py-2 shadow-md shadow-black/15 transition-all active:scale-[0.97]",
-                    toneClasses[tone].grad,
-                    pressed ? "scale-[1.04] ring-2 ring-white" : filter !== "all" && "opacity-60 hover:opacity-90",
+                    "flex h-full w-full flex-col items-center rounded-xl px-1 py-2 transition-colors",
+                    pressed ? "bg-white text-forest" : "bg-white/10 text-white hover:bg-white/15",
                   )}
                 >
-                  <span aria-hidden className="pointer-events-none absolute -right-3 -top-3 size-10 rounded-full bg-white/20" />
-                  <Icon className="relative size-4" aria-hidden />
-                  <span className="relative mt-1 text-lg font-semibold leading-none tabular-nums">{counts[count]}</span>
-                  <span className="relative mt-1 text-[11px] font-medium leading-none opacity-90">{label}</span>
+                  <span className="flex items-center gap-1">
+                    <span aria-hidden className={cn("size-2 rounded-full", toneClasses[tone].solid)} />
+                    <Icon className="size-3.5 opacity-80" aria-hidden />
+                  </span>
+                  <span className="mt-1 text-lg font-bold leading-none tabular-nums">{counts[count]}</span>
+                  <span className={cn("mt-1 text-[11px] leading-none", pressed ? "text-forest/80" : "text-white/75")}>{label}</span>
                 </button>
               </li>
             );

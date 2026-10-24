@@ -27,7 +27,6 @@ export default function LeavePage() {
     <>
       <PageHeader
         icon={CalendarMinus}
-        accent="violet"
         title="Leave"
         description="Record leave, approve it, and track what each employee has left."
         actions={
@@ -66,7 +65,7 @@ function BalanceRow({ name, balance }: { name: string; balance: Balance | undefi
       </div>
       {limited ? (
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-secondary" role="meter" aria-label={`${name} used`} aria-valuemin={0} aria-valuemax={balance.quota!} aria-valuenow={Math.min(balance.used, balance.quota!)}>
-          <div className={cn("h-full rounded-full", balance.remaining! < 0 ? "bg-danger" : "bg-violet-500")} style={{ width: `${share * 100}%` }} />
+          <div className={cn("h-full rounded-full", balance.remaining! < 0 ? "bg-danger" : "bg-primary")} style={{ width: `${share * 100}%` }} />
         </div>
       ) : null}
       <p className="mt-1 text-xs text-muted-foreground">
@@ -94,7 +93,7 @@ async function LeaveContent() {
   return (
     <div className="mt-6 grid max-w-4xl gap-5">
       <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
-        <CardTitle icon={CalendarMinus} accent="violet">Record leave</CardTitle>
+        <CardTitle icon={CalendarMinus}>Record leave</CardTitle>
         {types.length === 0 ? (
           <p className="mt-3 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
             There are no leave types yet.{" "}
@@ -123,7 +122,7 @@ async function LeaveContent() {
 
       {people.length > 0 && types.length > 0 ? (
         <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
-          <CardTitle icon={Scale} accent="indigo">Balances</CardTitle>
+          <CardTitle icon={Scale}>Balances</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             {basis === "calendar"
               ? `Days left this year, 1 January to 31 December ${today.slice(0, 4)}.`
@@ -152,7 +151,7 @@ async function LeaveContent() {
       ) : null}
 
       <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
-        <CardTitle icon={ListChecks} accent="pink" count={requests.length}>
+        <CardTitle icon={ListChecks} count={requests.length}>
           Requests
         </CardTitle>
         {requests.length === 0 ? (

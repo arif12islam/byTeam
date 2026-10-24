@@ -13,14 +13,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { Accent } from "@/components/accent";
-
 export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** The color of this screen in the menu and its heading. */
-  accent: Accent;
 };
 
 export type NavGroup = {
@@ -32,31 +28,31 @@ export const navGroups: NavGroup[] = [
   {
     label: "Daily",
     items: [
-      { href: "/today", label: "Today", icon: Clock, accent: "green" },
-      { href: "/attendance", label: "Attendance", icon: CalendarDays, accent: "indigo" },
-      { href: "/leave", label: "Leave", icon: CalendarMinus, accent: "violet" },
+      { href: "/today", label: "Today", icon: Clock },
+      { href: "/attendance", label: "Attendance", icon: CalendarDays },
+      { href: "/leave", label: "Leave", icon: CalendarMinus },
     ],
   },
   {
     label: "Monthly",
     items: [
-      { href: "/payroll", label: "Payroll", icon: Wallet, accent: "orange" },
-      { href: "/reports", label: "Reports", icon: ChartColumn, accent: "teal" },
+      { href: "/payroll", label: "Payroll", icon: Wallet },
+      { href: "/reports", label: "Reports", icon: ChartColumn },
     ],
   },
   {
     label: "Setup",
     items: [
-      { href: "/employees", label: "Employees", icon: Users, accent: "pink" },
-      { href: "/shifts", label: "Shifts", icon: Timer, accent: "sky" },
-      { href: "/devices", label: "Devices", icon: Fingerprint, accent: "lime" },
-      { href: "/rules", label: "Pay rules", icon: SlidersHorizontal, accent: "orange" },
-      { href: "/settings", label: "Settings", icon: Settings, accent: "slate" },
+      { href: "/employees", label: "Employees", icon: Users },
+      { href: "/shifts", label: "Shifts", icon: Timer },
+      { href: "/devices", label: "Devices", icon: Fingerprint },
+      { href: "/rules", label: "Pay rules", icon: SlidersHorizontal },
+      { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
   {
     label: "Records",
-    items: [{ href: "/audit", label: "Audit log", icon: History, accent: "slate" }],
+    items: [{ href: "/audit", label: "Audit log", icon: History }],
   },
 ];
 

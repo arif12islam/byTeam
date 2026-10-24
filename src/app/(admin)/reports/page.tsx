@@ -20,7 +20,6 @@ import { Suspense } from "react";
 import { BarList } from "@/components/charts/bar-list";
 import { ColumnChart } from "@/components/charts/column-chart";
 import { DailyBars } from "@/components/charts/daily-bars";
-import { accentCycle } from "@/components/accent";
 import { DateRangeFilter } from "@/components/date-range-filter";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui/avatar";
@@ -47,7 +46,6 @@ export default function ReportsPage(props: PageProps<"/reports">) {
     <>
       <PageHeader
         icon={ChartColumn}
-        accent="teal"
         title="Reports"
         description="Attendance, lateness, leave and payroll cost for a month, three months or any dates you pick."
       />
@@ -80,7 +78,7 @@ function PeopleCard({
 }) {
   return (
     <Card>
-      <CardTitle icon={icon} accent={tone === "warning" ? "orange" : tone === "danger" ? "pink" : "lime"}>
+      <CardTitle icon={icon}>
         {title}
       </CardTitle>
       {people.length === 0 ? (
@@ -181,9 +179,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       {nav}
 
       <div className="grid gap-3 md:grid-cols-[18rem_1fr] md:gap-5">
-        <section className="relative flex items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-teal-600 via-cyan-600 to-sky-700 p-5 text-white shadow-card">
-          <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full bg-lime-300/35 blur-3xl" />
-          <div aria-hidden className="pointer-events-none absolute -bottom-12 -left-8 size-32 rounded-full bg-indigo-300/35 blur-3xl" />
+        <section className="relative flex items-center gap-5 overflow-hidden rounded-3xl bg-forest p-5 text-white shadow-card">
           <Ring
             size={116}
             thickness={13}
@@ -213,15 +209,15 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
             hint="of arrivals"
           />
           <StatTile
-            label="Late days"
+            label="Late"
             value={totals.late}
             icon={AlarmClock}
             tone="warning"
-            hint={totals.lateMinutes > 0 ? `${totals.lateMinutes} min in all` : undefined}
+            hint={totals.lateMinutes > 0 ? `days, ${totals.lateMinutes} min in all` : "days"}
           />
-          <StatTile label="Absent days" value={totals.absent} icon={UserX} tone="danger" />
+          <StatTile label="Absent" value={totals.absent} icon={UserX} tone="danger" hint="days" />
           <StatTile
-            label="Leave days"
+            label="On leave"
             value={leaveDays}
             icon={Plane}
             tone="info"
@@ -231,7 +227,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       </div>
 
       <Card>
-        <CardTitle icon={ChartColumn} accent="indigo">Day by day</CardTitle>
+        <CardTitle icon={ChartColumn}>Day by day</CardTitle>
         <p className="mb-4 mt-1.5 text-sm text-muted-foreground">
           How many people were on time, late, absent or on leave each day of {label}.
         </p>
@@ -240,7 +236,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <Card>
-          <CardTitle icon={Users} accent="pink" count={report.departments.length}>
+          <CardTitle icon={Users} count={report.departments.length}>
             Teams
           </CardTitle>
           <p className="mb-4 mt-1.5 text-sm text-muted-foreground">Attendance rate by department.</p>
@@ -257,7 +253,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
         </Card>
 
         <Card>
-          <CardTitle icon={Banknote} accent="orange">Payroll cost</CardTitle>
+          <CardTitle icon={Banknote}>Payroll cost</CardTitle>
           {combined.months > 0 ? (
             <>
               <div className="mb-5 mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -279,11 +275,11 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
                 {combined.drafts > 0 ? <Badge tone="warning">{combined.drafts === 1 && combined.months === 1 ? "Draft" : `${combined.drafts} draft`}</Badge> : null}
               </p>
               <BarList
-                items={departmentCosts.map((d, i) => ({
+                items={departmentCosts.map((d) => ({
                   label: d.department,
                   value: d.net,
                   display: formatTaka(d.net),
-                  accent: accentCycle[i % accentCycle.length],
+                  brand: true,
                   sub: `${plural(d.people, "person", "people")}, gross ${formatTaka(d.gross)}`,
                 }))}
                 max={departmentMax}
@@ -311,11 +307,10 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       </div>
 
       <Card>
-        <CardTitle icon={Banknote} accent="orange">{single ? "Net pay, last six months" : "Net pay by month"}</CardTitle>
+        <CardTitle icon={Banknote}>{single ? "Net pay, last six months" : "Net pay by month"}</CardTitle>
         <p className="mb-4 mt-1.5 text-sm text-muted-foreground">The net pay of each payroll run. Months with no run are left empty.</p>
         {trend.some((p) => p.net !== null) ? (
           <ColumnChart
-            accent="orange"
             columns={trend.map((p) => ({
               label: formatMonth(p.month).split(" ")[0],
               value: p.net,
@@ -362,7 +357,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       </div>
 
       <Card>
-        <CardTitle icon={TriangleAlert} accent="slate">Worth a look</CardTitle>
+        <CardTitle icon={TriangleAlert}>Worth a look</CardTitle>
         <ul className="mt-3 grid gap-2 sm:grid-cols-3">
           {checks.map((check) => (
             <li key={check.text} className="flex items-center gap-3 rounded-xl bg-secondary px-3.5 py-3 text-sm">

@@ -15,10 +15,7 @@ const points = [
 export default function LoginPage() {
   return (
     <main className="grid min-h-dvh md:grid-cols-[1.1fr_1fr]">
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-indigo-700 px-6 pb-12 pt-[calc(2rem+env(safe-area-inset-top))] text-forest-foreground md:flex md:flex-col md:justify-between md:px-14 md:py-14">
-        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-acc-teal/45 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute right-1/4 top-1/2 size-56 rounded-full bg-acc-indigo/35 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-16 size-72 rounded-full bg-acc-lime/30 blur-3xl" />
+      <section className="relative overflow-hidden bg-forest px-6 pb-12 pt-[calc(2rem+env(safe-area-inset-top))] text-forest-foreground md:flex md:flex-col md:justify-between md:px-14 md:py-14">
         <div className="relative flex items-center gap-3 text-xl font-semibold tracking-tight">
           <BrandMark className="size-10" />
           <span className="flex items-baseline">
@@ -33,7 +30,7 @@ export default function LoginPage() {
           <ul className="mt-6 hidden gap-3 md:grid">
             {points.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3 text-white/90">
-                <span className="grid size-9 place-items-center rounded-xl bg-white/12">
+                <span className="grid size-9 place-items-center rounded-xl bg-white/10">
                   <Icon className="size-[18px]" aria-hidden />
                 </span>
                 {text}

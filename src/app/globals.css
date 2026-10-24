@@ -3,46 +3,46 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  byTeam palette: vivid on purpose. Big surfaces (page banners, stat tiles, hero
-  panels, buttons, avatars) are saturated gradients with white text. The page
-  itself has soft indigo and emerald washes behind it. Never pale-on-white.
+  byTeam palette: one bold brand color, used with confidence.
 
-  primary  #059669  emerald, buttons and links
-  forest   #0A3A40  deep teal for the sidebar, phone tab bar and hero panels
-  canvas   #F1F4FB  page background, washed with indigo and emerald
+  brand   #047857  deep emerald: buttons, links, active menu item, icon tiles
+  forest  #063B2F  darker emerald for the sidebar, phone bars and the Today hero
+  canvas  #F4F6F8  page background, plain on purpose
+  surface #FFFFFF  cards
 
-  Status colors carry meaning everywhere: present is green, late is amber,
-  absent is red, leave is blue and a day off is slate. Each has a strong
-  color for text and icons and a soft one for backgrounds.
+  Screens do not get their own colors. Besides the brand, color only ever means
+  a status: present is green, late is amber, absent is red, leave is blue and a
+  day off is slate. Each has a strong color for text and icons and a soft one
+  for backgrounds.
 */
 
 :root {
   --radius: 0.625rem;
 
-  --background: #f1f4fb;
+  --background: #f4f6f8;
   --foreground: #101828;
   --card: #ffffff;
   --card-foreground: #101828;
   --popover: #ffffff;
   --popover-foreground: #101828;
-  --primary: #059669;
+  --primary: #047857;
   --primary-foreground: #ffffff;
-  --secondary: #e8edf7;
+  --secondary: #eef1f4;
   --secondary-foreground: #101828;
-  --muted: #e8edf7;
+  --muted: #eef1f4;
   --muted-foreground: #576277;
   --accent: #d1fae5;
   --accent-foreground: #065f46;
   --destructive: #be123c;
-  --border: #dde4f0;
-  --input: #c9d2e3;
-  --ring: #059669;
+  --border: #e2e7eb;
+  --input: #cfd6dc;
+  --ring: #047857;
 
-  --forest: #0a3a40;
+  --forest: #063b2f;
   --forest-foreground: #f2faf6;
-  --forest-muted: #8ad3c8;
-  --forest-line: #115761;
-  --forest-active: #059669;
+  --forest-muted: #9cc9b9;
+  --forest-line: #0d5141;
+  --forest-active: #047857;
 
   --success: #047857;
   --success-soft: #d1fae5;
@@ -55,61 +55,40 @@
   --off: #475569;
   --off-soft: #e2e8f0;
 
-  --elevation: 0 1px 2px rgb(16 24 40 / 0.06), 0 6px 20px rgb(79 70 229 / 0.07);
-  --canvas-glow-a: rgb(99 102 241 / 0.16);
-  --canvas-glow-b: rgb(16 185 129 / 0.16);
-
-  /* Section accents: decorative identity colors for the menu, headings and charts. Status colors keep their own meaning. */
-  --acc-on: #ffffff;
-  --acc-indigo: #4f46e5;
-  --acc-indigo-soft: #e8e9fd;
-  --acc-violet: #7c3aed;
-  --acc-violet-soft: #f0e8fd;
-  --acc-pink: #db2777;
-  --acc-pink-soft: #fce7f1;
-  --acc-orange: #d9660a;
-  --acc-orange-soft: #fdebd8;
-  --acc-teal: #0d8a7f;
-  --acc-teal-soft: #d7f5f1;
-  --acc-sky: #0284c7;
-  --acc-sky-soft: #dcf0fb;
-  --acc-lime: #4d7c0f;
-  --acc-lime-soft: #e4f1cd;
-  --acc-slate: #475569;
-  --acc-slate-soft: #e8ecf1;
+  --elevation: 0 1px 2px rgb(16 24 40 / 0.05), 0 2px 8px rgb(16 24 40 / 0.04);
 
 
-  --sidebar: #0a3a40;
+  --sidebar: #063b2f;
   --sidebar-foreground: #f2faf6;
-  --sidebar-border: #115761;
+  --sidebar-border: #0d5141;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1220;
+    --background: #0c1214;
     --foreground: #e7ecf5;
-    --card: #131c2e;
+    --card: #141c1f;
     --card-foreground: #e7ecf5;
-    --popover: #131c2e;
+    --popover: #141c1f;
     --popover-foreground: #e7ecf5;
     --primary: #34d399;
-    --primary-foreground: #052e22;
-    --secondary: #1c2740;
+    --primary-foreground: #03261c;
+    --secondary: #1a2326;
     --secondary-foreground: #e7ecf5;
-    --muted: #1c2740;
+    --muted: #1a2326;
     --muted-foreground: #9aa7bd;
     --accent: #0f3a2c;
     --accent-foreground: #a7f3d0;
     --destructive: #fb7185;
-    --border: #223049;
-    --input: #31405c;
+    --border: #253033;
+    --input: #34413f;
     --ring: #34d399;
 
-    --forest: #071f2b;
+    --forest: #062a22;
     --forest-foreground: #f2faf6;
-    --forest-muted: #79b8b0;
-    --forest-line: #0f3a47;
-    --forest-active: #059669;
+    --forest-muted: #86b8a8;
+    --forest-line: #0d3e32;
+    --forest-active: #047857;
 
     --success: #34d399;
     --success-soft: #0f3a2c;
@@ -123,31 +102,11 @@
     --off-soft: #1e293b;
 
     --elevation: 0 1px 2px rgb(0 0 0 / 0.4);
-    --canvas-glow-a: rgb(99 102 241 / 0.22);
-    --canvas-glow-b: rgb(16 185 129 / 0.16);
-
-    --acc-on: #0d1512;
-    --acc-indigo: #8b93ff;
-    --acc-indigo-soft: #23264f;
-    --acc-violet: #b28cff;
-    --acc-violet-soft: #2e2250;
-    --acc-pink: #f472b6;
-    --acc-pink-soft: #4a1d36;
-    --acc-orange: #f59e5b;
-    --acc-orange-soft: #43270f;
-    --acc-teal: #4fd1c5;
-    --acc-teal-soft: #11403c;
-    --acc-sky: #5bbcf0;
-    --acc-sky-soft: #12364a;
-    --acc-lime: #a3e635;
-    --acc-lime-soft: #2f4012;
-    --acc-slate: #a3b1c2;
-    --acc-slate-soft: #263040;
 
 
-    --sidebar: #071f2b;
+    --sidebar: #062a22;
     --sidebar-foreground: #f2faf6;
-    --sidebar-border: #0f3a47;
+    --sidebar-border: #0d3e32;
   }
 }
 
@@ -195,24 +154,6 @@
 
   --shadow-card: var(--elevation);
 
-  --color-acc-on: var(--acc-on);
-  --color-acc-indigo: var(--acc-indigo);
-  --color-acc-indigo-soft: var(--acc-indigo-soft);
-  --color-acc-violet: var(--acc-violet);
-  --color-acc-violet-soft: var(--acc-violet-soft);
-  --color-acc-pink: var(--acc-pink);
-  --color-acc-pink-soft: var(--acc-pink-soft);
-  --color-acc-orange: var(--acc-orange);
-  --color-acc-orange-soft: var(--acc-orange-soft);
-  --color-acc-teal: var(--acc-teal);
-  --color-acc-teal-soft: var(--acc-teal-soft);
-  --color-acc-sky: var(--acc-sky);
-  --color-acc-sky-soft: var(--acc-sky-soft);
-  --color-acc-lime: var(--acc-lime);
-  --color-acc-lime-soft: var(--acc-lime-soft);
-  --color-acc-slate: var(--acc-slate);
-  --color-acc-slate-soft: var(--acc-slate-soft);
-
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -228,11 +169,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "tnum" 1;
-    /* Two soft washes of color behind everything, so the page is never flat grey. */
-    background-image:
-      radial-gradient(46rem 28rem at 100% -6%, var(--canvas-glow-a), transparent 70%),
-      radial-gradient(40rem 26rem at -8% 8%, var(--canvas-glow-b), transparent 70%);
-    background-attachment: fixed;
   }
 
   :focus-visible {

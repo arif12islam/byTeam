@@ -74,7 +74,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                 ["Leave", row.totals.leave, "info"],
               ] as const
             ).map(([label, value, tone]) => (
-              <div key={label} className={cn("rounded-xl px-1 py-1.5 shadow-sm", toneClasses[tone].grad)}>
+              <div key={label} className={cn("rounded-xl px-1 py-1.5", toneClasses[tone].soft)}>
                 <dd className="text-base font-semibold leading-none tabular-nums">{value}</dd>
                 <dt className="mt-1 text-[11px]">{label}</dt>
               </div>
@@ -114,9 +114,9 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                       aria-label={describeCell(date, cell)}
                       title={describeCell(date, cell)}
                       className={cn(
-                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums shadow-sm",
+                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums",
                         statusFill[cell.status],
-                        "font-medium",
+                        "font-semibold",
                         cell.missingOut && "ring-2 ring-amber-300 ring-offset-1 ring-offset-card",
                       )}
                     >

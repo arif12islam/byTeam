@@ -12,13 +12,13 @@ export const statusTone: Record<AttendanceStatus, Tone> = {
   holiday: "off",
 };
 
-/** A saturated fill for a day in a calendar or grid, with text that reads on it. A day off stays calm so the days that matter stand out. */
+/** The fill for a day in a calendar or grid: a soft status background with bold status text. */
 export const statusFill: Record<AttendanceStatus, string> = {
-  present: "bg-emerald-500 text-white",
-  late: "bg-amber-400 text-amber-950",
-  absent: "bg-rose-500 text-white",
-  leave_paid: "bg-sky-500 text-white",
-  leave_unpaid: "bg-sky-500 text-white",
+  present: "bg-success-soft text-success",
+  late: "bg-warning-soft text-warning",
+  absent: "bg-danger-soft text-danger",
+  leave_paid: "bg-info-soft text-info",
+  leave_unpaid: "bg-info-soft text-info",
   weekly_off: "bg-off-soft text-off",
   holiday: "bg-off-soft text-off",
 };

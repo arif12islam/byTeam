@@ -28,7 +28,6 @@ export default function AuditPage(props: PageProps<"/audit">) {
     <>
       <PageHeader
         icon={History}
-        accent="slate"
         title="Audit log"
         description="Every manual change, approval and payroll action, with who made it. Nothing here can be edited."
       />

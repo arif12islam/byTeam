@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { accentClasses } from "@/components/accent";
 import { Wordmark } from "@/components/brand";
 import { allNavItems, navGroups, primaryTabHrefs } from "@/components/nav";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col overflow-y-auto bg-gradient-to-b from-[#0a3a40] via-[#0b3347] to-[#1a2a63] px-3 py-6 text-sidebar-foreground md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col overflow-y-auto bg-sidebar px-3 py-6 text-sidebar-foreground md:flex">
       <div className="px-3">
         <Wordmark />
       </div>
@@ -38,15 +37,13 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-2 py-1.5 text-sm transition-colors",
+                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
                         active
-                          ? "bg-white/15 font-medium text-white shadow-inner ring-1 ring-white/10"
+                          ? "bg-forest-active font-medium text-white shadow-sm"
                           : "text-forest-foreground/85 hover:bg-white/10 hover:text-white",
                       )}
                     >
-                      <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg", accentClasses[item.accent].solid, !active && "opacity-90")}>
-                        <Icon className="size-4" aria-hidden />
-                      </span>
+                      <Icon className="size-[18px] shrink-0" aria-hidden />
                       {item.label}
                     </Link>
                   </li>
@@ -65,7 +62,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
 /** The slim green bar at the top of a phone screen. */
 export function MobileTopBar() {
   return (
-    <header className="sticky top-0 z-20 flex items-center bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
+    <header className="sticky top-0 z-20 flex items-center bg-forest px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
       <Wordmark />
     </header>
   );
@@ -136,7 +133,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                         active ? "border-primary bg-accent font-medium text-accent-foreground" : "border-border bg-background",
                       )}
                     >
-                      <span className={cn("grid size-10 place-items-center rounded-xl", accentClasses[item.accent].solid)}>
+                      <span className="grid size-10 place-items-center rounded-xl bg-accent text-accent-foreground">
                         <Icon className="size-5" aria-hidden />
                       </span>
                       {item.label}
@@ -152,7 +149,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-gradient-to-r from-[#0a3a40] to-[#17285a] pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-forest-line bg-forest pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-around px-1">
           {tabs.map((item) => {
@@ -171,7 +168,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                   <span
                     className={cn(
                       "grid h-7 w-14 place-items-center rounded-full transition-colors",
-                      active && accentClasses[item.accent].solid,
+                      active && "bg-forest-active text-white",
                     )}
                   >
                     <Icon className="size-5" aria-hidden />

@@ -23,7 +23,6 @@ export default function SettingsPage() {
     <>
       <PageHeader
         icon={Settings}
-        accent="slate"
         title="Settings"
         description="Company details, weekly off days, public holidays and office outages."
       />

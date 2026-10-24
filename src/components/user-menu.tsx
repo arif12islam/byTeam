@@ -18,7 +18,7 @@ export async function UserMenu({ onDark = false }: { onDark?: boolean }) {
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar name={user.name} className="ring-2 ring-white/40" />
+      <Avatar name={user.name} className={onDark ? "bg-forest-line text-forest-foreground" : undefined} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{user.name}</p>
         <p className={cn("text-xs", onDark ? "text-forest-muted" : "text-muted-foreground")}>{roleLabel[user.role]}</p>

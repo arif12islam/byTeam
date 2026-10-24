@@ -27,7 +27,6 @@ export default function AttendancePage(props: PageProps<"/attendance">) {
     <>
       <PageHeader
         icon={CalendarDays}
-        accent="indigo"
         title="Attendance"
         description="Attendance for every employee over a month, three months or any dates, built from device punches. Open a day to see the punches behind it."
       />
