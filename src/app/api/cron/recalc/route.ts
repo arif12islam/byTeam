@@ -1,9 +1,10 @@
-import { previousDate, toOfficeDate } from "@/lib/time";
+import { getDb } from "@/db";
+import { runNightlyRecalc } from "@/lib/attendance/nightly";
 
 /**
  * Nightly recalculation, called by Vercel Cron at 02:00 Dhaka (see vercel.json)
- * or by system cron on a VPS later. The attendance engine is wired in at M3;
- * until then this only confirms the job is reachable and authorized.
+ * or by system cron on a VPS later. Rebuilds the previous office day for every
+ * active employee.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -13,7 +14,11 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const date = previousDate(toOfficeDate(new Date()));
-
-  return Response.json({ ok: true, date, recalculated: 0 });
+  try {
+    const result = await runNightlyRecalc(getDb());
+    return Response.json({ ok: true, date: result.date, employees: result.employees, days: result.days, removed: result.removed });
+  } catch (error) {
+    console.error("[cron] nightly recalculation failed", error);
+    return Response.json({ ok: false, error: "Recalculation failed" }, { status: 500 });
+  }
 }
