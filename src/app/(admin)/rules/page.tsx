@@ -1,4 +1,3 @@
-import { SlidersHorizontal } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -17,7 +16,7 @@ export const metadata: Metadata = { title: "Pay rules" };
 export default function RulesPage() {
   return (
     <>
-      <PageHeader icon={SlidersHorizontal} title="Pay rules" description="How lates, absences and unpaid leave affect salary." />
+      <PageHeader title="Pay rules" description="How lates, absences and unpaid leave affect salary." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading pay rules</p>}>
         <RulesContent />
       </Suspense>
@@ -45,7 +44,7 @@ async function RulesContent() {
       ) : null}
 
       {canEdit ? (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">{rules.length === 0 ? "Add the first rules" : "Add rules for a new month"}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             New rules apply from the month you pick and stay until later rules take over. Months already paid keep their own rules.
@@ -57,7 +56,7 @@ async function RulesContent() {
       ) : null}
 
       {rules.map((rule) => (
-        <section key={rule.id} className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section key={rule.id} className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-base font-semibold">From {formatMonth(rule.effectiveFromMonth)}</h2>
             {current?.id === rule.id ? <p className="text-sm font-medium text-primary">In use this month</p> : null}
@@ -76,7 +75,7 @@ async function RulesContent() {
         </section>
       ))}
 
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-base font-semibold">Grace minutes</h2>
           <Link href="/shifts" className="text-sm text-primary underline-offset-4 hover:underline">

@@ -6,7 +6,7 @@ import { signIn, type LoginState } from "./actions";
 import { Button } from "@/components/ui/button";
 
 const inputClass =
-  "mt-1.5 block h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base";
+  "mt-1.5 block h-10 w-full rounded-md border border-input bg-card px-3 text-base shadow-xs sm:text-sm";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(signIn, {});
@@ -45,7 +45,7 @@ export function LoginForm() {
           {state.error}
         </p>
       ) : null}
-      <Button type="submit" size="lg" className="w-full" pending={pending}>
+      <Button type="submit" className="w-full" pending={pending}>
         Sign in
       </Button>
     </form>

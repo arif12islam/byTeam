@@ -7,7 +7,7 @@ function Card({ className, ...props }: React.ComponentProps<"section">) {
   return (
     <section
       data-slot="card"
-      className={cn("rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5", className)}
+      className={cn("rounded-xl border border-border bg-card p-4 shadow-card sm:p-5", className)}
       {...props}
     />
   );
@@ -29,15 +29,13 @@ function CardTitle({
 }) {
   return (
     <div className={cn("flex items-center justify-between gap-3", className)}>
-      <h2 className="flex min-w-0 items-center gap-2.5 text-base font-semibold tracking-tight">
+      <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
         {Icon ? (
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">
-            <Icon className="size-4" aria-hidden />
-          </span>
+          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         ) : null}
         <span className="truncate">{children}</span>
         {count !== undefined ? (
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
             {count}
           </span>
         ) : null}

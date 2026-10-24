@@ -14,25 +14,24 @@ type StatTileProps = {
   className?: string;
 };
 
-/** A big number for the top of a screen. The icon and the number carry the status color; the card stays white. */
+/** A number with a label, for the top of a screen. The status shows as a small dot, the rest stays neutral. */
 export function StatTile({ label, value, icon: Icon, tone = "neutral", hint, href, className }: StatTileProps) {
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-sm font-medium text-muted-foreground">{label}</p>
-        <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg", toneClasses[tone].soft)}>
-          <Icon className="size-4" aria-hidden />
-        </span>
+        <p className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+          {tone !== "neutral" ? <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", toneClasses[tone].solid)} /> : null}
+          <span className="truncate">{label}</span>
+        </p>
+        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
       </div>
-      <p className={cn("mt-2 text-3xl font-bold leading-none tracking-tight tabular-nums", tone !== "neutral" && tone !== "off" && toneClasses[tone].text)}>
-        {value}
-      </p>
-      {hint ? <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p> : null}
+      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
     </>
   );
-  const base = "block rounded-2xl border border-border bg-card p-4 shadow-card";
+  const base = "block rounded-xl border border-border bg-card p-4 shadow-card";
   return href ? (
-    <Link href={href} className={cn(base, "transition-colors hover:border-primary/50", className)}>
+    <Link href={href} className={cn(base, "transition-colors hover:bg-secondary/50", className)}>
       {body}
     </Link>
   ) : (

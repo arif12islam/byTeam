@@ -111,10 +111,10 @@ async function TodayContent() {
   const online = devices.filter((d) => deviceStatus(d.lastSeenAt, now) === "online").length;
   const deviceNote =
     devices.length === 0 ? null : (
-      <Link href="/devices" className="inline-flex items-center gap-1.5 text-xs text-white/90 hover:text-white">
+      <Link href="/devices" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
         <span
           aria-hidden
-          className={cn("size-2 rounded-full", online === devices.length ? "bg-lime-300" : online > 0 ? "bg-amber-300" : "bg-rose-300")}
+          className={cn("size-1.5 rounded-full", online === devices.length ? "bg-green-500" : online > 0 ? "bg-amber-400" : "bg-red-500")}
         />
         {devices.length === 1
           ? `${devices[0].name} ${online === 1 ? "online" : deviceStatus(devices[0].lastSeenAt, now) === "never" ? "never connected" : "offline"}`

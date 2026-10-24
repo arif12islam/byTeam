@@ -66,10 +66,10 @@ const matches: Record<Filter, (entry: BoardEntry) => boolean> = {
   on_leave: (e) => e.group === "on_leave",
 };
 
-const chips: { filter: Exclude<Filter, "all">; label: string; icon: LucideIcon; count: keyof BoardCounts; tone: Tone }[] = [
+const chips: { filter: Exclude<Filter, "all">; label: string; short?: string; icon: LucideIcon; count: keyof BoardCounts; tone: Tone }[] = [
   { filter: "in", label: "In", icon: UserCheck, count: "in", tone: "success" },
   { filter: "late", label: "Late", icon: AlarmClock, count: "late", tone: "warning" },
-  { filter: "not_in_yet", label: "Not in yet", icon: Hourglass, count: "notInYet", tone: "off" },
+  { filter: "not_in_yet", label: "Not in yet", short: "Not in", icon: Hourglass, count: "notInYet", tone: "off" },
   { filter: "absent", label: "Absent", icon: UserX, count: "absent", tone: "danger" },
   { filter: "on_leave", label: "On leave", icon: Plane, count: "onLeave", tone: "info" },
 ];
@@ -139,7 +139,7 @@ function PersonSheet({ entry, date, onClose }: { entry: BoardEntry; date: string
         role="dialog"
         aria-modal="true"
         aria-label={entry.name}
-        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-card p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card md:inset-auto md:left-1/2 md:top-1/2 md:w-[26rem] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-5"
+        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-card p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card md:inset-auto md:left-1/2 md:top-1/2 md:w-[26rem] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-5"
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border md:hidden" aria-hidden />
         <div className="flex items-center gap-3">
@@ -266,17 +266,17 @@ export function TodayBoard({
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:gap-4">
-      <section className="relative overflow-hidden rounded-2xl bg-forest p-3.5 text-white shadow-card sm:rounded-3xl sm:p-5">
-        <div className="relative flex items-center gap-4">
-          <Ring size={88} thickness={10} track="stroke-white/20" segments={hero.segments}>
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <div className="flex items-center gap-4">
+          <Ring size={76} thickness={7} track="stroke-secondary" segments={hero.segments}>
             <div>
-              <p className="text-2xl font-semibold leading-none tabular-nums">{counts.in}</p>
-              <p className="mt-0.5 text-[10px] text-white/80">of {hero.expected}</p>
+              <p className="text-lg font-semibold leading-none tabular-nums">{counts.in}</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">of {hero.expected}</p>
             </div>
           </Ring>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xs text-white/85">{hero.title}</h1>
-            <p className="mt-0.5 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">{hero.headline}</p>
+            <h1 className="text-xs text-muted-foreground">{hero.title}</h1>
+            <p className="mt-0.5 text-xl font-semibold tracking-tight">{hero.headline}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
               <LiveRefresh generatedAt={hero.generatedAt} />
               {deviceNote}
@@ -284,8 +284,8 @@ export function TodayBoard({
           </div>
         </div>
 
-        <ul className="relative mt-3 grid grid-cols-5 gap-1.5 sm:gap-2" aria-label="Filter the list">
-          {chips.map(({ filter: f, label, icon: Icon, count, tone }) => {
+        <ul className="mt-4 grid grid-cols-5 gap-1.5 sm:gap-2" aria-label="Filter the list">
+          {chips.map(({ filter: f, label, short, count, tone }) => {
             const pressed = filter === f;
             return (
               <li key={f}>
@@ -294,16 +294,24 @@ export function TodayBoard({
                   aria-pressed={pressed}
                   onClick={() => setFilter(pressed ? "all" : f)}
                   className={cn(
-                    "flex h-full w-full flex-col items-center rounded-xl px-1 py-2 transition-colors",
-                    pressed ? "bg-white text-forest" : "bg-white/10 text-white hover:bg-white/15",
+                    "flex h-full w-full flex-col items-start rounded-lg border px-2 py-2 text-left sm:px-2.5 transition-colors",
+                    pressed ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-secondary/60",
                   )}
                 >
-                  <span className="flex items-center gap-1">
-                    <span aria-hidden className={cn("size-2 rounded-full", toneClasses[tone].solid)} />
-                    <Icon className="size-3.5 opacity-80" aria-hidden />
+                  <span className="flex w-full items-center justify-between gap-1">
+                    <span className="text-lg font-semibold leading-none tabular-nums">{counts[count]}</span>
+                    <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", toneClasses[tone].solid)} />
                   </span>
-                  <span className="mt-1 text-lg font-bold leading-none tabular-nums">{counts[count]}</span>
-                  <span className={cn("mt-1 text-[11px] leading-none", pressed ? "text-forest/80" : "text-white/75")}>{label}</span>
+                  <span className={cn("mt-1.5 w-full truncate text-[11px] leading-none tracking-tight sm:tracking-normal", pressed ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                    {short ? (
+                      <>
+                        <span className="sm:hidden">{short}</span>
+                        <span className="hidden sm:inline">{label}</span>
+                      </>
+                    ) : (
+                      label
+                    )}
+                  </span>
                 </button>
               </li>
             );

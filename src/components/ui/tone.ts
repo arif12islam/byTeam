@@ -13,8 +13,8 @@ export const toneClasses: Record<Tone, { text: string; soft: string; solid: stri
   success: {
     text: "text-success",
     soft: "bg-success-soft text-success",
-    solid: "bg-emerald-500",
-    stroke: "stroke-emerald-500",
+    solid: "bg-green-500",
+    stroke: "stroke-green-500",
   },
   warning: {
     text: "text-warning",
@@ -25,20 +25,20 @@ export const toneClasses: Record<Tone, { text: string; soft: string; solid: stri
   danger: {
     text: "text-danger",
     soft: "bg-danger-soft text-danger",
-    solid: "bg-rose-500",
-    stroke: "stroke-rose-500",
+    solid: "bg-red-500",
+    stroke: "stroke-red-500",
   },
   info: {
     text: "text-info",
     soft: "bg-info-soft text-info",
-    solid: "bg-sky-500",
-    stroke: "stroke-sky-500",
+    solid: "bg-blue-500",
+    stroke: "stroke-blue-500",
   },
   off: {
     text: "text-off",
     soft: "bg-off-soft text-off",
-    solid: "bg-slate-400",
-    stroke: "stroke-slate-400",
+    solid: "bg-zinc-300",
+    stroke: "stroke-zinc-300",
   },
   neutral: {
     text: "text-foreground",

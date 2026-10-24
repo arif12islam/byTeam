@@ -22,7 +22,7 @@ export function MonthNav({
 }) {
   return (
     <nav aria-label="Month" className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-1 rounded-2xl border border-border bg-card p-1 shadow-card">
+      <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1 shadow-card">
         <Link
           href={`${basePath}?month=${shiftMonth(month, -1)}`}
           aria-label="Previous month"

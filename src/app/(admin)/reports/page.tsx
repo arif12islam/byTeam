@@ -45,7 +45,6 @@ export default function ReportsPage(props: PageProps<"/reports">) {
   return (
     <>
       <PageHeader
-        icon={ChartColumn}
         title="Reports"
         description="Attendance, lateness, leave and payroll cost for a month, three months or any dates you pick."
       />
@@ -179,22 +178,22 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       {nav}
 
       <div className="grid gap-3 md:grid-cols-[18rem_1fr] md:gap-5">
-        <section className="relative flex items-center gap-5 overflow-hidden rounded-3xl bg-forest p-5 text-white shadow-card">
+        <section className="flex items-center gap-5 rounded-xl border border-border bg-card p-5 shadow-card">
           <Ring
-            size={116}
-            thickness={13}
-            track="stroke-white/25"
+            size={96}
+            thickness={8}
+            track="stroke-secondary"
             segments={[
               { value: totals.present - totals.late, tone: "success", label: "On time" },
               { value: totals.late, tone: "warning", label: "Late" },
               { value: totals.absent, tone: "danger", label: "Absent" },
             ]}
           >
-            <p className="text-2xl font-semibold tabular-nums">{formatRate(report.attendanceRate)}</p>
+            <p className="text-xl font-semibold tabular-nums">{formatRate(report.attendanceRate)}</p>
           </Ring>
           <div className="min-w-0">
-            <p className="text-lg font-semibold leading-tight">Attendance rate</p>
-            <p className="mt-1 text-sm text-white/90">
+            <p className="text-sm font-medium text-muted-foreground">Attendance rate</p>
+            <p className="mt-1 text-sm">
               {plural(totals.present, "day")} attended, {plural(totals.absent, "day")} absent
               {report.workingDays > 0 ? `, over ${plural(report.workingDays, "working day")}` : ""}.
             </p>
@@ -246,7 +245,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
               label: d.department,
               value: d.rate ?? 0,
               display: formatRate(d.rate),
-              tone: rateTone(d.rate),
+              brand: true,
               sub: `${plural(d.people, "person", "people")}, ${d.late} late, ${d.absent} absent, ${d.leave} on leave`,
             }))}
           />
@@ -259,8 +258,8 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
               <div className="mb-5 mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
                   ["Gross", combined.totals.gross, "text-foreground"],
-                  ["Deductions", combined.totals.deductions, "text-danger"],
-                  ["Additions", combined.totals.additions, "text-success"],
+                  ["Deductions", combined.totals.deductions, "text-foreground"],
+                  ["Additions", combined.totals.additions, "text-foreground"],
                   ["Net pay", combined.totals.net, "text-foreground font-semibold"],
                 ].map(([name, value, cls]) => (
                   <div key={name}>

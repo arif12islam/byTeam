@@ -17,13 +17,13 @@ export function ArrivalsChart({ buckets }: { buckets: readonly ArrivalBucket[] }
         {buckets.map((bucket) => {
           const onTime = bucket.count - bucket.late;
           return (
-            <div key={bucket.label} className="flex h-full min-w-0 max-w-12 flex-1 flex-col justify-end" title={`${bucket.label}: ${bucket.count}`}>
+            <div key={bucket.label} className="flex h-full min-w-0 max-w-6 flex-1 flex-col justify-end" title={`${bucket.label}: ${bucket.count}`}>
               {bucket.late > 0 ? (
-                <div className="w-full rounded-t-md bg-amber-400" style={{ height: `${(bucket.late / max) * 100}%` }} />
+                <div className="w-full rounded-t-sm bg-amber-300" style={{ height: `${(bucket.late / max) * 100}%` }} />
               ) : null}
               {onTime > 0 ? (
                 <div
-                  className={`w-full bg-emerald-500 ${bucket.late > 0 ? "" : "rounded-t-md"}`}
+                  className={`w-full bg-green-500 ${bucket.late > 0 ? "" : "rounded-t-sm"}`}
                   style={{ height: `${(onTime / max) * 100}%` }}
                 />
               ) : null}
@@ -34,18 +34,18 @@ export function ArrivalsChart({ buckets }: { buckets: readonly ArrivalBucket[] }
       </div>
       <div aria-hidden className="mt-2 flex gap-1 text-[11px] text-muted-foreground">
         {buckets.map((bucket, i) => (
-          <span key={bucket.label} className="min-w-0 max-w-12 flex-1 overflow-visible whitespace-nowrap tabular-nums">
+          <span key={bucket.label} className="min-w-0 max-w-6 flex-1 overflow-visible whitespace-nowrap tabular-nums">
             {i % labelEvery === 0 ? bucket.label : ""}
           </span>
         ))}
       </div>
       <figcaption className="mt-2 flex gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-emerald-500" aria-hidden />
+          <span className="size-2.5 rounded-sm bg-green-500" aria-hidden />
           On time
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-amber-400" aria-hidden />
+          <span className="size-2.5 rounded-sm bg-amber-300" aria-hidden />
           Late
         </span>
       </figcaption>

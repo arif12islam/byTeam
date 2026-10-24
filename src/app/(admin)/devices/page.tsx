@@ -1,4 +1,4 @@
-import { Fingerprint, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -25,7 +25,6 @@ export default function DevicesPage() {
   return (
     <>
       <PageHeader
-        icon={Fingerprint}
         title="Devices"
         description="Only devices listed here can send punches. Add the serial number of each one."
       />
@@ -63,7 +62,7 @@ async function DevicesContent() {
 
   return (
     <div className="mt-6 grid max-w-3xl gap-6">
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Add a device</h2>
         <div className="mt-5">
           <AddDeviceForm />
@@ -80,7 +79,7 @@ async function DevicesContent() {
           const age = describeAge(device.lastSeenAt, now);
           const clock = clockState(device.clockOffsetSeconds);
           return (
-            <section key={device.id} className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+            <section key={device.id} className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="truncate text-base font-semibold">{device.name}</h2>
@@ -121,7 +120,7 @@ async function DevicesContent() {
         })
       )}
 
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Punches from unknown employee codes</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           These codes punched on a device but no employee has them. Usually someone was enrolled at the device and not

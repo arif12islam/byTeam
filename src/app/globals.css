@@ -3,110 +3,95 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  byTeam palette: one bold brand color, used with confidence.
+  byTeam palette: modern, minimal and neutral.
 
-  brand   #047857  deep emerald: buttons, links, active menu item, icon tiles
-  forest  #063B2F  darker emerald for the sidebar, phone bars and the Today hero
-  canvas  #F4F6F8  page background, plain on purpose
-  surface #FFFFFF  cards
+  Greys do almost all the work: white surfaces, zinc text and thin borders,
+  and a near-black primary for buttons and the active menu item. There are no
+  colored panels or gradients.
 
-  Screens do not get their own colors. Besides the brand, color only ever means
-  a status: present is green, late is amber, absent is red, leave is blue and a
-  day off is slate. Each has a strong color for text and icons and a soft one
-  for backgrounds.
+  Color only ever means a status, and it stays quiet: a small dot, a soft
+  tint behind a word, a thin bar in a chart. Present is green, late is amber,
+  absent is red, leave is blue and a day off is grey. Each has a text color
+  and a soft background.
 */
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  --background: #f4f6f8;
-  --foreground: #101828;
+  --background: #fafafa;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-foreground: #101828;
+  --card-foreground: #09090b;
   --popover: #ffffff;
-  --popover-foreground: #101828;
-  --primary: #047857;
-  --primary-foreground: #ffffff;
-  --secondary: #eef1f4;
-  --secondary-foreground: #101828;
-  --muted: #eef1f4;
-  --muted-foreground: #576277;
-  --accent: #d1fae5;
-  --accent-foreground: #065f46;
-  --destructive: #be123c;
-  --border: #e2e7eb;
-  --input: #cfd6dc;
-  --ring: #047857;
+  --popover-foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
 
-  --forest: #063b2f;
-  --forest-foreground: #f2faf6;
-  --forest-muted: #9cc9b9;
-  --forest-line: #0d5141;
-  --forest-active: #047857;
-
-  --success: #047857;
-  --success-soft: #d1fae5;
+  --success: #15803d;
+  --success-soft: #f0fdf4;
   --warning: #b45309;
-  --warning-soft: #fef3c7;
-  --danger: #be123c;
-  --danger-soft: #ffe4e6;
+  --warning-soft: #fffbeb;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
   --info: #1d4ed8;
-  --info-soft: #dbeafe;
-  --off: #475569;
-  --off-soft: #e2e8f0;
+  --info-soft: #eff6ff;
+  --off: #71717a;
+  --off-soft: #f4f4f5;
 
-  --elevation: 0 1px 2px rgb(16 24 40 / 0.05), 0 2px 8px rgb(16 24 40 / 0.04);
+  --elevation: 0 1px 2px rgb(9 9 11 / 0.04);
 
-
-  --sidebar: #063b2f;
-  --sidebar-foreground: #f2faf6;
-  --sidebar-border: #0d5141;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #3f3f46;
+  --sidebar-border: #e4e4e7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c1214;
-    --foreground: #e7ecf5;
-    --card: #141c1f;
-    --card-foreground: #e7ecf5;
-    --popover: #141c1f;
-    --popover-foreground: #e7ecf5;
-    --primary: #34d399;
-    --primary-foreground: #03261c;
-    --secondary: #1a2326;
-    --secondary-foreground: #e7ecf5;
-    --muted: #1a2326;
-    --muted-foreground: #9aa7bd;
-    --accent: #0f3a2c;
-    --accent-foreground: #a7f3d0;
-    --destructive: #fb7185;
-    --border: #253033;
-    --input: #34413f;
-    --ring: #34d399;
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #111113;
+    --card-foreground: #fafafa;
+    --popover: #111113;
+    --popover-foreground: #fafafa;
+    --primary: #fafafa;
+    --primary-foreground: #18181b;
+    --secondary: #27272a;
+    --secondary-foreground: #fafafa;
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
+    --accent: #27272a;
+    --accent-foreground: #fafafa;
+    --destructive: #f87171;
+    --border: #27272a;
+    --input: #3f3f46;
+    --ring: #52525b;
 
-    --forest: #062a22;
-    --forest-foreground: #f2faf6;
-    --forest-muted: #86b8a8;
-    --forest-line: #0d3e32;
-    --forest-active: #047857;
-
-    --success: #34d399;
-    --success-soft: #0f3a2c;
+    --success: #4ade80;
+    --success-soft: #052e16;
     --warning: #fbbf24;
-    --warning-soft: #3d2c0c;
-    --danger: #fb7185;
-    --danger-soft: #4a1522;
+    --warning-soft: #2a1d05;
+    --danger: #f87171;
+    --danger-soft: #2a0b0b;
     --info: #60a5fa;
-    --info-soft: #14284f;
-    --off: #94a3b8;
-    --off-soft: #1e293b;
+    --info-soft: #0c1a33;
+    --off: #a1a1aa;
+    --off-soft: #27272a;
 
-    --elevation: 0 1px 2px rgb(0 0 0 / 0.4);
+    --elevation: 0 1px 2px rgb(0 0 0 / 0.3);
 
-
-    --sidebar: #062a22;
-    --sidebar-foreground: #f2faf6;
-    --sidebar-border: #0d3e32;
+    --sidebar: #0c0c0e;
+    --sidebar-foreground: #d4d4d8;
+    --sidebar-border: #27272a;
   }
 }
 
@@ -135,12 +120,6 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-border: var(--sidebar-border);
 
-  --color-forest: var(--forest);
-  --color-forest-foreground: var(--forest-foreground);
-  --color-forest-muted: var(--forest-muted);
-  --color-forest-line: var(--forest-line);
-  --color-forest-active: var(--forest-active);
-
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
@@ -157,8 +136,9 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 10px);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 6px);
 }
 
 @layer base {

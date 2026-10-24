@@ -18,15 +18,15 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col overflow-y-auto bg-sidebar px-3 py-6 text-sidebar-foreground md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
       <div className="px-3">
         <Wordmark />
       </div>
 
-      <nav aria-label="Main" className="mt-9 flex flex-col gap-6">
+      <nav aria-label="Main" className="mt-8 flex flex-col gap-5">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-3 pb-2 text-xs font-medium text-forest-muted">{group.label}</p>
+            <p className="px-2.5 pb-1.5 text-xs font-medium text-muted-foreground">{group.label}</p>
             <ul className="flex flex-col gap-0.5">
               {group.items.map((item) => {
                 const active = isActive(pathname, item.href);
@@ -37,13 +37,13 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
+                        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                         active
-                          ? "bg-forest-active font-medium text-white shadow-sm"
-                          : "text-forest-foreground/85 hover:bg-white/10 hover:text-white",
+                          ? "bg-secondary font-medium text-foreground"
+                          : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
                       )}
                     >
-                      <Icon className="size-[18px] shrink-0" aria-hidden />
+                      <Icon className="size-4 shrink-0" aria-hidden />
                       {item.label}
                     </Link>
                   </li>
@@ -54,7 +54,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-sidebar-border px-3 pt-4">{account}</div>
+      <div className="mt-auto border-t border-sidebar-border px-1 pt-4">{account}</div>
     </aside>
   );
 }
@@ -62,7 +62,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
 /** The slim green bar at the top of a phone screen. */
 export function MobileTopBar() {
   return (
-    <header className="sticky top-0 z-20 flex items-center bg-forest px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
+    <header className="sticky top-0 z-20 flex items-center border-b border-border bg-background/90 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
       <Wordmark />
     </header>
   );
@@ -105,7 +105,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
             role="dialog"
             aria-modal="true"
             aria-label="More screens"
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-card px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-card"
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl border-t border-border bg-card px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-card"
           >
             <div className="mx-auto h-1 w-10 rounded-full bg-border" aria-hidden />
             <div className="mt-3 flex items-center justify-between">
@@ -129,13 +129,11 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex h-full flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 text-center text-sm",
-                        active ? "border-primary bg-accent font-medium text-accent-foreground" : "border-border bg-background",
+                        "flex h-full flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-center text-sm",
+                        active ? "border-foreground/20 bg-secondary font-medium" : "border-border",
                       )}
                     >
-                      <span className="grid size-10 place-items-center rounded-xl bg-accent text-accent-foreground">
-                        <Icon className="size-5" aria-hidden />
-                      </span>
+                      <Icon className="size-5 text-muted-foreground" aria-hidden />
                       {item.label}
                     </Link>
                   </li>
@@ -149,7 +147,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-forest-line bg-forest pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-around px-1">
           {tabs.map((item) => {
@@ -161,18 +159,11 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs",
-                    active ? "font-medium text-white" : "text-forest-muted",
+                    "flex flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[11px]",
+                    active ? "font-medium text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "grid h-7 w-14 place-items-center rounded-full transition-colors",
-                      active && "bg-forest-active text-white",
-                    )}
-                  >
-                    <Icon className="size-5" aria-hidden />
-                  </span>
+                  <Icon className="size-5" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                   {item.label}
                 </Link>
               </li>
@@ -185,13 +176,11 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
               aria-expanded={open}
               onClick={() => setOpenOn(pathname)}
               className={cn(
-                "flex w-full flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs",
-                moreActive ? "font-medium text-white" : "text-forest-muted",
+                "flex w-full flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[11px]",
+                moreActive ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >
-              <span className={cn("grid h-7 w-14 place-items-center rounded-full", moreActive && "bg-forest-active")}>
-                <Ellipsis className="size-5" aria-hidden />
-              </span>
+              <Ellipsis className="size-5" aria-hidden />
               More
             </button>
           </li>

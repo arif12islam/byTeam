@@ -18,10 +18,10 @@ export async function UserMenu({ onDark = false }: { onDark?: boolean }) {
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar name={user.name} className={onDark ? "bg-forest-line text-forest-foreground" : undefined} />
+      <Avatar name={user.name} className="size-8 text-xs" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{user.name}</p>
-        <p className={cn("text-xs", onDark ? "text-forest-muted" : "text-muted-foreground")}>{roleLabel[user.role]}</p>
+        <p className={cn("text-xs", "text-muted-foreground")}>{roleLabel[user.role]}</p>
       </div>
       <form action={signOut}>
         {onDark ? (
@@ -31,7 +31,7 @@ export async function UserMenu({ onDark = false }: { onDark?: boolean }) {
             size="icon"
             aria-label="Sign out"
             title="Sign out"
-            className="text-forest-foreground hover:bg-forest-line"
+            className="text-muted-foreground"
           >
             <LogOut aria-hidden />
           </Button>

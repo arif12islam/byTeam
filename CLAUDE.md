@@ -67,8 +67,8 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 
 ## UI and copy
 
-- One bold brand color, used with confidence: deep emerald (`--primary` #047857, `--forest` #063B2F for the sidebar, phone bars and dark hero panels). Clean white cards on a plain light canvas. Font is Instrument Sans.
-- No per-screen colors, no decorative gradients, no big banners. Color means something: the brand, or a status. Status colors (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, slate day off or inactive. Pair color with an icon or a word, never color alone.
+- Modern, minimal and neutral (think Linear or Vercel). Greys do the work: white cards with thin borders on a light grey canvas, zinc text, a near-black primary for buttons and the active menu item. Tokens are in `src/app/globals.css`, with a matching dark theme. Font is Instrument Sans.
+- No brand color, no colored panels, no gradients, no big banners. Color only means a status and stays small: a dot, a soft tint behind a word, a thin bar in a chart. Status colors (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, grey day off or inactive. Pair color with a word, never color alone.
 - Use `PageHeader`, `Card`, `StatTile`, `Badge`, `Avatar` and `Ring` from `src/components/` instead of one-off styling. Charts are plain SVG or CSS, no chart library.
 - Design for the phone first: touch targets at least 40px, inputs 16px text on phones, a bottom tab bar under `md`, wide tables become stacked cards on narrow screens.
 - Sentence case, plain verbs, no emojis, no em dashes, no all-caps labels.

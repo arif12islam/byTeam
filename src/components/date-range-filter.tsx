@@ -55,7 +55,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div ref={root} className="relative flex items-center gap-1 rounded-2xl border border-border bg-card p-1 shadow-card">
+      <div ref={root} className="relative flex items-center gap-1 rounded-xl border border-border bg-card p-1 shadow-card">
         <Link href={nav.prevHref} aria-label="Earlier" className={arrow}>
           <ChevronLeft aria-hidden />
         </Link>
@@ -78,7 +78,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
           <div
             role="dialog"
             aria-label="Choose dates"
-            className="absolute left-0 top-full z-30 mt-2 w-[min(23rem,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-3 shadow-[0_12px_40px_rgb(12_59_44/0.18)]"
+            className="absolute left-0 top-full z-30 mt-2 w-[min(23rem,calc(100vw-2rem))] rounded-xl border border-border bg-card p-3 shadow-[0_12px_40px_rgb(12_59_44/0.18)]"
           >
             <p className="px-1 pb-1.5 text-xs font-medium text-muted-foreground">Quick choices</p>
             <ul className="grid grid-cols-2 gap-1.5">

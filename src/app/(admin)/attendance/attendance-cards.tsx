@@ -53,7 +53,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
       </ul>
 
       {grid.rows.map((row) => (
-        <section key={row.employee.id} className="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <section key={row.employee.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
           <div className="flex items-center gap-3">
             <Avatar name={row.employee.name} />
             <div className="min-w-0 flex-1">
@@ -74,9 +74,12 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                 ["Leave", row.totals.leave, "info"],
               ] as const
             ).map(([label, value, tone]) => (
-              <div key={label} className={cn("rounded-xl px-1 py-1.5", toneClasses[tone].soft)}>
+              <div key={label} className="rounded-lg border px-1 py-1.5">
                 <dd className="text-base font-semibold leading-none tabular-nums">{value}</dd>
-                <dt className="mt-1 text-[11px]">{label}</dt>
+                <dt className="mt-1 flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+                  <span aria-hidden className={cn("size-1.5 rounded-full", toneClasses[tone].solid)} />
+                  {label}
+                </dt>
               </div>
             ))}
           </dl>

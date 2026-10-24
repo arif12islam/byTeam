@@ -50,10 +50,10 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
   const seconds = Math.max(0, Math.floor((now - generatedAt) / 1000));
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-white/90">
-      <span className="relative flex size-2.5 shrink-0" aria-hidden>
-        {!paused ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-lime-300 opacity-70 motion-reduce:animate-none" /> : null}
-        <span className={cn("relative inline-flex size-2.5 rounded-full", paused ? "bg-white/50" : "bg-lime-300")} />
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span className="relative flex size-2 shrink-0" aria-hidden>
+        {!paused ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-500 opacity-40 motion-reduce:animate-none" /> : null}
+        <span className={cn("relative inline-flex size-2 rounded-full", paused ? "bg-zinc-300" : "bg-green-500")} />
       </span>
 
       <button
@@ -61,7 +61,7 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
         onClick={() => startTransition(() => router.refresh())}
         aria-label="Refresh now"
         title="Refresh now"
-        className="grid size-7 place-items-center rounded-full bg-white/20 text-white hover:bg-white/30"
+        className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
       >
         <RefreshCw className={cn("size-3.5", pending && "animate-spin")} aria-hidden />
       </button>
@@ -70,7 +70,7 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
         onClick={() => setPaused((p) => !p)}
         aria-label={paused ? "Resume live updates" : "Pause live updates"}
         title={paused ? "Resume live updates" : "Pause live updates"}
-        className="grid size-7 place-items-center rounded-full bg-white/20 text-white hover:bg-white/30"
+        className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
       >
         {paused ? <Play className="size-3.5" aria-hidden /> : <Pause className="size-3.5" aria-hidden />}
       </button>

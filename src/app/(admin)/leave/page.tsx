@@ -26,11 +26,10 @@ export default function LeavePage() {
   return (
     <>
       <PageHeader
-        icon={CalendarMinus}
         title="Leave"
         description="Record leave, approve it, and track what each employee has left."
         actions={
-          <Link href="/leave/types" className={buttonVariants({ variant: "onColor" })}>
+          <Link href="/leave/types" className={buttonVariants({ variant: "outline" })}>
             Leave types
           </Link>
         }
@@ -92,7 +91,7 @@ async function LeaveContent() {
 
   return (
     <div className="mt-6 grid max-w-4xl gap-5">
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <CardTitle icon={CalendarMinus}>Record leave</CardTitle>
         {types.length === 0 ? (
           <p className="mt-3 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
@@ -121,7 +120,7 @@ async function LeaveContent() {
       </section>
 
       {people.length > 0 && types.length > 0 ? (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <CardTitle icon={Scale}>Balances</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             {basis === "calendar"
@@ -131,7 +130,7 @@ async function LeaveContent() {
           </p>
           <ul className="mt-4 grid gap-3 md:grid-cols-2">
             {people.map((p) => (
-              <li key={p.id} className="rounded-2xl border border-border bg-background p-4">
+              <li key={p.id} className="rounded-xl border border-border bg-background p-4">
                 <div className="flex items-center gap-3">
                   <Avatar name={p.name} />
                   <div className="min-w-0">
@@ -150,7 +149,7 @@ async function LeaveContent() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <CardTitle icon={ListChecks} count={requests.length}>
           Requests
         </CardTitle>
