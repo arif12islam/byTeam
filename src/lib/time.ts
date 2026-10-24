@@ -62,3 +62,22 @@ export function formatOfficeDate(date: string): string {
   );
   return `${parts.weekday} ${parts.day} ${parts.month} ${parts.year}`;
 }
+
+/** True for a real month written as YYYY-MM. */
+export function isValidMonth(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value) && Number(value.slice(0, 4)) >= 1900;
+}
+
+/** The office month (YYYY-MM) an instant falls in. */
+export function toOfficeMonth(instant: Date): string {
+  return toOfficeDate(instant).slice(0, 7);
+}
+
+/** A YYYY-MM month for people to read, like "Jan 2026". */
+export function formatMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  const name = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "short" }).format(
+    new Date(Date.UTC(y, m - 1, 1)),
+  );
+  return `${name} ${y}`;
+}

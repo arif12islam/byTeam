@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   daysInMonth,
+  formatMonth,
   formatOfficeDate,
+  isValidMonth,
   isValidOfficeDate,
   previousDate,
   toOfficeDate,
+  toOfficeMonth,
   weekdayOf,
 } from "@/lib/time";
 
@@ -71,5 +74,35 @@ describe("formatOfficeDate", () => {
   it("writes weekday, day, month and year", () => {
     expect(formatOfficeDate("2026-02-21")).toBe("Sat 21 Feb 2026");
     expect(formatOfficeDate("2026-12-01")).toBe("Tue 1 Dec 2026");
+  });
+});
+
+describe("isValidMonth", () => {
+  it("accepts YYYY-MM with a real month", () => {
+    expect(isValidMonth("2026-01")).toBe(true);
+    expect(isValidMonth("2026-12")).toBe(true);
+  });
+
+  it("rejects everything else", () => {
+    expect(isValidMonth("2026-00")).toBe(false);
+    expect(isValidMonth("2026-13")).toBe(false);
+    expect(isValidMonth("2026-1")).toBe(false);
+    expect(isValidMonth("2026-01-01")).toBe(false);
+    expect(isValidMonth("")).toBe(false);
+  });
+});
+
+describe("toOfficeMonth", () => {
+  it("uses the Dhaka month at a month boundary", () => {
+    // 18:30 UTC on Oct 31 is 00:30 on Nov 1 in Dhaka
+    expect(toOfficeMonth(new Date("2026-10-31T18:30:00Z"))).toBe("2026-11");
+    expect(toOfficeMonth(new Date("2026-10-31T17:30:00Z"))).toBe("2026-10");
+  });
+});
+
+describe("formatMonth", () => {
+  it("writes the short month and year", () => {
+    expect(formatMonth("2026-01")).toBe("Jan 2026");
+    expect(formatMonth("2026-12")).toBe("Dec 2026");
   });
 });

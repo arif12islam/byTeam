@@ -12,7 +12,8 @@ Read these before starting any milestone:
 ## Current status
 
 - M0 done (scaffold, CI, docs). Still open: connect Vercel and Neon.
-- Next: M1 Foundation (auth, employees, shifts, holidays, settings, audit helper).
+- M1 done (auth, owner seed, settings and holidays, shifts, employees, salary structures, audit helper).
+- Next: M2 Device integration (devices, ADMS routes, simulator).
 - When an item is finished, tick it in `docs/BUILD_PLAN.md` in the same change.
 
 ## Stack
