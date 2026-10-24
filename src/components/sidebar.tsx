@@ -22,7 +22,7 @@ function Wordmark() {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ account }: { account: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -63,18 +63,21 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      <div className="mt-auto border-t border-sidebar-border px-3 pt-4">{account}</div>
     </aside>
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ account }: { account: React.ReactNode }) {
   const pathname = usePathname();
   const items = navGroups.flatMap((group) => group.items);
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-sidebar md:hidden">
-      <div className="px-4 pt-3">
+      <div className="flex items-center justify-between gap-4 px-4 pt-3">
         <Wordmark />
+        {account}
       </div>
       <nav aria-label="Main" className="overflow-x-auto px-2 pb-2 pt-2">
         <ul className="flex w-max gap-1">
