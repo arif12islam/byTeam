@@ -97,3 +97,38 @@ export function formatOfficeDateTime(instant: Date): string {
   const parts = Object.fromEntries(dateTimeFormatter.formatToParts(instant).map((p) => [p.type, p.value]));
   return `${parts.day} ${parts.month} ${parts.year}, ${parts.hour}:${parts.minute}`;
 }
+
+const wallClockFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: APP_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+/** What a clock in the office time zone reads at an instant, as a UTC timestamp in milliseconds. */
+function officeWallClock(timestamp: number): number {
+  const p = Object.fromEntries(wallClockFormatter.formatToParts(new Date(timestamp)).map((x) => [x.type, x.value]));
+  return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second));
+}
+
+/**
+ * The exact instant for a reading on a clock set to the office time zone, such
+ * as the time a device stamps on a punch: date as YYYY-MM-DD, time as HH:MM:SS
+ * or HH:MM. Null when either is not a real date or time.
+ */
+export function officeDateTimeToInstant(date: string, time: string): Date | null {
+  const t = /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(time);
+  if (!t || !isValidOfficeDate(date)) return null;
+
+  const [y, m, d] = date.split("-").map(Number);
+  const wall = Date.UTC(y, m - 1, d, Number(t[1]), Number(t[2]), Number(t[3] ?? 0));
+
+  // Find the instant whose office clock reads `wall`. Two passes settle it even across a clock change.
+  let guess = wall - (officeWallClock(wall) - wall);
+  guess = wall - (officeWallClock(guess) - guess);
+  return new Date(guess);
+}

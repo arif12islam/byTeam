@@ -7,6 +7,7 @@ import {
   formatOfficeDate,
   isValidMonth,
   isValidOfficeDate,
+  officeDateTimeToInstant,
   previousDate,
   toOfficeDate,
   toOfficeMonth,
@@ -115,5 +116,30 @@ describe("formatOfficeDateTime", () => {
 
   it("rolls into the next Dhaka day after 18:00 UTC", () => {
     expect(formatOfficeDateTime(new Date("2026-10-23T18:30:00Z"))).toBe("24 Oct 2026, 00:30");
+  });
+});
+
+describe("officeDateTimeToInstant", () => {
+  it("reads a Dhaka clock time as UTC+6", () => {
+    expect(officeDateTimeToInstant("2026-10-24", "09:00:00")?.toISOString()).toBe("2026-10-24T03:00:00.000Z");
+    expect(officeDateTimeToInstant("2026-10-24", "09:00")?.toISOString()).toBe("2026-10-24T03:00:00.000Z");
+  });
+
+  it("puts an early morning punch on the previous UTC day", () => {
+    expect(officeDateTimeToInstant("2026-10-24", "00:30:15")?.toISOString()).toBe("2026-10-23T18:30:15.000Z");
+  });
+
+  it("round trips with toOfficeDate", () => {
+    const instant = officeDateTimeToInstant("2026-10-24", "23:59:59")!;
+    expect(toOfficeDate(instant)).toBe("2026-10-24");
+    expect(formatOfficeDateTime(instant)).toBe("24 Oct 2026, 23:59");
+  });
+
+  it("is null for impossible dates or times", () => {
+    expect(officeDateTimeToInstant("2026-02-30", "09:00:00")).toBeNull();
+    expect(officeDateTimeToInstant("2026-10-24", "24:00:00")).toBeNull();
+    expect(officeDateTimeToInstant("2026-10-24", "09:60:00")).toBeNull();
+    expect(officeDateTimeToInstant("2026-10-24", "9am")).toBeNull();
+    expect(officeDateTimeToInstant("", "09:00:00")).toBeNull();
   });
 });
