@@ -168,7 +168,7 @@ for e in employees:
                  pay["grossEarned"], pay["deductions"], pay["additions"], pay["netBeforeRounding"], pay["net"]])
 
 with open(os.path.join(OUT, "expected-pay.csv"), "w", newline="") as f:
-    w = csv.writer(f)
+    w = csv.writer(f, lineterminator="\n")
     w.writerow(["key", "name", "monthly_gross", "payable_days", "absent_days", "late_count", "unpaid_leave_days", "gross_earned", "deductions", "additions", "net_before_rounding", "net"])
     w.writerows(rows)
 
