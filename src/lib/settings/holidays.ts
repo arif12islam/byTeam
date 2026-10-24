@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { holidays } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { recalcAfterHolidayChange } from "@/lib/attendance/triggers";
 import { isValidOfficeDate } from "@/lib/time";
 
 type Db = ReturnType<typeof getDb>;
@@ -41,7 +42,7 @@ export async function listHolidays(db: Db): Promise<Holiday[]> {
 export async function addHoliday(db: Db, input: HolidayInput, actorId: string): Promise<Holiday> {
   const data = holidaySchema.parse(input);
 
-  return db.transaction(async (tx) => {
+  const holiday = await db.transaction(async (tx) => {
     const [row] = await tx.insert(holidays).values(data).returning();
     await audit(tx, {
       actorId,
@@ -52,13 +53,15 @@ export async function addHoliday(db: Db, input: HolidayInput, actorId: string): 
     });
     return { id: row.id, date: row.date, name: row.name };
   });
+  await recalcAfterHolidayChange(db, holiday.date);
+  return holiday;
 }
 
 /** Returns false when the holiday was already gone. */
 export async function removeHoliday(db: Db, id: string, actorId: string): Promise<boolean> {
-  return db.transaction(async (tx) => {
+  const removed = await db.transaction(async (tx) => {
     const [row] = await tx.delete(holidays).where(eq(holidays.id, id)).returning();
-    if (!row) return false;
+    if (!row) return null;
     await audit(tx, {
       actorId,
       action: "holiday.delete",
@@ -66,6 +69,9 @@ export async function removeHoliday(db: Db, id: string, actorId: string): Promis
       entityId: row.id,
       before: row,
     });
-    return true;
+    return row.date;
   });
+  if (removed === null) return false;
+  await recalcAfterHolidayChange(db, removed);
+  return true;
 }

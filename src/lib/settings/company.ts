@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { companySettings } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { recalcAfterWeeklyOffChange } from "@/lib/attendance/triggers";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -63,9 +64,9 @@ export async function saveCompanySettings(
 ): Promise<{ changed: boolean }> {
   const data = companySettingsSchema.parse(input);
 
-  return db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
     const [before] = await tx.select().from(companySettings).where(eq(companySettings.id, 1));
-    if (before && sameSettings(before, data)) return { changed: false };
+    if (before && sameSettings(before, data)) return { changed: false, offDaysChanged: false };
 
     const [after] = await tx
       .insert(companySettings)
@@ -84,6 +85,10 @@ export async function saveCompanySettings(
       before,
       after,
     });
-    return { changed: true };
+    return { changed: true, offDaysChanged: before?.weeklyOffDays.join(",") !== data.weeklyOffDays.join(",") };
   });
+
+  // Weekly off days apply from today. Earlier days keep how they were computed.
+  if (outcome.offDaysChanged) await recalcAfterWeeklyOffChange(db);
+  return { changed: outcome.changed };
 }

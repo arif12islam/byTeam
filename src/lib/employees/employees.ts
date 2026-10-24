@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { employees, shifts } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { recalcAfterEmployeeChange } from "@/lib/attendance/triggers";
 import { queueUserUpdate } from "@/lib/devices/queue";
 import { isValidOfficeDate } from "@/lib/time";
 
@@ -133,18 +134,28 @@ const EDITABLE = ["name", "department", "designation", "joinDate", "exitDate", "
 export async function updateEmployee(db: Db, id: string, input: EmployeeDetailsInput, actorId: string) {
   const data = employeeDetailsSchema.parse(input);
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [before] = await tx.select().from(employees).where(eq(employees.id, id));
     if (!before) return null;
 
-    if (EDITABLE.every((key) => before[key] === data[key])) return { employee: before, changed: false };
+    if (EDITABLE.every((key) => before[key] === data[key])) return { employee: before, changed: false, before };
 
     const [after] = await tx.update(employees).set(data).where(eq(employees.id, id)).returning();
     await audit(tx, { actorId, action: "employee.update", entity: "employee", entityId: id, before, after });
     // Only the name is kept on the device, so only a new name needs sending.
     if (before.name !== after.name) await queueUserUpdate(tx, { empCode: after.empCode, name: after.name });
-    return { employee: after, changed: true };
+    return { employee: after, changed: true, before };
   });
+
+  if (result?.changed) {
+    await recalcAfterEmployeeChange(
+      db,
+      id,
+      { shiftId: result.before.shiftId, joinDate: result.before.joinDate, exitDate: result.before.exitDate },
+      { shiftId: result.employee.shiftId, joinDate: result.employee.joinDate, exitDate: result.employee.exitDate },
+    );
+  }
+  return result ? { employee: result.employee, changed: result.changed } : null;
 }
 
 /** Deactivating keeps every record: history is never deleted. Returns null when the employee is gone. */
