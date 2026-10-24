@@ -1,73 +1,14 @@
 /**
- * Rate limits for the /iclock device routes, kept in the memory of the running
- * server. No outside service is needed, so it works with `next start` on one
- * machine. On a host that runs several copies of the server each copy counts
- * for itself, which still stops a flood aimed at any one of them.
+ * Rate limits for the /iclock device routes. The limiter itself is in
+ * `src/lib/rate-limit.ts`.
  *
  * A real device sends a few requests a minute: a poll every 30 seconds and a
  * punch as it happens. The limits are many times that.
  */
 
-export type RateDecision = { allowed: true } | { allowed: false; retryAfterSeconds: number };
+export { clientIp, createRateLimiter, type RateDecision, type RateLimiter } from "@/lib/rate-limit";
 
-export type RateLimiter = {
-  /** Counts one request for the key and says whether it is within the limit. */
-  hit(key: string): RateDecision;
-  /** Says whether the key is over the limit without counting a request. */
-  peek(key: string): RateDecision;
-  /** How many keys are being tracked. */
-  size(): number;
-};
-
-/** Never track more keys than this, so a flood of made-up addresses cannot fill the memory. */
-const MAX_KEYS = 10_000;
-
-/** A fixed window counter: up to `limit` requests per key in each `windowMs`. */
-export function createRateLimiter(options: { limit: number; windowMs: number; now?: () => number }): RateLimiter {
-  const { limit, windowMs } = options;
-  const now = options.now ?? Date.now;
-  const windows = new Map<string, { count: number; resetAt: number }>();
-
-  const retryAfter = (resetAt: number, at: number) => Math.max(1, Math.ceil((resetAt - at) / 1000));
-
-  function prune(at: number) {
-    for (const [key, w] of windows) if (w.resetAt <= at) windows.delete(key);
-    // Still full: drop the oldest windows to make room for one more. Insertion order is oldest first.
-    for (const key of windows.keys()) {
-      if (windows.size < MAX_KEYS) break;
-      windows.delete(key);
-    }
-  }
-
-  return {
-    hit(key) {
-      const at = now();
-      let w = windows.get(key);
-      if (!w || w.resetAt <= at) {
-        if (windows.size >= MAX_KEYS) prune(at);
-        w = { count: 0, resetAt: at + windowMs };
-        windows.set(key, w);
-      }
-      w.count += 1;
-      return w.count <= limit ? { allowed: true } : { allowed: false, retryAfterSeconds: retryAfter(w.resetAt, at) };
-    },
-    peek(key) {
-      const at = now();
-      const w = windows.get(key);
-      if (!w || w.resetAt <= at || w.count <= limit) return { allowed: true };
-      return { allowed: false, retryAfterSeconds: retryAfter(w.resetAt, at) };
-    },
-    size: () => windows.size,
-  };
-}
-
-/** The address the request came from, as the host in front of us reports it. */
-export function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const ip = forwarded || request.headers.get("x-real-ip")?.trim();
-  // Anything that is not a plausible address shares one bucket instead of making new ones.
-  return ip && /^[0-9a-fA-F:.]{2,45}$/.test(ip) ? ip : "unknown";
-}
+import { clientIp, createRateLimiter } from "@/lib/rate-limit";
 
 export const DEVICE_LIMIT = { limit: 60, windowMs: 60_000 } as const;
 export const REFUSED_LIMIT = { limit: 20, windowMs: 60_000 } as const;

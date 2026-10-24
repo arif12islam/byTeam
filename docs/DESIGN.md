@@ -232,6 +232,7 @@ One scheduled job, a closed device path, and an audit row for every human change
 
 - `/iclock` routes accept only whitelisted serial numbers, are rate limited, and can only insert punches or read the command queue.
 - Admin routes need a session; role checks run on the server for every action.
+- Sign-in guessing is slowed down in the server's memory: 10 failed attempts for one email from one address, or 30 from one address across any emails, turn that address away for 15 minutes, even with the right password. A good sign in clears the count for that email and address. (The sign-in form calls Better Auth directly, which skips Better Auth's own limit on its web route.)
 - Admin traffic is HTTPS. The device path stays plain HTTP only where the firmware requires it.
 - Passwords hashed with argon2 or bcrypt.
 
