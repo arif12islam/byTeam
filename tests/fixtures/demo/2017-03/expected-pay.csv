@@ -1,0 +1,9 @@
+key,name,monthly_gross,payable_days,absent_days,late_count,unpaid_leave_days,gross_earned,deductions,additions,net_before_rounding,net
+on_time,Anwar Hossain,30000.00,31,0,0,0,30000.00,0.00,2000.00,32000.00,32000.00
+frequent_late,Farhana Akter,24000.00,31,0,7,0,24000.00,2285.71,0.00,21714.29,21714.00
+absent_no_leave,Mahbub Alam,28000.00,31,2,0,0,28000.00,7666.67,0.00,20333.33,20333.00
+absent_paid_leave,Nasrin Sultana,26000.00,31,0,0,0,26000.00,0.00,0.00,26000.00,26000.00
+absent_unpaid_leave,Kamal Hasan,32000.00,31,0,0,2,32000.00,3047.62,0.00,28952.38,28952.00
+forgotten_punch_out,Rubina Yasmin,22000.00,31,0,0,0,22000.00,0.00,0.00,22000.00,22000.00
+double_tap,Tanvir Ahmed,40000.00,31,0,0,0,40000.00,0.00,0.00,40000.00,40000.00
+joined_mid_month,Sabina Khatun,36000.00,17,0,1,0,19741.94,0.00,1500.00,21241.94,21242.00

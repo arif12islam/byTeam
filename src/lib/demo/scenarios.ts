@@ -151,7 +151,9 @@ export function buildDemoPlan(month: string, weeklyOffDays: readonly number[], e
     punches: [...full(without(forgotOut)), ...forgotOut.map((i) => ({ date: day(i), time: "08:55" }))],
   });
 
-  // 7. The device reads every punch twice a few seconds apart, and one weekly off day is worked.
+  // 7. The device reads every punch twice a few seconds apart. On one day only the arrival is read (twice), so the
+  //    second tap must not count as leaving. One weekly off day is worked as well.
+  const tapOnlyDay = 5;
   const offDay = dates.find((d) => weeklyOffDays.includes(weekdayOf(d)) && d !== holidayDate);
   const doubleTap = person(6, {
     key: "double_tap",
@@ -163,8 +165,7 @@ export function buildDemoPlan(month: string, weeklyOffDays: readonly number[], e
       ...every.flatMap((i) => [
         { date: day(i), time: "08:55:00" },
         { date: day(i), time: "08:55:25" },
-        { date: day(i), time: "18:00:00" },
-        { date: day(i), time: "18:00:20" },
+        ...(i === tapOnlyDay ? [] : [{ date: day(i), time: "18:00:00" }, { date: day(i), time: "18:00:20" }]),
       ]),
       ...(offDay ? [{ date: offDay, time: "10:00" }, { date: offDay, time: "14:00" }] : []),
     ],
