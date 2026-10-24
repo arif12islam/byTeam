@@ -1,37 +1,32 @@
-import {
-  AlarmClock,
-  ArrowRight,
-  CalendarOff,
-  Fingerprint,
-  Hourglass,
-  Plane,
-  Sunrise,
-  TriangleAlert,
-  UserCheck,
-  UserX,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Fingerprint, Sunrise, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
-import { StatTile } from "@/components/ui/stat-tile";
 import type { Tone } from "@/components/ui/tone";
 import { getDb } from "@/db";
-import { arrivalBuckets, loadTodayBoard, type TodayEntry, type TodayGroup } from "@/lib/attendance/today";
+import {
+  arrivalBuckets,
+  buildPunchFeed,
+  groupPunchesByCode,
+  loadDayPunches,
+  loadTodayBoard,
+  type TodayEntry,
+} from "@/lib/attendance/today";
 import { describeAge, deviceStatus, listDevices } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
-import { formatOfficeDate, formatOfficeTime, toOfficeDate } from "@/lib/time";
+import { formatOfficeDate, formatOfficeTime, officeMinuteOfDay, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { ArrivalsChart } from "./arrivals-chart";
+import { TodayBoard, type BoardEntry } from "./board";
+import { LiveRefresh } from "./live-refresh";
+import { PunchFeed } from "./punch-feed";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -45,14 +40,6 @@ export default function TodayPage() {
     </>
   );
 }
-
-const sections: { group: TodayGroup; title: string; hint?: string; icon: LucideIcon }[] = [
-  { group: "absent", title: "Absent", hint: "No punch, and the shift is over.", icon: UserX },
-  { group: "not_in_yet", title: "Not in yet", hint: "No punch so far. Their shift has not ended.", icon: Hourglass },
-  { group: "in", title: "In", icon: UserCheck },
-  { group: "worked_off_day", title: "Came in on a day off", icon: CalendarOff },
-  { group: "on_leave", title: "On leave", icon: Plane },
-];
 
 /** The badge and the time text on the right of a person's row. */
 function describeEntry(entry: TodayEntry): { tone: Tone; badge: string; detail: string } {
@@ -73,24 +60,9 @@ function describeEntry(entry: TodayEntry): { tone: Tone; badge: string; detail: 
   return { tone: "off", badge: "Not in yet", detail: `Shift ${entry.shiftLabel}` };
 }
 
-function PersonRow({ entry }: { entry: TodayEntry }) {
-  const { tone, badge, detail } = describeEntry(entry);
-  return (
-    <li className="flex items-center gap-3 py-3">
-      <Avatar name={entry.name} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{entry.name}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          Code {entry.empCode}
-          {entry.department ? `, ${entry.department}` : ""}
-        </p>
-      </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <Badge tone={tone}>{badge}</Badge>
-        {detail ? <p className="text-xs tabular-nums text-muted-foreground">{detail}</p> : null}
-      </div>
-    </li>
-  );
+function greeting(now: Date): string {
+  const hour = Math.floor(officeMinuteOfDay(now) / 60);
+  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 }
 
 /** Reads the current time and the database, so it renders after the session check, inside Suspense. */
@@ -99,10 +71,12 @@ async function TodayContent() {
 
   const db = getDb();
   const now = new Date();
-  const [board, deviceList, unmatched] = await Promise.all([
+  const today = toOfficeDate(now);
+  const [board, deviceList, unmatched, dayPunches] = await Promise.all([
     loadTodayBoard(db, now),
     listDevices(db),
     listUnmatchedCodes(db),
+    loadDayPunches(db, today),
   ]);
   const devices = deviceList.filter((d) => d.active);
   const offlineDevices = devices.filter((d) => deviceStatus(d.lastSeenAt, now) === "offline");
@@ -110,6 +84,25 @@ async function TodayContent() {
   const onTime = counts.in - counts.late;
   const expected = counts.in + counts.notInYet + counts.absent + counts.onLeave;
   const buckets = arrivalBuckets(board.entries);
+  const punchTimes = groupPunchesByCode(dayPunches);
+  const feed = buildPunchFeed(dayPunches, board.entries);
+  const entries: BoardEntry[] = board.entries.map((entry) => {
+    const { tone, badge, detail } = describeEntry(entry);
+    return {
+      id: entry.id,
+      empCode: entry.empCode,
+      name: entry.name,
+      department: entry.department,
+      group: entry.group,
+      late: entry.status === "late",
+      tone,
+      badge,
+      detail,
+      shiftLabel: entry.shiftLabel,
+      punches: (punchTimes.get(entry.empCode) ?? []).map(formatOfficeTime),
+      missingOut: entry.missingOut,
+    };
+  });
 
   return (
     <div className="mt-6 grid gap-5">
@@ -135,7 +128,7 @@ async function TodayContent() {
           </Ring>
           <div className="min-w-0 flex-1 basis-56">
             <p className="text-sm text-forest-muted">
-              {formatOfficeDate(toOfficeDate(now))}
+              {greeting(now)}. {formatOfficeDate(today)}
               {board.offDay === "holiday" ? ", office holiday" : board.offDay === "weekly_off" ? ", weekly off day" : ""}
             </p>
             <p className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -155,6 +148,9 @@ async function TodayContent() {
               {counts.onLeave > 0 ? `${counts.onLeave} on leave. ` : ""}
               {counts.notInYet > 0 ? `${counts.notInYet} not in yet.` : ""}
             </p>
+            <div className="mt-4 border-t border-forest-line pt-3">
+              <LiveRefresh generatedAt={now.getTime()} />
+            </div>
           </div>
         </div>
       </section>
@@ -178,58 +174,21 @@ async function TodayContent() {
         </Alert>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatTile label="In" value={counts.in} icon={UserCheck} tone="success" />
-        <StatTile label="Late" value={counts.late} icon={AlarmClock} tone="warning" />
-        <StatTile label="Not in yet" value={counts.notInYet} icon={Hourglass} tone="off" />
-        <StatTile label="Absent" value={counts.absent} icon={UserX} tone="danger" />
-        <StatTile label="On leave" value={counts.onLeave} icon={Plane} tone="info" className="col-span-2 md:col-span-1" />
-      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-[1fr_20rem]">
+        <TodayBoard entries={entries} counts={counts} date={today} />
 
-      {board.entries.length === 0 ? (
-        <Card className="border-dashed text-sm text-muted-foreground shadow-none">
-          No employees yet.{" "}
-          <Link href="/employees" className="font-medium text-primary underline underline-offset-2">
-            Add your team on the Employees screen
-          </Link>{" "}
-          and today will fill in as they punch.
-        </Card>
-      ) : (
-        <div className="grid items-start gap-5 lg:grid-cols-[1fr_20rem]">
-          <div className="grid gap-5">
-            {sections.map(({ group, title, hint, icon }) => {
-              const rows = board.entries.filter((e) => e.group === group);
-              if (rows.length === 0) return null;
-              return (
-                <Card key={group}>
-                  <CardTitle icon={icon} count={rows.length}>
-                    {title}
-                  </CardTitle>
-                  {hint ? <p className="mt-1.5 text-sm text-muted-foreground">{hint}</p> : null}
-                  <ul className="mt-2 divide-y divide-border">
-                    {rows.map((entry) => (
-                      <PersonRow key={entry.id} entry={entry} />
-                    ))}
-                  </ul>
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-5 lg:sticky lg:top-6">
-            {buckets.length > 0 ? (
-              <Card>
-                <CardTitle icon={Sunrise}>Arrivals</CardTitle>
-                <p className="mb-4 mt-1.5 text-sm text-muted-foreground">First punch of each person, by quarter hour.</p>
-                <ArrivalsChart buckets={buckets} />
-              </Card>
-            ) : null}
-            <DeviceCard devices={devices} now={now} />
-          </div>
+        <div className="grid gap-5 lg:sticky lg:top-6">
+          <PunchFeed items={feed} now={now} />
+          {buckets.length > 0 ? (
+            <Card>
+              <CardTitle icon={Sunrise}>Arrivals</CardTitle>
+              <p className="mb-4 mt-1.5 text-sm text-muted-foreground">First punch of each person, by quarter hour.</p>
+              <ArrivalsChart buckets={buckets} />
+            </Card>
+          ) : null}
+          <DeviceCard devices={devices} now={now} />
         </div>
-      )}
-
-      {board.entries.length === 0 ? <DeviceCard devices={devices} now={now} /> : null}
+      </div>
     </div>
   );
 }

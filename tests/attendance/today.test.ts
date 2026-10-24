@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { DayResult } from "@/lib/attendance/compute-day";
-import { arrivalBuckets, buildTodayBoard, type TodayInput } from "@/lib/attendance/today";
+import { arrivalBuckets, buildPunchFeed, buildTodayBoard, groupPunchesByCode, type DayPunch, type TodayInput } from "@/lib/attendance/today";
 import { officeDateTimeToInstant } from "@/lib/time";
 
 const DAY = "2031-03-04";
@@ -135,5 +135,55 @@ describe("arrivalBuckets", () => {
       ["08:00", 1],
       ["08:30", 1],
     ]);
+  });
+});
+
+describe("groupPunchesByCode", () => {
+  it("groups punch times by employee code, oldest first, whatever the input order", () => {
+    const punches: DayPunch[] = [
+      { empCode: "A", at: at("17:55"), deviceName: null },
+      { empCode: "B", at: at("08:40"), deviceName: null },
+      { empCode: "A", at: at("08:50"), deviceName: null },
+    ];
+    const grouped = groupPunchesByCode(punches);
+    expect(grouped.get("A")).toEqual([at("08:50"), at("17:55")]);
+    expect(grouped.get("B")).toEqual([at("08:40")]);
+    expect(grouped.get("C")).toBeUndefined();
+  });
+});
+
+describe("buildPunchFeed", () => {
+  const entries = [
+    { empCode: "A", name: "Ana" },
+    { empCode: "B", name: "Bela" },
+  ];
+  const punches: DayPunch[] = [
+    { empCode: "A", at: at("08:50"), deviceName: "Front door" },
+    { empCode: "B", at: at("08:55"), deviceName: "Front door" },
+    { empCode: "A", at: at("17:55"), deviceName: "Front door" },
+    { empCode: "Z", at: at("09:30"), deviceName: null },
+  ];
+
+  it("lists the newest punches first and marks the first one of each person as arriving", () => {
+    expect(buildPunchFeed(punches, entries).map((f) => [f.empCode, f.kind])).toEqual([
+      ["A", "again"],
+      ["Z", "arrived"],
+      ["B", "arrived"],
+      ["A", "arrived"],
+    ]);
+  });
+
+  it("gives the name for known codes and null for codes with no employee", () => {
+    const feed = buildPunchFeed(punches, entries);
+    expect(feed.find((f) => f.empCode === "B")?.name).toBe("Bela");
+    expect(feed.find((f) => f.empCode === "Z")?.name).toBeNull();
+  });
+
+  it("keeps only as many as the limit asks for, the newest ones", () => {
+    expect(buildPunchFeed(punches, entries, 2).map((f) => f.empCode)).toEqual(["A", "Z"]);
+  });
+
+  it("is empty when nobody has punched", () => {
+    expect(buildPunchFeed([], entries)).toEqual([]);
   });
 });
