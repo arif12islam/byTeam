@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fieldValue } from "@/lib/form";
 
-import { renameDeviceAction, setDeviceActiveAction } from "./actions";
+import { renameDeviceAction, sendEmployeesAction, setDeviceActiveAction } from "./actions";
 
 type Props = {
   device: { id: string; serialNo: string; name: string; active: boolean };
@@ -16,6 +16,7 @@ type Props = {
 /** Rename and enable or disable one device. Status is shown by the page around it. */
 export function DeviceControls({ device }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(renameDeviceAction, {});
+  const [sendState, sendAction, sending] = useActionState<FormState, FormData>(sendEmployeesAction, {});
 
   return (
     <div className="space-y-4">
@@ -37,6 +38,23 @@ export function DeviceControls({ device }: Props) {
         </Button>
       </form>
       <FormMessage state={state} />
+
+      {device.active ? (
+        <div>
+          <form action={sendAction} className="flex flex-wrap items-center gap-3">
+            <input type="hidden" name="serialNo" value={device.serialNo} />
+            <Button type="submit" variant="outline" size="sm" disabled={sending}>
+              {sending ? "Queuing" : "Send all employees to this device"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              New and renamed employees are sent automatically. Use this for people added before the device was.
+            </p>
+          </form>
+          <div className="mt-2">
+            <FormMessage state={sendState} />
+          </div>
+        </div>
+      ) : null}
 
       <form action={setDeviceActiveAction}>
         <input type="hidden" name="id" value={device.id} />
