@@ -1,11 +1,11 @@
 import { getDb } from "@/db";
-import { buildHandshakeConfig, readSerial } from "@/lib/adms/handshake";
+import { buildHandshakeConfig } from "@/lib/adms/handshake";
+import { authenticateDevice } from "@/lib/adms/request";
 import { splitLines } from "@/lib/adms/parse";
 import { recalcForNewPunches } from "@/lib/attendance/triggers";
 import { savePunches } from "@/lib/adms/store";
 import { adaptAttlogBody } from "@/lib/adms/zkteco-adapter";
 import { recordClockCheck } from "@/lib/devices/clock";
-import { touchDevice } from "@/lib/devices/receive";
 
 const textHeaders = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
 
@@ -18,19 +18,10 @@ const MAX_BODY_BYTES = 5_000_000;
  * be registered and active on the Devices screen.
  */
 export async function GET(request: Request) {
-  const serial = readSerial(new URL(request.url).searchParams.get("SN"));
-  if (!serial) {
-    console.warn("[iclock] handshake refused: serial number missing or malformed");
-    return new Response("ERROR: serial number missing or invalid\n", { status: 400, headers: textHeaders });
-  }
+  const auth = await authenticateDevice(request, "handshake");
+  if ("refused" in auth) return auth.refused;
 
-  const device = await touchDevice(getDb(), serial, new Date());
-  if (!device) {
-    console.warn(`[iclock] handshake refused: ${serial} is not registered or is switched off`);
-    return new Response("ERROR: device not registered\n", { status: 403, headers: textHeaders });
-  }
-
-  return new Response(buildHandshakeConfig(device.serialNo), { status: 200, headers: textHeaders });
+  return new Response(buildHandshakeConfig(auth.device.serialNo), { status: 200, headers: textHeaders });
 }
 
 /**
@@ -43,11 +34,10 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const serial = readSerial(url.searchParams.get("SN"));
-  if (!serial) {
-    console.warn("[iclock] upload refused: serial number missing or malformed");
-    return new Response("ERROR: serial number missing or invalid\n", { status: 400, headers: textHeaders });
-  }
+  const receivedAt = new Date();
+  const auth = await authenticateDevice(request, "upload");
+  if ("refused" in auth) return auth.refused;
+  const { device } = auth;
 
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (declared > MAX_BODY_BYTES) {
@@ -55,13 +45,6 @@ export async function POST(request: Request) {
   }
 
   const db = getDb();
-  const receivedAt = new Date();
-  const device = await touchDevice(db, serial, receivedAt);
-  if (!device) {
-    console.warn(`[iclock] upload refused: ${serial} is not registered or is switched off`);
-    return new Response("ERROR: device not registered\n", { status: 403, headers: textHeaders });
-  }
-
   const table = url.searchParams.get("table");
   if (table !== "ATTLOG" && table !== "OPERLOG") {
     // Photos, user lists and the like are not used. Say OK so the device moves on.
