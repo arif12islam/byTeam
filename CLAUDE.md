@@ -11,14 +11,9 @@ Read these before starting any milestone:
 
 ## Current status
 
-- M0 done (scaffold, CI, docs). Still open: connect Vercel and Neon.
-- M1 done (auth, owner seed, settings and holidays, shifts, employees, salary structures, audit helper).
-- M2 done except the run against a Vercel preview.
-- M3 done (attendance engine, screens, export, demo data script and fixtures).
-- M4 done (leave types, requests, decisions, balances, balance block).
-- M5 done (rules, payroll draft, finalize and unlock, payslips, salary sheet, golden tests). Pay rules are decided (BUILD_PLAN section 7): gross base, working-days divisor, every 3 lates cost one day.
+- M0 to M6 done: scaffold, auth and setup, device receiver, attendance engine, leave, payroll, and hardening (office outages, device clock check, rate limits, audit log screen, role checks, empty and error states).
 - Vercel and Neon are connected, migrations run on every Vercel build, and the owner can log in.
-- Next: M6 Hardening. Ask the owner before starting a new milestone.
+- Next: M7 real device and pilot. It needs the real ZKTeco device and the office network, so ask the owner before starting.
 - When an item is finished, tick it in `docs/BUILD_PLAN.md` in the same change.
 
 ## Stack
