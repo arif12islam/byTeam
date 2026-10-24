@@ -19,10 +19,11 @@ cd byteam
 npm install
 cp .env.example .env.local   # then fill in DATABASE_URL and the secrets
 npm run db:migrate
+OWNER_EMAIL=you@example.com OWNER_PASSWORD=choose-a-password npm run seed:owner
 npm run dev
 ```
 
-Open http://localhost:3000. It redirects to the Today screen.
+Open http://localhost:3000 and sign in with the owner account. The seed does nothing if an owner already exists.
 
 ## Scripts
 
@@ -36,6 +37,7 @@ Open http://localhost:3000. It redirects to the Today screen.
 | `npm run db:generate` | Create a migration from schema changes |
 | `npm run db:migrate` | Apply migrations to `DATABASE_URL` |
 | `npm run db:studio` | Browse the database |
+| `npm run seed:owner` | Create the first owner login from `OWNER_EMAIL`, `OWNER_NAME`, `OWNER_PASSWORD` |
 
 ## Project layout
 
