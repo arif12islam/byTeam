@@ -2,13 +2,17 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-/** The byTeam mark: a rounded tile with a tick, the check in an attendance register. */
+/** The byTeam mark: a bright rounded tile with a tick, the check in an attendance register. */
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden className={cn("size-8 shrink-0", className)}>
-      <rect width="32" height="32" rx="9" className="fill-forest-active" />
-      <path d="M9 16.5l4.6 4.6L23 11.6" fill="none" stroke="white" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <span
+      aria-hidden
+      className={cn("grid size-8 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-emerald-400 to-cyan-600 shadow-md shadow-emerald-900/30", className)}
+    >
+      <svg viewBox="0 0 32 32" className="size-full p-[18%]">
+        <path d="M6 17l6.5 6.5L26 9.5" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   );
 }
 

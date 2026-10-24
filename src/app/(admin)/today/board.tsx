@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Ring, type RingSegment } from "@/components/ui/ring";
-import type { Tone } from "@/components/ui/tone";
+import { toneClasses, type Tone } from "@/components/ui/tone";
 import type { TodayGroup } from "@/lib/attendance/today";
 import { cn } from "@/lib/utils";
 
@@ -66,12 +66,12 @@ const matches: Record<Filter, (entry: BoardEntry) => boolean> = {
   on_leave: (e) => e.group === "on_leave",
 };
 
-const chips: { filter: Exclude<Filter, "all">; label: string; icon: LucideIcon; count: keyof BoardCounts; glyph: string }[] = [
-  { filter: "in", label: "In", icon: UserCheck, count: "in", glyph: "text-[#7ee2b8]" },
-  { filter: "late", label: "Late", icon: AlarmClock, count: "late", glyph: "text-[#f7c873]" },
-  { filter: "not_in_yet", label: "Not in yet", icon: Hourglass, count: "notInYet", glyph: "text-[#b5c0cc]" },
-  { filter: "absent", label: "Absent", icon: UserX, count: "absent", glyph: "text-[#ff9f95]" },
-  { filter: "on_leave", label: "On leave", icon: Plane, count: "onLeave", glyph: "text-[#93c0ff]" },
+const chips: { filter: Exclude<Filter, "all">; label: string; icon: LucideIcon; count: keyof BoardCounts; tone: Tone }[] = [
+  { filter: "in", label: "In", icon: UserCheck, count: "in", tone: "success" },
+  { filter: "late", label: "Late", icon: AlarmClock, count: "late", tone: "warning" },
+  { filter: "not_in_yet", label: "Not in yet", icon: Hourglass, count: "notInYet", tone: "off" },
+  { filter: "absent", label: "Absent", icon: UserX, count: "absent", tone: "danger" },
+  { filter: "on_leave", label: "On leave", icon: Plane, count: "onLeave", tone: "info" },
 ];
 
 const sections: { group: TodayGroup; title: string; hint?: string; icon: LucideIcon }[] = [
@@ -266,18 +266,18 @@ export function TodayBoard({
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:gap-4">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-forest via-forest to-[#0f5a46] p-3.5 text-forest-foreground shadow-card sm:rounded-3xl sm:p-5">
-        <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-acc-teal/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-16 left-1/3 size-48 rounded-full bg-acc-indigo/30 blur-3xl" />
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-3.5 text-white shadow-card sm:rounded-3xl sm:p-5">
+        <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-lime-300/30 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-16 left-1/3 size-48 rounded-full bg-sky-300/30 blur-3xl" />
         <div className="relative flex items-center gap-4">
-          <Ring size={88} thickness={10} track="stroke-forest-line" segments={hero.segments}>
+          <Ring size={88} thickness={10} track="stroke-white/20" segments={hero.segments}>
             <div>
               <p className="text-2xl font-semibold leading-none tabular-nums">{counts.in}</p>
-              <p className="mt-0.5 text-[10px] text-forest-muted">of {hero.expected}</p>
+              <p className="mt-0.5 text-[10px] text-white/80">of {hero.expected}</p>
             </div>
           </Ring>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xs text-forest-muted">{hero.title}</h1>
+            <h1 className="text-xs text-white/85">{hero.title}</h1>
             <p className="mt-0.5 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">{hero.headline}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
               <LiveRefresh generatedAt={hero.generatedAt} />
@@ -287,7 +287,7 @@ export function TodayBoard({
         </div>
 
         <ul className="relative mt-3 grid grid-cols-5 gap-1.5 sm:gap-2" aria-label="Filter the list">
-          {chips.map(({ filter: f, label, icon: Icon, count, glyph }) => {
+          {chips.map(({ filter: f, label, icon: Icon, count, tone }) => {
             const pressed = filter === f;
             return (
               <li key={f}>
@@ -296,13 +296,15 @@ export function TodayBoard({
                   aria-pressed={pressed}
                   onClick={() => setFilter(pressed ? "all" : f)}
                   className={cn(
-                    "flex h-full w-full flex-col items-center rounded-xl px-1 py-2 transition-all active:scale-[0.97]",
-                    pressed ? "bg-white text-forest shadow-sm" : "bg-forest-line/70 text-forest-foreground hover:bg-forest-line",
+                    "relative flex h-full w-full flex-col items-center overflow-hidden rounded-xl px-1 py-2 shadow-md shadow-black/15 transition-all active:scale-[0.97]",
+                    toneClasses[tone].grad,
+                    pressed ? "scale-[1.04] ring-2 ring-white" : filter !== "all" && "opacity-60 hover:opacity-90",
                   )}
                 >
-                  <Icon className={cn("size-4", pressed ? "text-forest" : glyph)} aria-hidden />
-                  <span className="mt-1 text-lg font-semibold leading-none tabular-nums">{counts[count]}</span>
-                  <span className={cn("mt-1 text-[11px] leading-none", pressed ? "text-forest" : "text-forest-muted")}>{label}</span>
+                  <span aria-hidden className="pointer-events-none absolute -right-3 -top-3 size-10 rounded-full bg-white/20" />
+                  <Icon className="relative size-4" aria-hidden />
+                  <span className="relative mt-1 text-lg font-semibold leading-none tabular-nums">{counts[count]}</span>
+                  <span className="relative mt-1 text-[11px] font-medium leading-none opacity-90">{label}</span>
                 </button>
               </li>
             );

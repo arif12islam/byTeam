@@ -3,14 +3,13 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  byTeam palette
-  paper   #F4F6F5  page background
-  surface #FFFFFF  panels
-  ink     #12181B  text
-  slate   #5A6670  secondary text
-  rule    #E1E6E4  borders
-  ledger  #1E6B52  accent, the green of an attendance register
-  forest  #0C3B2C  deep green for the sidebar, hero panels and the phone tab bar
+  byTeam palette: vivid on purpose. Big surfaces (page banners, stat tiles, hero
+  panels, buttons, avatars) are saturated gradients with white text. The page
+  itself has soft indigo and emerald washes behind it. Never pale-on-white.
+
+  primary  #059669  emerald, buttons and links
+  forest   #0A3A40  deep teal for the sidebar, phone tab bar and hero panels
+  canvas   #F1F4FB  page background, washed with indigo and emerald
 
   Status colors carry meaning everywhere: present is green, late is amber,
   absent is red, leave is blue and a day off is slate. Each has a strong
@@ -20,43 +19,45 @@
 :root {
   --radius: 0.625rem;
 
-  --background: #f4f6f5;
-  --foreground: #12181b;
+  --background: #f1f4fb;
+  --foreground: #101828;
   --card: #ffffff;
-  --card-foreground: #15191e;
+  --card-foreground: #101828;
   --popover: #ffffff;
-  --popover-foreground: #15191e;
-  --primary: #1e6b52;
+  --popover-foreground: #101828;
+  --primary: #059669;
   --primary-foreground: #ffffff;
-  --secondary: #eceff1;
-  --secondary-foreground: #15191e;
-  --muted: #eceff1;
-  --muted-foreground: #5a6670;
-  --accent: #e0f0e8;
-  --accent-foreground: #134a38;
-  --destructive: #b42318;
-  --border: #e1e6e4;
-  --input: #cfd6d3;
-  --ring: #1e6b52;
+  --secondary: #e8edf7;
+  --secondary-foreground: #101828;
+  --muted: #e8edf7;
+  --muted-foreground: #576277;
+  --accent: #d1fae5;
+  --accent-foreground: #065f46;
+  --destructive: #be123c;
+  --border: #dde4f0;
+  --input: #c9d2e3;
+  --ring: #059669;
 
-  --forest: #0c3b2c;
+  --forest: #0a3a40;
   --forest-foreground: #f2faf6;
-  --forest-muted: #8fb8a6;
-  --forest-line: #1d5442;
-  --forest-active: #1e6b52;
+  --forest-muted: #8ad3c8;
+  --forest-line: #115761;
+  --forest-active: #059669;
 
-  --success: #1e6b52;
-  --success-soft: #e0f0e8;
-  --warning: #a65d03;
-  --warning-soft: #fdf0d5;
-  --danger: #b42318;
-  --danger-soft: #fde8e6;
-  --info: #1a56b0;
-  --info-soft: #e3edfb;
-  --off: #5a6670;
-  --off-soft: #e9edeb;
+  --success: #047857;
+  --success-soft: #d1fae5;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --danger: #be123c;
+  --danger-soft: #ffe4e6;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+  --off: #475569;
+  --off-soft: #e2e8f0;
 
-  --elevation: 0 1px 2px rgb(12 59 44 / 0.06), 0 4px 16px rgb(12 59 44 / 0.05);
+  --elevation: 0 1px 2px rgb(16 24 40 / 0.06), 0 6px 20px rgb(79 70 229 / 0.07);
+  --canvas-glow-a: rgb(99 102 241 / 0.16);
+  --canvas-glow-b: rgb(16 185 129 / 0.16);
 
   /* Section accents: decorative identity colors for the menu, headings and charts. Status colors keep their own meaning. */
   --acc-on: #ffffff;
@@ -78,50 +79,52 @@
   --acc-slate-soft: #e8ecf1;
 
 
-  --sidebar: #0c3b2c;
+  --sidebar: #0a3a40;
   --sidebar-foreground: #f2faf6;
-  --sidebar-border: #1d5442;
+  --sidebar-border: #115761;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0e1316;
-    --foreground: #e8ecea;
-    --card: #161c1f;
-    --card-foreground: #e8ecea;
-    --popover: #161c1f;
-    --popover-foreground: #e8ecea;
-    --primary: #5fbf99;
-    --primary-foreground: #0d2a20;
-    --secondary: #222930;
-    --secondary-foreground: #e8ebee;
-    --muted: #222930;
-    --muted-foreground: #9aa6a1;
-    --accent: #1b3329;
-    --accent-foreground: #b9e4d1;
-    --destructive: #f97066;
-    --border: #263036;
-    --input: #34404a;
-    --ring: #5fbf99;
+    --background: #0b1220;
+    --foreground: #e7ecf5;
+    --card: #131c2e;
+    --card-foreground: #e7ecf5;
+    --popover: #131c2e;
+    --popover-foreground: #e7ecf5;
+    --primary: #34d399;
+    --primary-foreground: #052e22;
+    --secondary: #1c2740;
+    --secondary-foreground: #e7ecf5;
+    --muted: #1c2740;
+    --muted-foreground: #9aa7bd;
+    --accent: #0f3a2c;
+    --accent-foreground: #a7f3d0;
+    --destructive: #fb7185;
+    --border: #223049;
+    --input: #31405c;
+    --ring: #34d399;
 
-    --forest: #0a2c21;
+    --forest: #071f2b;
     --forest-foreground: #f2faf6;
-    --forest-muted: #7fa896;
-    --forest-line: #174536;
-    --forest-active: #1e6b52;
+    --forest-muted: #79b8b0;
+    --forest-line: #0f3a47;
+    --forest-active: #059669;
 
-    --success: #5fbf99;
-    --success-soft: #16352a;
-    --warning: #f0b45a;
-    --warning-soft: #3a2b10;
-    --danger: #f97066;
-    --danger-soft: #3d1b18;
-    --info: #7db0f5;
-    --info-soft: #17294a;
-    --off: #9aa6a1;
-    --off-soft: #232b2f;
+    --success: #34d399;
+    --success-soft: #0f3a2c;
+    --warning: #fbbf24;
+    --warning-soft: #3d2c0c;
+    --danger: #fb7185;
+    --danger-soft: #4a1522;
+    --info: #60a5fa;
+    --info-soft: #14284f;
+    --off: #94a3b8;
+    --off-soft: #1e293b;
 
     --elevation: 0 1px 2px rgb(0 0 0 / 0.4);
+    --canvas-glow-a: rgb(99 102 241 / 0.22);
+    --canvas-glow-b: rgb(16 185 129 / 0.16);
 
     --acc-on: #0d1512;
     --acc-indigo: #8b93ff;
@@ -142,9 +145,9 @@
     --acc-slate-soft: #263040;
 
 
-    --sidebar: #0a2c21;
+    --sidebar: #071f2b;
     --sidebar-foreground: #f2faf6;
-    --sidebar-border: #174536;
+    --sidebar-border: #0f3a47;
   }
 }
 
@@ -225,6 +228,11 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "tnum" 1;
+    /* Two soft washes of color behind everything, so the page is never flat grey. */
+    background-image:
+      radial-gradient(46rem 28rem at 100% -6%, var(--canvas-glow-a), transparent 70%),
+      radial-gradient(40rem 26rem at -8% 8%, var(--canvas-glow-b), transparent 70%);
+    background-attachment: fixed;
   }
 
   :focus-visible {

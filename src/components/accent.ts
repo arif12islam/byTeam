@@ -1,34 +1,103 @@
 /**
  * Accent colors give each part of the app its own identity: the menu icons,
- * the heading tile and the chips on cards. They are only decoration. What a
- * day or a person's status means is always carried by the tones in `tone.ts`.
+ * the page banner, the chips on cards and the avatars. They are decoration.
+ * What a day or a person's status means is always carried by the tones in
+ * `ui/tone.ts`.
+ *
+ * Everything here that is a gradient is saturated and the same in light and
+ * dark mode, with white text on it. `soft` and `text` follow the theme.
  */
 export type Accent = "green" | "indigo" | "violet" | "pink" | "orange" | "teal" | "sky" | "lime" | "slate";
 
 type AccentClasses = {
-  /** A solid color with a contrasting icon on it: white in light mode, dark in dark mode. */
+  /** A small saturated gradient with a white icon, for menu icons, chips and avatars. */
   solid: string;
-  /** A soft background with the accent as the icon color. */
+  /** A big gradient with white text, for a page banner or a hero panel. */
+  banner: string;
+  /** A soft background with the accent as the icon color. Follows the theme. */
   soft: string;
-  /** The accent as a text or icon color. */
+  /** The accent as a text or icon color. Follows the theme. */
   text: string;
-  /** A glow behind a heading tile. */
-  glow: string;
-  /** A soft blurred shape for the corner of a dark hero panel. */
+  /** A soft blurred shape for the corner of a banner. */
   blob: string;
+  /** A flat fill, for chart bars. */
+  fill: string;
 };
 
 export const accentClasses: Record<Accent, AccentClasses> = {
-  green: { solid: "bg-forest-active text-white", soft: "bg-accent text-accent-foreground", text: "text-primary", glow: "shadow-[0_6px_18px_-4px_rgb(30_107_82/0.6)]", blob: "bg-forest-active/40" },
-  indigo: { solid: "bg-acc-indigo text-acc-on", soft: "bg-acc-indigo-soft text-acc-indigo", text: "text-acc-indigo", glow: "shadow-[0_6px_18px_-4px_rgb(79_70_229/0.55)]", blob: "bg-acc-indigo/35" },
-  violet: { solid: "bg-acc-violet text-acc-on", soft: "bg-acc-violet-soft text-acc-violet", text: "text-acc-violet", glow: "shadow-[0_6px_18px_-4px_rgb(124_58_237/0.55)]", blob: "bg-acc-violet/35" },
-  pink: { solid: "bg-acc-pink text-acc-on", soft: "bg-acc-pink-soft text-acc-pink", text: "text-acc-pink", glow: "shadow-[0_6px_18px_-4px_rgb(219_39_119/0.5)]", blob: "bg-acc-pink/30" },
-  orange: { solid: "bg-acc-orange text-acc-on", soft: "bg-acc-orange-soft text-acc-orange", text: "text-acc-orange", glow: "shadow-[0_6px_18px_-4px_rgb(217_102_10/0.55)]", blob: "bg-acc-orange/35" },
-  teal: { solid: "bg-acc-teal text-acc-on", soft: "bg-acc-teal-soft text-acc-teal", text: "text-acc-teal", glow: "shadow-[0_6px_18px_-4px_rgb(13_138_127/0.55)]", blob: "bg-acc-teal/35" },
-  sky: { solid: "bg-acc-sky text-acc-on", soft: "bg-acc-sky-soft text-acc-sky", text: "text-acc-sky", glow: "shadow-[0_6px_18px_-4px_rgb(2_132_199/0.55)]", blob: "bg-acc-sky/35" },
-  lime: { solid: "bg-acc-lime text-acc-on", soft: "bg-acc-lime-soft text-acc-lime", text: "text-acc-lime", glow: "shadow-[0_6px_18px_-4px_rgb(77_124_15/0.55)]", blob: "bg-acc-lime/35" },
-  slate: { solid: "bg-acc-slate text-acc-on", soft: "bg-acc-slate-soft text-acc-slate", text: "text-acc-slate", glow: "shadow-[0_6px_18px_-4px_rgb(71_85_105/0.5)]", blob: "bg-acc-slate/35" },
+  green: {
+    solid: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white",
+    banner: "bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white",
+    soft: "bg-accent text-accent-foreground",
+    text: "text-primary",
+    blob: "bg-lime-300/30",
+    fill: "bg-emerald-500",
+  },
+  indigo: {
+    solid: "bg-gradient-to-br from-indigo-500 to-violet-600 text-white",
+    banner: "bg-gradient-to-br from-indigo-500 via-violet-600 to-purple-700 text-white",
+    soft: "bg-acc-indigo-soft text-acc-indigo",
+    text: "text-acc-indigo",
+    blob: "bg-sky-300/30",
+    fill: "bg-indigo-500",
+  },
+  violet: {
+    solid: "bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white",
+    banner: "bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-700 text-white",
+    soft: "bg-acc-violet-soft text-acc-violet",
+    text: "text-acc-violet",
+    blob: "bg-pink-300/30",
+    fill: "bg-violet-500",
+  },
+  pink: {
+    solid: "bg-gradient-to-br from-pink-500 to-rose-500 text-white",
+    banner: "bg-gradient-to-br from-pink-600 via-rose-600 to-orange-600 text-white",
+    soft: "bg-acc-pink-soft text-acc-pink",
+    text: "text-acc-pink",
+    blob: "bg-amber-300/30",
+    fill: "bg-pink-500",
+  },
+  orange: {
+    solid: "bg-gradient-to-br from-amber-500 to-orange-600 text-white",
+    banner: "bg-gradient-to-br from-orange-600 via-rose-500 to-pink-600 text-white",
+    soft: "bg-acc-orange-soft text-acc-orange",
+    text: "text-acc-orange",
+    blob: "bg-yellow-300/35",
+    fill: "bg-orange-500",
+  },
+  teal: {
+    solid: "bg-gradient-to-br from-teal-500 to-cyan-600 text-white",
+    banner: "bg-gradient-to-br from-teal-600 via-cyan-600 to-sky-700 text-white",
+    soft: "bg-acc-teal-soft text-acc-teal",
+    text: "text-acc-teal",
+    blob: "bg-emerald-300/30",
+    fill: "bg-teal-500",
+  },
+  sky: {
+    solid: "bg-gradient-to-br from-sky-500 to-blue-600 text-white",
+    banner: "bg-gradient-to-br from-sky-600 via-blue-600 to-indigo-700 text-white",
+    soft: "bg-acc-sky-soft text-acc-sky",
+    text: "text-acc-sky",
+    blob: "bg-cyan-300/30",
+    fill: "bg-sky-500",
+  },
+  lime: {
+    solid: "bg-gradient-to-br from-lime-500 to-emerald-600 text-white",
+    banner: "bg-gradient-to-br from-lime-600 via-green-600 to-emerald-700 text-white",
+    soft: "bg-acc-lime-soft text-acc-lime",
+    text: "text-acc-lime",
+    blob: "bg-yellow-200/30",
+    fill: "bg-lime-500",
+  },
+  slate: {
+    solid: "bg-gradient-to-br from-slate-500 to-slate-700 text-white",
+    banner: "bg-gradient-to-br from-slate-700 via-slate-800 to-indigo-900 text-white",
+    soft: "bg-acc-slate-soft text-acc-slate",
+    text: "text-acc-slate",
+    blob: "bg-indigo-300/25",
+    fill: "bg-slate-500",
+  },
 };
 
 /** The colors people and charts cycle through, so neighbours differ. */
-export const accentCycle: Accent[] = ["indigo", "pink", "teal", "orange", "violet", "sky", "lime", "slate"];
+export const accentCycle: Accent[] = ["indigo", "pink", "teal", "orange", "violet", "sky", "lime", "green"];

@@ -35,7 +35,7 @@ function CardTitle({
     <div className={cn("flex items-center justify-between gap-3", className)}>
       <h2 className="flex min-w-0 items-center gap-2.5 text-base font-semibold tracking-tight">
         {Icon ? (
-          <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg", accentClasses[accent].soft)}>
+          <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg", accentClasses[accent].solid)}>
             <Icon className="size-4" aria-hidden />
           </span>
         ) : null}

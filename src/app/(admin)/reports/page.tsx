@@ -181,13 +181,13 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       {nav}
 
       <div className="grid gap-3 md:grid-cols-[18rem_1fr] md:gap-5">
-        <section className="relative flex items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-[#0f5a46] p-5 text-forest-foreground shadow-card">
-          <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full bg-acc-teal/40 blur-3xl" />
-          <div aria-hidden className="pointer-events-none absolute -bottom-12 -left-8 size-32 rounded-full bg-acc-lime/25 blur-3xl" />
+        <section className="relative flex items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-teal-600 via-cyan-600 to-sky-700 p-5 text-white shadow-card">
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full bg-lime-300/35 blur-3xl" />
+          <div aria-hidden className="pointer-events-none absolute -bottom-12 -left-8 size-32 rounded-full bg-indigo-300/35 blur-3xl" />
           <Ring
             size={116}
             thickness={13}
-            track="stroke-forest-line"
+            track="stroke-white/25"
             segments={[
               { value: totals.present - totals.late, tone: "success", label: "On time" },
               { value: totals.late, tone: "warning", label: "Late" },
@@ -198,7 +198,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
           </Ring>
           <div className="min-w-0">
             <p className="text-lg font-semibold leading-tight">Attendance rate</p>
-            <p className="mt-1 text-sm text-forest-foreground/80">
+            <p className="mt-1 text-sm text-white/90">
               {plural(totals.present, "day")} attended, {plural(totals.absent, "day")} absent
               {report.workingDays > 0 ? `, over ${plural(report.workingDays, "working day")}` : ""}.
             </p>

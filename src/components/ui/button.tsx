@@ -9,11 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+        default: "bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-700/25 hover:brightness-110",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         outline: "border border-input bg-card text-foreground shadow-sm hover:bg-secondary",
         ghost: "hover:bg-secondary",
-        destructive: "bg-destructive text-white hover:bg-destructive/90",
+        destructive: "bg-gradient-to-br from-rose-600 to-red-700 text-white shadow-md shadow-rose-700/25 hover:brightness-110",
+        /** A white button for sitting on a colored banner. */
+        onColor: "bg-white text-slate-900 shadow-md shadow-black/10 hover:bg-white/90",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
