@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { attendanceAdjustments, attendanceDays, employees, shifts, users } from "@/db/schema";
@@ -56,7 +56,10 @@ describe.skipIf(!testDatabaseUrl)("attendance tables", () => {
 
   it("starts a day with sensible defaults", async () => {
     await db.insert(attendanceDays).values({ employeeId, date: "2026-10-05", status: "absent" });
-    const [row] = await db.select().from(attendanceDays).where(eq(attendanceDays.date, "2026-10-05"));
+    const [row] = await db
+      .select()
+      .from(attendanceDays)
+      .where(and(eq(attendanceDays.employeeId, employeeId), eq(attendanceDays.date, "2026-10-05")));
     expect(row).toMatchObject({
       firstIn: null,
       lastOut: null,
@@ -84,7 +87,10 @@ describe.skipIf(!testDatabaseUrl)("attendance tables", () => {
     await db.insert(attendanceAdjustments).values({ ...base, newValue: "2026-10-07T12:00:00Z", reason: "First fix" });
     await db.insert(attendanceAdjustments).values({ ...base, newValue: "2026-10-07T12:30:00Z", reason: "Corrected the fix" });
     await db.insert(attendanceAdjustments).values({ ...base, newValue: null, reason: "Put it back" });
-    const rows = await db.select().from(attendanceAdjustments).where(eq(attendanceAdjustments.date, "2026-10-07"));
+    const rows = await db
+      .select()
+      .from(attendanceAdjustments)
+      .where(and(eq(attendanceAdjustments.employeeId, employeeId), eq(attendanceAdjustments.date, "2026-10-07")));
     expect(rows).toHaveLength(3);
     expect(rows.filter((r) => r.newValue === null)).toHaveLength(1);
   });
