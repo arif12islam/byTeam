@@ -1,4 +1,4 @@
-import { Fingerprint, LogIn, Repeat2 } from "lucide-react";
+import { Fingerprint } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -6,44 +6,41 @@ import { Card, CardTitle } from "@/components/ui/card";
 import type { FeedItem } from "@/lib/attendance/today";
 import { formatOfficeTime } from "@/lib/time";
 
-/** The latest punches of the day, newest first. Punches in the last five minutes get a "Just now" badge. */
+/** The latest punches of the day, newest first, one tight line each. Punches within five minutes get a "Now" badge. */
 export function PunchFeed({ items, now }: { items: readonly FeedItem[]; now: Date }) {
   return (
-    <Card>
-      <CardTitle icon={Fingerprint} count={items.length > 0 ? items.length : undefined}>
+    <Card className="p-3 sm:p-3.5">
+      <CardTitle icon={Fingerprint}>
         Latest punches
       </CardTitle>
       {items.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">No punches yet today. They appear here the moment the device sends them.</p>
+        <p className="mt-2 text-sm text-muted-foreground">No punches yet today. They appear here the moment the device sends them.</p>
       ) : (
-        <ol className="mt-3 grid">
-          {items.map((item, index) => {
+        <ol className="mt-1.5 divide-y divide-border/60">
+          {items.map((item) => {
             // A device clock a little ahead of the server gives a punch slightly in the future, which is still fresh.
             const fresh = Math.abs(now.getTime() - item.at.getTime()) < 5 * 60_000;
-            const Icon = item.kind === "arrived" ? LogIn : Repeat2;
             return (
-              <li key={`${item.empCode}-${item.at.getTime()}`} className="relative flex gap-3 pb-4 last:pb-0">
-                {index < items.length - 1 ? <span aria-hidden className="absolute left-[19px] top-10 h-[calc(100%-2.25rem)] w-px bg-border" /> : null}
+              <li key={`${item.empCode}-${item.at.getTime()}`} className="flex items-center gap-2.5 py-1.5">
                 {item.name ? (
-                  <Avatar name={item.name} className="size-10" />
+                  <Avatar name={item.name} className="size-8 text-xs" />
                 ) : (
-                  <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
-                    <Fingerprint className="size-[18px]" />
+                  <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
+                    <Fingerprint className="size-4" />
                   </span>
                 )}
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-sm leading-tight">
                     <span className="truncate font-medium">{item.name ?? `Code ${item.empCode}`}</span>
-                    {fresh ? <Badge tone="success">Just now</Badge> : null}
-                    {item.name === null ? <Badge tone="warning">No employee</Badge> : null}
+                    {fresh ? <Badge tone="success" className="px-1.5 py-0 text-[10px] leading-4">Now</Badge> : null}
+                    {item.name === null ? <Badge tone="warning" className="px-1.5 py-0 text-[10px] leading-4">No employee</Badge> : null}
                   </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Icon className="size-3.5" aria-hidden />
-                    <span className="tabular-nums">{formatOfficeTime(item.at)}</span>
-                    {item.kind === "arrived" ? "arrived" : "punched again"}
+                  <p className="truncate text-[11px] leading-tight text-muted-foreground">
+                    {item.kind === "arrived" ? "Arrived" : "Punched again"}
                     {item.deviceName ? `, ${item.deviceName}` : ""}
                   </p>
                 </div>
+                <span className="shrink-0 text-xs font-medium tabular-nums">{formatOfficeTime(item.at)}</span>
               </li>
             );
           })}

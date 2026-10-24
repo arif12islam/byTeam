@@ -13,7 +13,7 @@ export function ArrivalsChart({ buckets }: { buckets: readonly ArrivalBucket[] }
 
   return (
     <figure>
-      <div role="img" aria-label={`Arrivals, ${total} people. ${summary}`} className="flex h-28 items-end gap-1">
+      <div role="img" aria-label={`Arrivals, ${total} people. ${summary}`} className="flex h-20 items-end gap-1">
         {buckets.map((bucket) => {
           const onTime = bucket.count - bucket.late;
           return (
@@ -39,7 +39,7 @@ export function ArrivalsChart({ buckets }: { buckets: readonly ArrivalBucket[] }
           </span>
         ))}
       </div>
-      <figcaption className="mt-3 flex gap-4 text-xs text-muted-foreground">
+      <figcaption className="mt-2 flex gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm bg-success" aria-hidden />
           On time
