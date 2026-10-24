@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { attendanceAdjustments, attendanceDays, companySettings, employees, holidays, shifts, users } from "@/db/schema";
@@ -72,7 +72,7 @@ describe.skipIf(!testDatabaseUrl)("recalc", () => {
   }
 
   async function daysOf(employeeId: string) {
-    const rows = await db.select().from(attendanceDays).where(eq(attendanceDays.employeeId, employeeId));
+    const rows = await db.select().from(attendanceDays).where(eq(attendanceDays.employeeId, employeeId)).orderBy(asc(attendanceDays.date));
     return new Map(rows.map((r) => [r.date, r]));
   }
 

@@ -1,6 +1,7 @@
 import { getDb } from "@/db";
 import { buildHandshakeConfig, readSerial } from "@/lib/adms/handshake";
 import { splitLines } from "@/lib/adms/parse";
+import { recalcForNewPunches } from "@/lib/attendance/triggers";
 import { savePunches } from "@/lib/adms/store";
 import { adaptAttlogBody } from "@/lib/adms/zkteco-adapter";
 import { touchDevice } from "@/lib/devices/receive";
@@ -77,7 +78,9 @@ export async function POST(request: Request) {
   }
 
   const { punches, skipped } = adaptAttlogBody(device.serialNo, body);
-  const { received, inserted } = await savePunches(db, punches);
+  const { received, inserted, newPunches } = await savePunches(db, punches);
+  // Punches are saved. Bringing attendance up to date must never make the device resend them.
+  await recalcForNewPunches(db, newPunches);
   console.info(
     `[iclock] ${device.serialNo} ATTLOG: ${received} punches, ${inserted} new, ${received - inserted} already held, ${skipped} lines skipped`,
   );

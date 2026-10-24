@@ -17,10 +17,14 @@ export function chunk<T>(items: T[], size: number): T[][] {
 /**
  * Saves punches to the append-only log. The unique key on device, employee
  * code and time does the deduplication: a punch we already hold, including a
- * whole resent batch, is skipped without error. Returns how many were new.
+ * whole resent batch, is skipped without error. Returns how many were new and
+ * which, so the days they fall on can be recomputed.
  */
-export async function savePunches(db: Db, punches: StandardPunch[]): Promise<{ received: number; inserted: number }> {
-  let inserted = 0;
+export async function savePunches(
+  db: Db,
+  punches: StandardPunch[],
+): Promise<{ received: number; inserted: number; newPunches: { empCode: string; punchedAt: Date }[] }> {
+  const newPunches: { empCode: string; punchedAt: Date }[] = [];
 
   for (const batch of chunk(punches, BATCH_SIZE)) {
     const rows = await db
@@ -36,9 +40,9 @@ export async function savePunches(db: Db, punches: StandardPunch[]): Promise<{ r
         })),
       )
       .onConflictDoNothing()
-      .returning({ id: rawPunches.id });
-    inserted += rows.length;
+      .returning({ empCode: rawPunches.empCode, punchedAt: rawPunches.punchedAt });
+    newPunches.push(...rows);
   }
 
-  return { received: punches.length, inserted };
+  return { received: punches.length, inserted: newPunches.length, newPunches };
 }

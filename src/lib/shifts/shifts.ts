@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { employees, shifts } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { recalcAfterShiftChange } from "@/lib/attendance/triggers";
 import { timeToMinutes } from "@/lib/time";
 
 // Kept here too, so existing imports of timeToMinutes from the shifts module keep working.
@@ -94,7 +95,7 @@ export async function createShift(db: Db, input: ShiftInput, actorId: string) {
 export async function updateShift(db: Db, id: string, input: ShiftInput, actorId: string) {
   const data = shiftSchema.parse(input);
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [before] = await tx.select().from(shifts).where(eq(shifts.id, id));
     if (!before) return null;
 
@@ -107,6 +108,14 @@ export async function updateShift(db: Db, id: string, input: ShiftInput, actorId
 
     const [after] = await tx.update(shifts).set(data).where(eq(shifts.id, id)).returning();
     await audit(tx, { actorId, action: "shift.update", entity: "shift", entityId: id, before, after });
-    return { shift: after, changed: true };
+    const hoursChanged =
+      toHm(before.startTime) !== toHm(after.startTime) ||
+      toHm(before.endTime) !== toHm(after.endTime) ||
+      before.graceMinutes !== after.graceMinutes;
+    return { shift: after, changed: true, hoursChanged };
   });
+
+  // Renaming a shift changes no attendance. New hours apply from today.
+  if (result && "hoursChanged" in result && result.hoursChanged) await recalcAfterShiftChange(db, id);
+  return result;
 }

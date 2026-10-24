@@ -42,8 +42,8 @@ describe.skipIf(!testDatabaseUrl)("punch storage", () => {
       punch(sn, uniqueCode(), "2026-10-24T03:05:00Z"),
     ];
 
-    expect(await savePunches(db, batch)).toEqual({ received: 3, inserted: 3 });
-    expect(await savePunches(db, batch)).toEqual({ received: 3, inserted: 0 });
+    expect(await savePunches(db, batch)).toMatchObject({ received: 3, inserted: 3 });
+    expect(await savePunches(db, batch)).toMatchObject({ received: 3, inserted: 0, newPunches: [] });
     expect(await countFor(sn)).toBe(3);
   });
 
@@ -57,7 +57,8 @@ describe.skipIf(!testDatabaseUrl)("punch storage", () => {
       punch(sn, code, "2026-10-24T12:00:00Z"),
       punch(sn, code, "2026-10-25T03:00:00Z"),
     ]);
-    expect(result).toEqual({ received: 2, inserted: 1 });
+    expect(result).toMatchObject({ received: 2, inserted: 1 });
+    expect(result.newPunches.map((p) => p.punchedAt.toISOString())).toEqual(["2026-10-25T03:00:00.000Z"]);
     expect(await countFor(sn)).toBe(3);
   });
 
@@ -66,7 +67,7 @@ describe.skipIf(!testDatabaseUrl)("punch storage", () => {
     await addTestDevice(db, sn);
     const code = uniqueCode();
     const same = punch(sn, code, "2026-10-24T03:00:00Z");
-    expect(await savePunches(db, [same, { ...same, rawLine: "second copy" }])).toEqual({ received: 2, inserted: 1 });
+    expect(await savePunches(db, [same, { ...same, rawLine: "second copy" }])).toMatchObject({ received: 2, inserted: 1 });
     expect(await countFor(sn)).toBe(1);
   });
 
