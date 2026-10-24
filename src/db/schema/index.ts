@@ -2,4 +2,4 @@
 // setup.ts (M1), device.ts (M2), attendance.ts (M3), leave.ts (M4), payroll.ts (M5).
 // Re-export each file here so the db client and drizzle-kit see every table.
 
-export {};
+export * from "./setup";
