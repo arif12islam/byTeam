@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { companySettings, employees, holidays, leaveRequests, leaveTypes, type LeaveStatus } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { finalizedMonthsBetween, lockedMessage } from "@/lib/payroll/lock";
 import { formatOfficeDate, isValidOfficeDate } from "@/lib/time";
 
 import { MAX_LEAVE_RANGE_DAYS, leaveWorkingDates, type CalendarForLeave } from "./days";
@@ -43,7 +44,7 @@ export type CreateLeaveResult =
  * with the request and skips weekly off days and holidays. Past dates are fine,
  * because HR often records leave after it happened.
  *
- * Refuses: an unknown or former employee, an unknown or switched-off type,
+ * Refuses: dates in a month whose payroll is finalized, an unknown or former employee, an unknown or switched-off type,
  * dates outside the person's time at the company, a range longer than a year,
  * a range of only days off, and dates that overlap a pending or approved
  * request for the same person.
@@ -58,6 +59,9 @@ export async function createLeaveRequest(db: Db, input: LeaveRequestInput, actor
   if (span > MAX_LEAVE_RANGE_DAYS) return { ok: false, error: `One request can cover at most ${MAX_LEAVE_RANGE_DAYS} days. Split it into two.` };
 
   return db.transaction(async (tx): Promise<CreateLeaveResult> => {
+    const locked = await finalizedMonthsBetween(tx, fromDate, toDate, { lock: true });
+    if (locked.size > 0) return { ok: false, error: lockedMessage(locked, "leave in those dates") };
+
     const [person] = await tx.select().from(employees).where(eq(employees.id, employeeId));
     if (!person) return { ok: false, error: "That employee no longer exists." };
     if (!person.active) return { ok: false, error: "That employee is no longer active." };

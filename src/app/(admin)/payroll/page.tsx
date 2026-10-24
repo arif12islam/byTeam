@@ -9,9 +9,9 @@ import { ADJUSTMENT_LABELS } from "@/lib/payroll/adjustments";
 import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
 import { formatTaka } from "@/lib/salary/money";
 import { requireRole } from "@/lib/session";
-import { formatMonth, isValidMonth, shiftMonth, toOfficeMonth } from "@/lib/time";
+import { formatMonth, formatOfficeDate, isValidMonth, shiftMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
 
-import { AdjustmentForm, CreateRunForm, RecomputeForm, RemoveAdjustmentForm } from "./run-forms";
+import { AdjustmentForm, CreateRunForm, FinalizeForm, RecomputeForm, RemoveAdjustmentForm } from "./run-forms";
 
 export const metadata: Metadata = { title: "Payroll" };
 
@@ -35,7 +35,7 @@ const cell = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
 const head = "px-3 py-2 text-right text-xs font-medium text-muted-foreground whitespace-nowrap";
 
 async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payroll">["searchParams"] }) {
-  await requireRole("owner", "hr");
+  const user = await requireRole("owner", "hr");
 
   const thisMonth = toOfficeMonth(new Date());
   const { month: requested } = await searchParams;
@@ -79,7 +79,13 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
             <p className="text-sm">
               <span className="font-semibold">{locked ? "Finalized" : "Draft"}</span>
               <span className="text-muted-foreground">
-                {locked ? ` · version ${sheet.run.version}` : " · not final until the owner finalizes it"}
+                {locked
+                  ? ` · version ${sheet.run.version}${
+                      sheet.run.finalizedAt
+                        ? ` · ${formatOfficeDate(toOfficeDate(sheet.run.finalizedAt))}${sheet.run.finalizedByName ? ` by ${sheet.run.finalizedByName}` : ""}`
+                        : ""
+                    }`
+                  : " · not final until the owner finalizes it"}
               </span>
             </p>
             {locked ? null : <RecomputeForm runId={sheet.run.id} />}
@@ -191,6 +197,28 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                   ))}
                 </details>
               ))}
+            </section>
+          ) : null}
+
+          {locked ? (
+            <p role="status" className="rounded-md border border-input bg-card p-3 text-sm">
+              Attendance, leave, bonuses and advances for {formatMonth(month)} are locked.
+            </p>
+          ) : sheet.rows.length > 0 ? (
+            <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+              <h2 className="text-base font-semibold">Finalize payroll</h2>
+              {user.role === "owner" ? (
+                <>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Check the sheet and the breakdowns first. Finalizing recalculates once more, keeps a copy of the pay rules, and locks the month.
+                  </p>
+                  <div className="mt-5">
+                    <FinalizeForm runId={sheet.run.id} label={formatMonth(month)} />
+                  </div>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">Only the owner can finalize a month. Ask them to review this sheet.</p>
+              )}
             </section>
           ) : null}
 

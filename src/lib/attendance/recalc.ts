@@ -5,6 +5,7 @@ import { attendanceAdjustments, attendanceDays, companySettings, employees, holi
 import { eachDate, nextDate, officeDateTimeToInstant } from "@/lib/time";
 
 import { leaveWorkingDates, splitUnpaid } from "@/lib/leave/days";
+import { finalizedMonthsBetween, isLockedDate } from "@/lib/payroll/lock";
 
 import { computeDay, type DayResult } from "./compute-day";
 import { effectiveOverrides, type AdjustmentRow } from "./overrides";
@@ -194,15 +195,23 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
  * join date or after the exit date) has its row removed. It never writes
  * anything but attendance_days.
  *
- * Approved leave joins the inputs in M4, and M5 makes this skip months whose
- * payroll is finalized.
+ * Days in a month whose payroll is finalized are skipped: they stay as they were.
  */
-export async function recalc(db: Db, scope: RecalcScope): Promise<RecalcSummary> {
+export async function recalc(db: Pick<Db, "transaction">, scope: RecalcScope): Promise<RecalcSummary> {
   if (eachDate(scope.from, scope.to).length === 0) return { employees: 0, days: 0, removed: 0 };
 
   return db.transaction(async (tx) => {
-    const { people, toSave, toRemove } = await computeDays(tx, scope);
+    // Days in a month with finalized payroll are left exactly as they were.
+    const locked = await finalizedMonthsBetween(tx, scope.from, scope.to, { lock: true });
+    const computed = await computeDays(tx, scope);
+    const { people } = computed;
     if (people.length === 0) return { employees: 0, days: 0, removed: 0 };
+    const toSave = computed.toSave.filter((row) => !isLockedDate(row.date, locked));
+    const toRemove = new Map<string, string[]>();
+    for (const [employeeId, dates] of computed.toRemove) {
+      const open = dates.filter((date) => !isLockedDate(date, locked));
+      if (open.length > 0) toRemove.set(employeeId, open);
+    }
 
     let removed = 0;
     for (const [employeeId, removeDates] of toRemove) {

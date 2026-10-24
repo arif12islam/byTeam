@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Field, FormMessage, type FormState } from "@/components/field";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { fieldValue } from "@/lib/form";
 
-import { addAdjustmentAction, createRunAction, recomputeRunAction, removeAdjustmentAction } from "./actions";
+import { addAdjustmentAction, createRunAction, finalizeRunAction, recomputeRunAction, removeAdjustmentAction } from "./actions";
 
 export function CreateRunForm({ month, label }: { month: string; label: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createRunAction, {});
@@ -98,6 +98,38 @@ export function RemoveAdjustmentForm({ id }: { id: string }) {
       <Button type="submit" variant="outline" size="sm" disabled={pending}>
         {pending ? "Removing" : "Remove"}
       </Button>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/** Two steps, so a month is never locked by one stray tap. */
+export function FinalizeForm({ runId, label }: { runId: string; label: string }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(finalizeRunAction, {});
+  const [confirming, setConfirming] = useState(false);
+
+  return (
+    <form action={action} className="space-y-3">
+      <input type="hidden" name="runId" value={runId} />
+      {confirming ? (
+        <>
+          <p className="text-sm">
+            Finalize payroll for {label}? Attendance, leave, bonuses and advances for the month will be locked until you unlock it.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={pending}>
+              {pending ? "Finalizing" : `Finalize ${label}`}
+            </Button>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setConfirming(false)}>
+              Not yet
+            </Button>
+          </div>
+        </>
+      ) : (
+        <Button type="button" onClick={() => setConfirming(true)}>
+          Finalize payroll
+        </Button>
+      )}
       <FormMessage state={state} />
     </form>
   );

@@ -1,7 +1,7 @@
 import { asc, count, desc, eq, sql } from "drizzle-orm";
 
 import type { getDb } from "@/db";
-import { employees, payrollAdjustments, payrollItems, payrollRuns, type PayrollRunStatus } from "@/db/schema";
+import { employees, payrollAdjustments, payrollItems, payrollRuns, users, type PayrollRunStatus } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { recalc } from "@/lib/attendance/recalc";
 import { formatMonth, isValidMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
@@ -82,6 +82,51 @@ export async function createDraftRun(db: Db, month: string, actorId: string, opt
   return { ok: true, runId: run.id };
 }
 
+type Tx = Pick<Db, "select" | "insert" | "update" | "delete" | "transaction">;
+
+/**
+ * Brings a month's attendance up to date, then works out its items from the
+ * stored inputs. Writes only attendance (derived data); the caller saves the
+ * items. Run inside the transaction that holds the run's row lock.
+ */
+async function computeRunItems(tx: Tx, month: string, today: string) {
+  const { first, last } = monthBounds(month);
+  const to = last < today ? last : today;
+  if (to >= first) {
+    const ids = (await loadEmployedIn(tx, month)).map((p) => p.id);
+    if (ids.length > 0) await recalc(tx, { employeeIds: ids, from: first, to });
+  }
+  const inputs = await loadPayrollInputs(tx, month);
+  if (inputs.ruleSet === null) return null;
+  return { inputs, ...buildPayrollItems(inputs) };
+}
+
+type Computed = NonNullable<Awaited<ReturnType<typeof computeRunItems>>>;
+
+async function replaceItems(tx: Tx, runId: string, items: Computed["items"]) {
+  await tx.delete(payrollItems).where(eq(payrollItems.runId, runId));
+  if (items.length === 0) return;
+  await tx.insert(payrollItems).values(
+    items.map(({ employee, item }) => ({
+      runId,
+      employeeId: employee.id,
+      payableDays: item.payableDays,
+      absentDays: item.absentDays,
+      lateCount: item.lateCount,
+      unpaidLeaveDays: item.unpaidLeaveDays,
+      gross: item.gross,
+      deductions: item.deductions,
+      additions: item.additions,
+      net: item.net,
+      breakdown: item.breakdown,
+    })),
+  );
+}
+
+const noRules = (month: string) => `No pay rules apply to ${formatMonth(month)}. Add rules on the Pay rules screen first.`;
+const gone = { ok: false as const, error: "That payroll run no longer exists. Reload the page." };
+const isFinalized = { ok: false as const, error: "This month is finalized. Unlock it to change it." };
+
 /**
  * Rebuilds a draft run's items from the stored inputs: attendance is recalculated
  * for the month first, so the sheet is never behind the day grid. Bonuses and
@@ -93,60 +138,86 @@ export async function recomputeRun(
   actorId: string,
   options: { today?: string } = {},
 ): Promise<RunResult<{ employees: number; skipped: number }>> {
-  const [run] = await db.select().from(payrollRuns).where(eq(payrollRuns.id, runId));
-  if (!run) return { ok: false, error: "That payroll run no longer exists. Reload the page." };
-  if (run.status === "finalized") return { ok: false, error: "This month is finalized. Unlock it to change it." };
-
-  const month = run.month.slice(0, 7);
-  const { first, last } = monthBounds(month);
   const today = options.today ?? toOfficeDate(new Date());
-
-  // Attendance first, so any change since the last look is in the sheet.
-  const to = last < today ? last : today;
-  if (to >= first) {
-    const ids = (await loadEmployedIn(db, month)).map((p) => p.id);
-    if (ids.length > 0) await recalc(db, { employeeIds: ids, from: first, to });
-  }
 
   return db.transaction(async (tx) => {
     // Two people recomputing at once, or one finalizing meanwhile, line up behind this lock.
-    const [locked] = await tx.select().from(payrollRuns).where(eq(payrollRuns.id, runId)).for("update");
-    if (!locked) return { ok: false as const, error: "That payroll run no longer exists. Reload the page." };
-    if (locked.status === "finalized") return { ok: false as const, error: "This month is finalized. Unlock it to change it." };
+    const [run] = await tx.select().from(payrollRuns).where(eq(payrollRuns.id, runId)).for("update");
+    if (!run) return gone;
+    if (run.status === "finalized") return isFinalized;
 
-    const inputs = await loadPayrollInputs(tx, month);
-    if (inputs.ruleSet === null) {
-      return { ok: false as const, error: `No pay rules apply to ${formatMonth(month)}. Add rules on the Pay rules screen first.` };
-    }
-    const { items, skipped } = buildPayrollItems(inputs);
+    const month = run.month.slice(0, 7);
+    const computed = await computeRunItems(tx, month, today);
+    if (computed === null) return { ok: false as const, error: noRules(month) };
 
-    await tx.delete(payrollItems).where(eq(payrollItems.runId, runId));
-    if (items.length > 0) {
-      await tx.insert(payrollItems).values(
-        items.map(({ employee, item }) => ({
-          runId,
-          employeeId: employee.id,
-          payableDays: item.payableDays,
-          absentDays: item.absentDays,
-          lateCount: item.lateCount,
-          unpaidLeaveDays: item.unpaidLeaveDays,
-          gross: item.gross,
-          deductions: item.deductions,
-          additions: item.additions,
-          net: item.net,
-          breakdown: item.breakdown,
-        })),
-      );
-    }
+    await replaceItems(tx, runId, computed.items);
     await tx.update(payrollRuns).set({ updatedAt: new Date() }).where(eq(payrollRuns.id, runId));
     await audit(tx, {
       actorId,
       action: "payroll_run.recompute",
       entity: "payroll_run",
       entityId: runId,
-      after: { month, employees: items.length, skipped: skipped.length, net: sumMoney(items.map((i) => i.item.net)) },
+      after: { month, employees: computed.items.length, skipped: computed.skipped.length, net: sumMoney(computed.items.map((i) => i.item.net)) },
     });
-    return { ok: true as const, employees: items.length, skipped: skipped.length };
+    return { ok: true as const, employees: computed.items.length, skipped: computed.skipped.length };
+  });
+}
+
+/**
+ * Finalizes a draft run (the owner's decision). In one transaction it refreshes
+ * attendance and the items one last time, copies the rule set and calendar into
+ * the run as a snapshot, and marks the run finalized. From then on the month's
+ * attendance, leave, bonuses and advances cannot change until it is unlocked.
+ * Refused when there is nothing to pay.
+ */
+export async function finalizeRun(
+  db: Db,
+  runId: string,
+  actorId: string,
+  options: { today?: string } = {},
+): Promise<RunResult<{ employees: number; net: string }>> {
+  const today = options.today ?? toOfficeDate(new Date());
+
+  return db.transaction(async (tx) => {
+    const [run] = await tx.select().from(payrollRuns).where(eq(payrollRuns.id, runId)).for("update");
+    if (!run) return gone;
+    if (run.status === "finalized") return { ok: false as const, error: "This month is already finalized." };
+
+    const month = run.month.slice(0, 7);
+    const computed = await computeRunItems(tx, month, today);
+    if (computed === null) return { ok: false as const, error: noRules(month) };
+    if (computed.items.length === 0) {
+      return { ok: false as const, error: `There is nothing to pay for ${formatMonth(month)}. Add salaries to the people who worked, then recompute.` };
+    }
+
+    await replaceItems(tx, runId, computed.items);
+    const net = sumMoney(computed.items.map((i) => i.item.net));
+    const now = new Date();
+    const snapshot = {
+      month,
+      version: run.version,
+      ruleSet: computed.inputs.ruleSet,
+      weeklyOffDays: computed.inputs.weeklyOffDays,
+      workingDays: computed.inputs.workingDays,
+      employees: computed.items.length,
+      notPaid: computed.skipped.map((s) => ({ employeeId: s.employee.id, empCode: s.employee.empCode, name: s.employee.name, reason: s.reason })),
+      net,
+      finalizedAt: now.toISOString(),
+    };
+    const [after] = await tx
+      .update(payrollRuns)
+      .set({ status: "finalized", ruleSetSnapshot: snapshot, finalizedBy: actorId, finalizedAt: now, updatedAt: now })
+      .where(eq(payrollRuns.id, runId))
+      .returning();
+    await audit(tx, {
+      actorId,
+      action: "payroll_run.finalize",
+      entity: "payroll_run",
+      entityId: runId,
+      before: run,
+      after: { month, version: after.version, employees: computed.items.length, net },
+    });
+    return { ok: true as const, employees: computed.items.length, net };
   });
 }
 
@@ -180,7 +251,7 @@ export type AdjustmentRow = {
 };
 
 export type Sheet = {
-  run: { id: string; month: string; status: PayrollRunStatus; version: number; updatedAt: Date; finalizedAt: Date | null };
+  run: { id: string; month: string; status: PayrollRunStatus; version: number; updatedAt: Date; finalizedAt: Date | null; finalizedByName: string | null };
   rows: SheetRow[];
   totals: { gross: string; deductions: string; additions: string; net: string };
   /** People employed in the month who have no salary structure, so are not in the sheet. Drafts only. */
@@ -193,8 +264,13 @@ export type Sheet = {
 /** The run for a month with its items, or null when there is none. */
 export async function loadPayrollSheet(db: Db, month: string): Promise<Sheet | null> {
   const { first } = monthBounds(month);
-  const [run] = await db.select().from(payrollRuns).where(eq(payrollRuns.month, first));
-  if (!run) return null;
+  const [found] = await db
+    .select({ run: payrollRuns, finalizedByName: users.name })
+    .from(payrollRuns)
+    .leftJoin(users, eq(users.id, payrollRuns.finalizedBy))
+    .where(eq(payrollRuns.month, first));
+  if (!found) return null;
+  const { run, finalizedByName } = found;
 
   const itemRows = await db
     .select({ item: payrollItems, employee: employees })
@@ -254,7 +330,7 @@ export async function loadPayrollSheet(db: Db, month: string): Promise<Sheet | n
   }
 
   return {
-    run: { id: run.id, month, status: run.status, version: run.version, updatedAt: run.updatedAt, finalizedAt: run.finalizedAt },
+    run: { id: run.id, month, status: run.status, version: run.version, updatedAt: run.updatedAt, finalizedAt: run.finalizedAt, finalizedByName },
     rows,
     totals: {
       gross: sumMoney(rows.map((r) => r.gross)),
