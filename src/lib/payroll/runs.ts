@@ -215,8 +215,8 @@ export async function finalizeRun(
       action: "payroll_run.finalize",
       entity: "payroll_run",
       entityId: runId,
-      before: run,
-      after: { month, version: after.version, employees: computed.items.length, net },
+      before: { month, status: run.status, version: run.version },
+      after: { month, status: after.status, version: after.version, employees: computed.items.length, net },
     });
     return { ok: true as const, employees: computed.items.length, net };
   });
