@@ -12,7 +12,7 @@ export function csvField(value: string | number | null): string {
 const HEADER = ["Code", "Name", "Department", "Days present", "Days late", "Days absent", "Days on leave", "Minutes late", "Missing leaving punch", "Net pay"];
 
 /**
- * The month as a CSV, one line per employee. `netByEmployee` holds each
+ * The period as a CSV, one line per employee. `netByEmployee` holds each
  * person's net pay as text when a payroll run exists for the month.
  */
 export function buildReportCsv(grid: MonthGrid, netByEmployee: ReadonlyMap<string, string> = new Map()): string {

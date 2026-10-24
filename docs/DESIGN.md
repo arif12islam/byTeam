@@ -218,6 +218,10 @@ Eight screens cover the MVP. HR runs the daily work; only the Owner changes rule
 | Reports | The month in numbers: attendance rate, punctuality, day-by-day chart, teams, most late and absent, payroll cost, six-month net pay trend, CSV download | Yes | Yes |
 | Audit log | Every manual change, approval, rule change, finalize and unlock | View | View |
 
+### Date ranges
+
+Attendance and Reports work over a period, not a month: `?from=YYYY-MM-DD&to=YYYY-MM-DD` (the old `?month=YYYY-MM` still works, and no parameter means this month). `src/lib/period.ts` reads it: dates the wrong way round are swapped, anything over 366 days is cut short with a notice, and a nonsense value falls back to this month. The control offers quick choices (this month, last month, last 3 months, last 6 months, this year, last year) and custom dates, with arrows that step by the period's own length. Days after today have no records, so a period reaching into the future simply stops at today. Payroll is worked out for whole months only, so the payroll figures in a report cover the whole months inside the period and say so when some months have no run yet.
+
 ### Reports figures
 
 Worked out from the monthly attendance grid by pure functions in `src/lib/reports/`, nothing is stored.

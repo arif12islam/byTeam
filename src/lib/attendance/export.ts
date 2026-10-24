@@ -1,10 +1,11 @@
 import ExcelJS from "exceljs";
 
-import { formatMonth } from "@/lib/time";
+import { periodLabel } from "@/lib/period";
 
 import { cellText } from "./labels";
 import type { MonthGrid } from "./month";
 
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const TOTAL_HEADINGS = ["Present", "Late", "Absent", "Leave", "Late minutes", "No leaving punch", "Worked on days off"];
 
 /** Letters for the first column numbers: 1 is A, 27 is AA. */
@@ -15,16 +16,18 @@ function columnLetter(n: number): string {
 }
 
 /**
- * The monthly grid as an .xlsx file: one row per employee, one column per day
+ * The grid as an .xlsx file (a month or any period): one row per employee, one column per day
  * with the same codes as the screen, then the totals. Names go in as plain
  * text, never as formulas.
  */
 export async function buildGridWorkbook(grid: MonthGrid): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "byTeam";
-  const sheet = workbook.addWorksheet(formatMonth(grid.month), { views: [{ state: "frozen", xSplit: 3, ySplit: 1 }] });
+  const sheet = workbook.addWorksheet(periodLabel({ from: grid.from, to: grid.to }), { views: [{ state: "frozen", xSplit: 3, ySplit: 1 }] });
 
-  const dayHeadings = grid.dates.map((date) => Number(date.slice(8)));
+  // One month needs only the day number. A longer period says which month each day is in.
+  const oneMonth = grid.from.slice(0, 7) === grid.to.slice(0, 7);
+  const dayHeadings = grid.dates.map((date) => (oneMonth ? Number(date.slice(8)) : `${Number(date.slice(8))} ${monthNames[Number(date.slice(5, 7)) - 1]}`));
   const header = sheet.addRow(["Code", "Name", "Department", ...dayHeadings, ...TOTAL_HEADINGS]);
   header.font = { bold: true };
 
@@ -53,7 +56,7 @@ export async function buildGridWorkbook(grid: MonthGrid): Promise<Buffer> {
   sheet.getColumn(3).width = 16;
   for (let i = 0; i < grid.dates.length; i++) {
     const column = sheet.getColumn(4 + i);
-    column.width = 4.5;
+    column.width = oneMonth ? 4.5 : 7;
     column.alignment = { horizontal: "center" };
   }
   for (let i = 0; i < TOTAL_HEADINGS.length; i++) {

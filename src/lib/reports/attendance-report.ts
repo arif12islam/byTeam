@@ -48,7 +48,10 @@ export type PersonFigure = {
 };
 
 export type AttendanceReport = {
+  /** The month the period starts in, YYYY-MM. */
   month: string;
+  from: string;
+  to: string;
   people: number;
   totals: {
     present: number;
@@ -186,6 +189,8 @@ export function buildAttendanceReport(grid: MonthGrid, options: { limit?: number
 
   return {
     month: grid.month,
+    from: grid.from,
+    to: grid.to,
     people: grid.rows.length,
     totals,
     attendanceRate: ratio(totals.present, totals.present + totals.absent),

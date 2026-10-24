@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { DayResult } from "@/lib/attendance/compute-day";
 import { buildGridWorkbook } from "@/lib/attendance/export";
-import { buildMonthGrid } from "@/lib/attendance/month";
+import { buildMonthGrid, buildPeriodGrid } from "@/lib/attendance/month";
 
 const day = (overrides: Partial<DayResult>): DayResult => ({
   status: "present",
@@ -70,5 +70,26 @@ describe("buildGridWorkbook", () => {
     const sheet = (await read(await buildGridWorkbook(buildMonthGrid("2026-02", [])))).worksheets[0];
     expect(sheet.getRow(1).getCell(1).value).toBe("Code");
     expect(sheet.rowCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it("writes a longer period with the month in each day heading and a sheet named for the period", async () => {
+    const period = { from: "2026-08-30", to: "2026-09-02" };
+    const multi = buildPeriodGrid(period, [
+      {
+        employee: { id: "a", empCode: "10", name: "Ana", department: null },
+        days: [
+          { date: "2026-08-31", result: day({ status: "present" }) },
+          { date: "2026-09-01", result: day({ status: "late", lateMinutes: 12 }) },
+        ],
+      },
+    ]);
+    const sheet = (await read(await buildGridWorkbook(multi))).worksheets[0];
+    expect(sheet.name).toBe("30 Aug to 2 Sep 2026");
+    const header = sheet.getRow(1).values as unknown[];
+    expect(header.slice(1, 8)).toEqual(["Code", "Name", "Department", "30 Aug", "31 Aug", "1 Sep", "2 Sep"]);
+    const row = sheet.getRow(2).values as unknown[];
+    expect(row.slice(4, 8)).toEqual(["", "P", "L", ""]);
+    expect(row[8]).toBe(2); // present, late days included
+    expect(row[9]).toBe(1); // late
   });
 });
