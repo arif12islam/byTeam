@@ -40,3 +40,32 @@ export function parseCommandResults(body: string): CommandResult[] {
   }
   return results;
 }
+
+/** The longest name most devices keep. A longer one is cut, not rejected. */
+const DEVICE_NAME_MAX = 24;
+
+/**
+ * A name made safe for the device: tabs separate fields and "=" splits key from
+ * value, so neither can appear, and control characters are dropped. Cut to what
+ * the device can hold. Falls back to the code when nothing is left.
+ */
+export function deviceUserName(name: string, fallback: string): string {
+  const clean = Array.from(name.replace(/[\t=]/g, " "))
+    .filter((ch) => ch >= " " && ch !== "\u007f")
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+  const cut = Array.from(clean).slice(0, DEVICE_NAME_MAX).join("").trim();
+  return cut === "" ? fallback : cut;
+}
+
+/**
+ * Adds or updates one person on the device. The PIN is the employee code, so a
+ * punch on the device matches the employee. Face and fingerprint enrolment is
+ * still done at the device. Privilege 0 is an ordinary user, never an admin.
+ * Field names follow the common push protocol and are confirmed on the real
+ * device in M7.
+ */
+export function buildUserUpdateCommand(user: { empCode: string; name: string }): string {
+  return `DATA UPDATE USERINFO PIN=${user.empCode}\tName=${deviceUserName(user.name, user.empCode)}\tPri=0`;
+}

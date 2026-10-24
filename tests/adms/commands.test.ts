@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCommand, MAX_ATTEMPTS, parseCommandResults, RESEND_AFTER_SECONDS } from "@/lib/adms/commands";
+import {
+  buildUserUpdateCommand,
+  deviceUserName,
+  formatCommand,
+  MAX_ATTEMPTS,
+  parseCommandResults,
+  RESEND_AFTER_SECONDS,
+} from "@/lib/adms/commands";
 
 describe("formatCommand", () => {
   it("writes C:<id>:<command>", () => {
@@ -46,5 +53,52 @@ describe("parseCommandResults", () => {
 
   it("is empty for an empty body", () => {
     expect(parseCommandResults("")).toEqual([]);
+  });
+});
+
+describe("deviceUserName", () => {
+  it("keeps an ordinary name", () => {
+    expect(deviceUserName("Rahim Uddin", "1001")).toBe("Rahim Uddin");
+  });
+
+  it("removes tabs and equals signs, which would break the command", () => {
+    expect(deviceUserName("Ra\thim=Admin", "1001")).toBe("Ra him Admin");
+  });
+
+  it("drops line breaks and control characters and tidies spaces", () => {
+    expect(deviceUserName("  Rahim\r\n\u0007  Uddin ", "1001")).toBe("Rahim Uddin");
+  });
+
+  it("cuts a long name to what the device holds without splitting a character", () => {
+    const long = "A".repeat(30);
+    expect(deviceUserName(long, "1001")).toBe("A".repeat(24));
+    const bengali = "মোহাম্মদ আব্দুর রহমান খান চৌধুরী";
+    const cut = deviceUserName(bengali, "1001");
+    expect(Array.from(cut).length).toBeLessThanOrEqual(24);
+    expect(bengali.startsWith(cut)).toBe(true);
+  });
+
+  it("falls back to the code when nothing usable is left", () => {
+    expect(deviceUserName("\t=\n", "1001")).toBe("1001");
+    expect(deviceUserName("", "1001")).toBe("1001");
+  });
+});
+
+describe("buildUserUpdateCommand", () => {
+  it("puts the employee code in as the PIN, with the name and a normal privilege", () => {
+    expect(buildUserUpdateCommand({ empCode: "1001", name: "Rahim Uddin" })).toBe(
+      "DATA UPDATE USERINFO PIN=1001\tName=Rahim Uddin\tPri=0",
+    );
+  });
+
+  it("keeps leading zeros in the code", () => {
+    expect(buildUserUpdateCommand({ empCode: "0042", name: "A" })).toContain("PIN=0042\t");
+  });
+
+  it("survives a hostile name: still one line, no extra fields", () => {
+    const text = buildUserUpdateCommand({ empCode: "1001", name: "X\tPri=14\r\nC:5:REBOOT" });
+    expect(text).not.toMatch(/[\r\n]/);
+    expect(text.split("\t")).toHaveLength(3);
+    expect(text.endsWith("\tPri=0")).toBe(true);
   });
 });

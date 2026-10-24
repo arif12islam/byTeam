@@ -8,6 +8,7 @@ import type { FormState } from "@/components/field";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { addDevice, deviceNameSchema, newDeviceSchema, renameDevice, setDeviceActive } from "@/lib/devices/devices";
 import { formError } from "@/lib/form";
+import { queueAllUsers } from "@/lib/devices/queue";
 import { requireRole } from "@/lib/session";
 
 export async function addDeviceAction(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -51,4 +52,21 @@ export async function setDeviceActiveAction(formData: FormData): Promise<void> {
 
   await setDeviceActive(getDb(), id.data, formData.get("active") === "true", user.id);
   revalidatePath("/devices");
+}
+
+export async function sendEmployeesAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const serialNo = formData.get("serialNo");
+  if (typeof serialNo !== "string" || serialNo === "") return { error: "That device no longer exists." };
+
+  const result = await queueAllUsers(getDb(), serialNo, user.id);
+  if (!result) return { error: "That device is not accepted. Accept it again first." };
+
+  revalidatePath("/devices");
+  if (result.employees === 0) return { message: "There are no active employees to send yet." };
+  if (result.queued === 0) return { message: "Everyone is already waiting to be sent." };
+  return {
+    message: `Queued ${result.queued} ${result.queued === 1 ? "employee" : "employees"}. The device picks them up the next time it checks in, within about a minute.`,
+  };
 }
