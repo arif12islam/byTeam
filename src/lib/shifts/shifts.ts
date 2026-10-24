@@ -4,16 +4,12 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { employees, shifts } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { timeToMinutes } from "@/lib/time";
+
+// Kept here too, so existing imports of timeToMinutes from the shifts module keep working.
+export { timeToMinutes };
 
 type Db = ReturnType<typeof getDb>;
-
-const TIME = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/;
-
-/** Minutes after midnight for "HH:MM" or "HH:MM:SS", or null when it is not a time of day. */
-export function timeToMinutes(value: string): number | null {
-  const match = TIME.exec(value);
-  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
-}
 
 /** "09:00:00" from the database becomes "09:00" for forms and screens. */
 export function toHm(value: string): string {

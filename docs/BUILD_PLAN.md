@@ -185,7 +185,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 ### M3: Attendance engine
 
 - [x] Schema: `attendance_days`, `attendance_adjustments`
-- [ ] `computeDay()` as a pure function: day type, first in, last out, late, early, missing out, worked on off day
+- [x] `computeDay()` as a pure function: day type, first in, last out, late, early, missing out, worked on off day
 - [ ] `recalc(employeeIds, dateRange)` that loads inputs and saves results
 - [ ] Trigger recalc on: new punch batch, adjustment, shift change
 - [ ] Nightly `/api/cron/recalc` for the previous day
