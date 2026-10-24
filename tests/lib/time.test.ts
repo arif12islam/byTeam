@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   daysInMonth,
+  eachDate,
   formatMonth,
   formatOfficeDateTime,
   formatOfficeDate,
   isValidMonth,
+  nextDate,
   isValidOfficeDate,
   officeDateTimeToInstant,
   officeMinuteOfDay,
@@ -35,6 +37,19 @@ describe("previousDate", () => {
 
   it("handles leap years", () => {
     expect(previousDate("2028-03-01")).toBe("2028-02-29");
+  });
+});
+
+describe("nextDate", () => {
+  it("crosses month and year boundaries, and handles leap years", () => {
+    expect(nextDate("2026-10-31")).toBe("2026-11-01");
+    expect(nextDate("2026-12-31")).toBe("2027-01-01");
+    expect(nextDate("2028-02-28")).toBe("2028-02-29");
+    expect(nextDate("2026-10-24")).toBe("2026-10-25");
+  });
+
+  it("undoes previousDate", () => {
+    expect(nextDate(previousDate("2026-11-01"))).toBe("2026-11-01");
   });
 });
 
@@ -166,5 +181,25 @@ describe("officeMinuteOfDay", () => {
   it("handles the day boundary in Dhaka, not UTC", () => {
     expect(officeMinuteOfDay(new Date("2026-10-23T18:30:00Z"))).toBe(30);
     expect(officeMinuteOfDay(new Date("2026-10-24T17:59:59Z"))).toBe(23 * 60 + 59);
+  });
+});
+
+describe("eachDate", () => {
+  it("lists every date including both ends", () => {
+    expect(eachDate("2026-10-30", "2026-11-02")).toEqual(["2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"]);
+    expect(eachDate("2026-10-24", "2026-10-24")).toEqual(["2026-10-24"]);
+  });
+
+  it("is empty when the range is backwards", () => {
+    expect(eachDate("2026-10-25", "2026-10-24")).toEqual([]);
+  });
+
+  it("handles month, year and leap day boundaries", () => {
+    expect(eachDate("2028-02-28", "2028-03-01")).toEqual(["2028-02-28", "2028-02-29", "2028-03-01"]);
+    expect(eachDate("2026-12-31", "2027-01-01")).toEqual(["2026-12-31", "2027-01-01"]);
+  });
+
+  it("covers a whole month", () => {
+    expect(eachDate("2026-10-01", "2026-10-31")).toHaveLength(31);
   });
 });
