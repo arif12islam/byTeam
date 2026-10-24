@@ -179,12 +179,14 @@ describe.skipIf(!testDatabaseUrl)("unmatched punch codes", () => {
     await addTestDevice(db, sn);
     const code = uniqueCode();
     const at = (iso: string) => ({ deviceSn: sn, empCode: code, punchedAt: new Date(iso), statusCode: 0, verifyCode: 1, rawLine: "x" });
-    await savePunches(db, [at("2026-10-24T03:00:00Z"), at("2026-10-24T12:00:00Z"), at("2026-10-25T03:00:00Z")]);
+    // Far in the future so these are the newest punches: the list shows only the 50 most recent codes, and other
+    // tests leave unknown codes behind.
+    await savePunches(db, [at("2200-10-24T03:00:00Z"), at("2200-10-24T12:00:00Z"), at("2200-10-25T03:00:00Z")]);
 
     const listed = (await listUnmatchedCodes(db)).find((u) => u.empCode === code);
     expect(listed).toMatchObject({ punches: 3, devices: [sn] });
-    expect(listed?.firstPunchAt.toISOString()).toBe("2026-10-24T03:00:00.000Z");
-    expect(listed?.lastPunchAt.toISOString()).toBe("2026-10-25T03:00:00.000Z");
+    expect(listed?.firstPunchAt.toISOString()).toBe("2200-10-24T03:00:00.000Z");
+    expect(listed?.lastPunchAt.toISOString()).toBe("2200-10-25T03:00:00.000Z");
 
     const [shift] = await db.insert(shifts).values({ name: `Test ${code}`, startTime: "09:00", endTime: "18:00" }).returning();
     await db.insert(employees).values({ empCode: code, name: "Now Known", joinDate: "2026-10-01", shiftId: shift.id });
