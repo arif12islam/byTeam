@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Avatar } from "@/components/ui/avatar";
 import { toneClasses } from "@/components/ui/tone";
-import { statusTone } from "@/components/status";
+import { statusFill } from "@/components/status";
 import { statusLabel } from "@/lib/attendance/labels";
 import type { GridCell, MonthGrid } from "@/lib/attendance/month";
 import { formatMonth, weekdayOf } from "@/lib/time";
@@ -74,7 +74,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                 ["Leave", row.totals.leave, "info"],
               ] as const
             ).map(([label, value, tone]) => (
-              <div key={label} className={cn("rounded-xl px-1 py-1.5", toneClasses[tone].soft)}>
+              <div key={label} className={cn("rounded-xl px-1 py-1.5 shadow-sm", toneClasses[tone].grad)}>
                 <dd className="text-base font-semibold leading-none tabular-nums">{value}</dd>
                 <dt className="mt-1 text-[11px]">{label}</dt>
               </div>
@@ -107,7 +107,6 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                       </span>
                     );
                   }
-                  const tone = statusTone[cell.status];
                   return (
                     <Link
                       key={date}
@@ -115,10 +114,10 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                       aria-label={describeCell(date, cell)}
                       title={describeCell(date, cell)}
                       className={cn(
-                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums",
-                        toneClasses[tone].soft,
-                        (cell.status === "late" || cell.status === "absent") && "font-semibold",
-                        cell.missingOut && "ring-1 ring-warning",
+                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums shadow-sm",
+                        statusFill[cell.status],
+                        "font-medium",
+                        cell.missingOut && "ring-2 ring-amber-300 ring-offset-1 ring-offset-card",
                       )}
                     >
                       {day}

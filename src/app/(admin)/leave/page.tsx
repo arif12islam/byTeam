@@ -31,7 +31,7 @@ export default function LeavePage() {
         title="Leave"
         description="Record leave, approve it, and track what each employee has left."
         actions={
-          <Link href="/leave/types" className={buttonVariants({ variant: "outline" })}>
+          <Link href="/leave/types" className={buttonVariants({ variant: "onColor" })}>
             Leave types
           </Link>
         }
@@ -66,7 +66,7 @@ function BalanceRow({ name, balance }: { name: string; balance: Balance | undefi
       </div>
       {limited ? (
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-secondary" role="meter" aria-label={`${name} used`} aria-valuemin={0} aria-valuemax={balance.quota!} aria-valuenow={Math.min(balance.used, balance.quota!)}>
-          <div className={cn("h-full rounded-full", balance.remaining! < 0 ? "bg-danger" : "bg-acc-violet")} style={{ width: `${share * 100}%` }} />
+          <div className={cn("h-full rounded-full", balance.remaining! < 0 ? "bg-danger" : "bg-violet-500")} style={{ width: `${share * 100}%` }} />
         </div>
       ) : null}
       <p className="mt-1 text-xs text-muted-foreground">

@@ -24,7 +24,7 @@ export default function EmployeesPage(props: PageProps<"/employees">) {
         title="Employees"
         description="Staff records, shifts and salaries."
         actions={
-          <Link href="/employees/new" className={buttonVariants()}>
+          <Link href="/employees/new" className={buttonVariants({ variant: "onColor" })}>
             Add employee
           </Link>
         }

@@ -19,11 +19,11 @@ export function ArrivalsChart({ buckets }: { buckets: readonly ArrivalBucket[] }
           return (
             <div key={bucket.label} className="flex h-full min-w-0 max-w-12 flex-1 flex-col justify-end" title={`${bucket.label}: ${bucket.count}`}>
               {bucket.late > 0 ? (
-                <div className="w-full rounded-t-md bg-warning" style={{ height: `${(bucket.late / max) * 100}%` }} />
+                <div className="w-full rounded-t-md bg-amber-400" style={{ height: `${(bucket.late / max) * 100}%` }} />
               ) : null}
               {onTime > 0 ? (
                 <div
-                  className={`w-full bg-success ${bucket.late > 0 ? "" : "rounded-t-md"}`}
+                  className={`w-full bg-emerald-500 ${bucket.late > 0 ? "" : "rounded-t-md"}`}
                   style={{ height: `${(onTime / max) * 100}%` }}
                 />
               ) : null}
@@ -41,11 +41,11 @@ export function ArrivalsChart({ buckets }: { buckets: readonly ArrivalBucket[] }
       </div>
       <figcaption className="mt-2 flex gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-success" aria-hidden />
+          <span className="size-2.5 rounded-sm bg-emerald-500" aria-hidden />
           On time
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-warning" aria-hidden />
+          <span className="size-2.5 rounded-sm bg-amber-400" aria-hidden />
           Late
         </span>
       </figcaption>

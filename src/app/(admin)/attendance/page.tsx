@@ -8,8 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
-import { toneClasses } from "@/components/ui/tone";
-import { statusTone } from "@/components/status";
+import { statusFill } from "@/components/status";
 import { getDb } from "@/db";
 import type { AttendanceStatus } from "@/db/schema/attendance";
 import { cellText, statusLabel } from "@/lib/attendance/labels";
@@ -40,9 +39,9 @@ export default function AttendancePage(props: PageProps<"/attendance">) {
 }
 
 function cellStyle(status: AttendanceStatus): string {
+  // Present is the usual day, so it stays plain and the days that need a look are the ones in color.
   if (status === "present") return "text-foreground";
-  const bold = status === "late" || status === "absent" ? "font-semibold " : "";
-  return `${bold}${toneClasses[statusTone[status]].soft}`;
+  return `font-semibold ${statusFill[status]}`;
 }
 
 function describeCell(date: string, cell: GridCell): string {

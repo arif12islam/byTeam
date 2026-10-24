@@ -38,13 +38,13 @@ export function DailyBars({ points }: { points: readonly DailyPoint[] }) {
           <div key={p.date} title={label(p)} className="flex h-full min-w-0 flex-1 flex-col justify-end">
             {p.kind === "working" ? (
               <>
-                <div className="w-full rounded-t-[3px] bg-info" style={{ height: part(p.leave) }} />
-                <div className="w-full bg-danger" style={{ height: part(p.absent) }} />
-                <div className="w-full bg-warning" style={{ height: part(p.late) }} />
-                <div className="w-full bg-success" style={{ height: part(p.onTime) }} />
+                <div className="w-full rounded-t-[3px] bg-sky-500" style={{ height: part(p.leave) }} />
+                <div className="w-full bg-rose-500" style={{ height: part(p.absent) }} />
+                <div className="w-full bg-amber-400" style={{ height: part(p.late) }} />
+                <div className="w-full bg-emerald-500" style={{ height: part(p.onTime) }} />
               </>
             ) : p.kind === "off" ? (
-              <div className="h-1.5 w-full rounded-full bg-off-soft" />
+              <div className="h-1.5 w-full rounded-full bg-slate-300/70" />
             ) : (
               <div className="h-1.5 w-full rounded-full border border-dashed border-border" />
             )}
@@ -60,11 +60,11 @@ export function DailyBars({ points }: { points: readonly DailyPoint[] }) {
       </div>
       <Legend
         items={[
-          ["bg-success", "On time"],
-          ["bg-warning", "Late"],
-          ["bg-danger", "Absent"],
-          ["bg-info", "On leave"],
-          ["bg-off-soft", "Day off"],
+          ["bg-emerald-500", "On time"],
+          ["bg-amber-400", "Late"],
+          ["bg-rose-500", "Absent"],
+          ["bg-sky-500", "On leave"],
+          ["bg-slate-200", "Day off"],
         ]}
       />
     </figure>

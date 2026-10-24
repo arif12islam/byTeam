@@ -67,8 +67,9 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 
 ## UI and copy
 
-- Bold, phone first, still uncluttered. Palette and tokens are in `src/app/globals.css`: ledger green `#1E6B52` as the accent, deep forest green `#0C3B2C` for the sidebar, phone tab bar and hero panels. Font is Instrument Sans.
-- Status colors always mean the same thing (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, slate day off or inactive. Use the `Card`, `StatTile`, `Badge`, `Avatar` and `Ring` components in `src/components/ui/` instead of one-off styling. Charts are plain SVG, no chart library.
+- Vivid, bold and phone first. The look is saturated color, never pale on white: page banners, stat tiles, hero panels, buttons, avatars and menu icons are gradients with white text (`accentClasses` in `src/components/accent.ts`, `toneClasses` in `src/components/ui/tone.ts`). The page canvas has soft indigo and emerald washes (`globals.css`). Font is Instrument Sans. Do not drop back to white cards with tiny pastel chips.
+- Each screen has its own accent color (Today green, Attendance indigo, Leave violet, Payroll orange, Reports teal, Employees pink, Shifts sky, Devices lime, Settings and Audit slate). Accent colors are decoration only.
+- Status colors always mean the same thing (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, slate day off or inactive. Pair color with an icon or a word, never color alone. Use `PageHeader`, `Card`, `StatTile`, `Badge`, `Avatar` and `Ring` instead of one-off styling. Charts are plain SVG or CSS, no chart library.
 - Design for the phone first: touch targets at least 40px, inputs 16px text on phones, a bottom tab bar under `md`, wide tables become stacked cards on narrow screens.
 - Sentence case, plain verbs, no emojis, no em dashes, no all-caps labels.
 - Buttons say what they do ("Save shift", "Approve leave"). Empty states tell the user what to do next.

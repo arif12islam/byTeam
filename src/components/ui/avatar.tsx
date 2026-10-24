@@ -1,7 +1,7 @@
 import { accentClasses, accentCycle } from "@/components/accent";
 import { cn } from "@/lib/utils";
 
-const palette = accentCycle.map((name) => accentClasses[name].soft);
+const palette = accentCycle.map((name) => accentClasses[name].solid);
 
 /** Up to two initials from a name. */
 export function initials(name: string): string {

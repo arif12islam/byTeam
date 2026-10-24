@@ -62,17 +62,17 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
         </section>
       ) : (
         <>
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest via-forest to-[#0f5a46] p-5 text-forest-foreground shadow-card sm:p-7">
-            <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-acc-orange/40 blur-3xl" />
-            <div aria-hidden className="pointer-events-none absolute -bottom-20 left-1/4 size-56 rounded-full bg-acc-lime/20 blur-3xl" />
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700 p-5 text-white shadow-card sm:p-7">
+            <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-sky-300/35 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-20 left-1/4 size-56 rounded-full bg-pink-300/30 blur-3xl" />
             <div className="relative flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
               <div>
-                <p className="flex items-center gap-2 text-sm text-forest-muted">
+                <p className="flex items-center gap-2 text-sm text-white/85">
                   Net pay for {formatMonth(month)}
                   <Badge tone={locked ? "success" : "warning"}>{locked ? "Finalized" : "Draft"}</Badge>
                 </p>
                 <p className="mt-1 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">{taka(sheet.totals.net)}</p>
-                <p className="mt-2 text-sm text-forest-foreground/80">
+                <p className="mt-2 text-sm text-white/85">
                   {locked
                     ? `Version ${sheet.run.version}${
                         sheet.run.finalizedAt
@@ -84,14 +84,14 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
               </div>
               {locked ? null : <RecomputeForm runId={sheet.run.id} />}
             </div>
-            <dl className="relative mt-5 grid grid-cols-3 gap-3 border-t border-forest-line pt-4 text-sm">
+            <dl className="relative mt-5 grid grid-cols-3 gap-3 border-t border-white/25 pt-4 text-sm">
               {[
                 ["Gross", sheet.totals.gross],
                 ["Deductions", sheet.totals.deductions],
                 ["Additions", sheet.totals.additions],
               ].map(([label, value]) => (
                 <div key={label}>
-                  <dt className="text-xs text-forest-muted">{label}</dt>
+                  <dt className="text-xs text-white/80">{label}</dt>
                   <dd className="mt-0.5 font-semibold tabular-nums">{taka(value)}</dd>
                 </div>
               ))}
