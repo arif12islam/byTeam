@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Field, FormMessage, type FormState } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { fieldValue } from "@/lib/form";
 import { WEEKDAYS } from "@/lib/settings/company";
 
 import { saveCompanyAction } from "./actions";
@@ -22,7 +23,7 @@ export function CompanyForm({ name, weeklyOffDays, timezone, currency }: Props) 
   return (
     <form action={action} className="space-y-5">
       <Field label="Company name" htmlFor="name">
-        <Input id="name" name="name" defaultValue={name} required maxLength={120} autoComplete="organization" />
+        <Input id="name" name="name" defaultValue={fieldValue(state, "name", name)} required maxLength={120} autoComplete="organization" />
       </Field>
 
       <fieldset>

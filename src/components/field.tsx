@@ -1,3 +1,5 @@
+import type { FormState } from "@/lib/form";
+
 type FieldProps = {
   label: string;
   htmlFor: string;
@@ -18,7 +20,7 @@ export function Field({ label, htmlFor, hint, children }: FieldProps) {
   );
 }
 
-export type FormState = { error?: string; message?: string };
+export type { FormState } from "@/lib/form";
 
 /** Result of a server action, shown under the form. */
 export function FormMessage({ state }: { state: FormState }) {

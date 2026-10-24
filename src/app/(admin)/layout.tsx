@@ -24,9 +24,14 @@ export default function AdminLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh">
-      <Sidebar account={account} />
+      {/* usePathname in the nav needs a boundary on routes with dynamic segments. */}
+      <Suspense fallback={<aside className="hidden w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:block" />}>
+        <Sidebar account={account} />
+      </Suspense>
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileNav account={account} />
+        <Suspense fallback={<header className="h-24 border-b border-border bg-sidebar md:hidden" />}>
+          <MobileNav account={account} />
+        </Suspense>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-10 md:py-10">
           <Suspense fallback={null}>
             <SignedIn>{children}</SignedIn>

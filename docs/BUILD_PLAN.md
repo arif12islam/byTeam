@@ -160,7 +160,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Seed first owner account via script
 - [x] Settings screen: company, weekly off days, holidays
 - [x] Shifts screen: name, start, end, grace minutes
-- [ ] Employees screen: list, create, edit, deactivate, assign shift
+- [x] Employees screen: list, create, edit, deactivate, assign shift
 - [ ] Salary structure form with effective-from month
 - [ ] `audit()` helper, used on every create and update above
 
