@@ -1,4 +1,4 @@
-import { ChevronRight, Users } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -19,12 +19,10 @@ export default function EmployeesPage(props: PageProps<"/employees">) {
   return (
     <>
       <PageHeader
-        icon={Users}
-        accent="pink"
         title="Employees"
         description="Staff records, shifts and salaries."
         actions={
-          <Link href="/employees/new" className={buttonVariants({ variant: "onColor" })}>
+          <Link href="/employees/new" className={buttonVariants()}>
             Add employee
           </Link>
         }
@@ -60,7 +58,7 @@ async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employ
 
   return (
     <div className="mt-6">
-      <nav aria-label="Employee status" className="inline-flex gap-1 rounded-2xl bg-secondary p-1">
+      <nav aria-label="Employee status" className="inline-flex gap-1 rounded-xl bg-secondary p-1">
         {tab("active", "Active", counts.active)}
         {tab("inactive", "Inactive", counts.inactive)}
       </nav>
@@ -82,7 +80,7 @@ async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employ
             <li key={row.id}>
               <Link
                 href={`/employees/${row.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-card transition-colors hover:border-primary/40"
+                className="flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 shadow-card transition-colors hover:border-primary/40"
               >
                 <Avatar name={row.name} className="size-11" />
                 <div className="min-w-0 flex-1">

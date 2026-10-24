@@ -4,52 +4,46 @@
  * danger is absent or blocked, info is leave, off is a day off or inactive.
  *
  * `text` and `soft` follow the light and dark theme and are safe to put words
- * on. `solid`, `stroke` and `grad` are saturated fills for dots, bars, rings
- * and big tiles, and look the same in both themes.
+ * on. `solid` and `stroke` are saturated fills for dots, bars and rings, and look
+ * the same in both themes.
  */
 export type Tone = "success" | "warning" | "danger" | "info" | "off" | "neutral";
 
-export const toneClasses: Record<Tone, { text: string; soft: string; solid: string; stroke: string; grad: string }> = {
+export const toneClasses: Record<Tone, { text: string; soft: string; solid: string; stroke: string}> = {
   success: {
     text: "text-success",
     soft: "bg-success-soft text-success",
-    solid: "bg-emerald-500",
-    stroke: "stroke-emerald-500",
-    grad: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white",
+    solid: "bg-green-500",
+    stroke: "stroke-green-500",
   },
   warning: {
     text: "text-warning",
     soft: "bg-warning-soft text-warning",
     solid: "bg-amber-400",
     stroke: "stroke-amber-400",
-    grad: "bg-gradient-to-br from-amber-300 to-orange-500 text-amber-950",
   },
   danger: {
     text: "text-danger",
     soft: "bg-danger-soft text-danger",
-    solid: "bg-rose-500",
-    stroke: "stroke-rose-500",
-    grad: "bg-gradient-to-br from-rose-500 to-red-600 text-white",
+    solid: "bg-red-500",
+    stroke: "stroke-red-500",
   },
   info: {
     text: "text-info",
     soft: "bg-info-soft text-info",
-    solid: "bg-sky-500",
-    stroke: "stroke-sky-500",
-    grad: "bg-gradient-to-br from-sky-500 to-blue-600 text-white",
+    solid: "bg-blue-500",
+    stroke: "stroke-blue-500",
   },
   off: {
     text: "text-off",
     soft: "bg-off-soft text-off",
-    solid: "bg-slate-400",
-    stroke: "stroke-slate-400",
-    grad: "bg-gradient-to-br from-slate-500 to-indigo-700 text-white",
+    solid: "bg-zinc-300",
+    stroke: "stroke-zinc-300",
   },
   neutral: {
     text: "text-foreground",
     soft: "bg-secondary text-secondary-foreground",
     solid: "bg-foreground",
     stroke: "stroke-foreground",
-    grad: "bg-gradient-to-br from-slate-700 to-slate-900 text-white",
   },
 };

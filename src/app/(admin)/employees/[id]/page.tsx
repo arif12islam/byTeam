@@ -45,7 +45,7 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
       />
 
       <div className="mt-6 grid max-w-3xl gap-6">
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">Details</h2>
           <div className="mt-5">
             <EmployeeForm employee={employee} shifts={shifts} />
@@ -56,7 +56,7 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
           <SalarySection employeeId={employee.id} />
         </Suspense>
 
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">{employee.active ? "Deactivate" : "Reactivate"}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {employee.active

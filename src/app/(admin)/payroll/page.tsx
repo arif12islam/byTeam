@@ -1,4 +1,4 @@
-import { TriangleAlert, Wallet } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: "Payroll" };
 export default function PayrollPage(props: PageProps<"/payroll">) {
   return (
     <>
-      <PageHeader icon={Wallet} accent="orange" title="Payroll" description="Run the month's salaries from attendance and leave, then review the sheet." />
+      <PageHeader title="Payroll" description="Run the month's salaries from attendance and leave, then review the sheet." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading payroll</p>}>
         <PayrollContent searchParams={props.searchParams} />
       </Suspense>
@@ -50,7 +50,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
       <MonthNav basePath="/payroll" month={month} thisMonth={thisMonth} />
 
       {sheet === null ? (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">No payroll run for {formatMonth(month)} yet</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             A draft works out everyone&apos;s pay from attendance, leave and the pay rules. You can review it, add bonuses and advances and
@@ -62,17 +62,15 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
         </section>
       ) : (
         <>
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700 p-5 text-white shadow-card sm:p-7">
-            <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-sky-300/35 blur-3xl" />
-            <div aria-hidden className="pointer-events-none absolute -bottom-20 left-1/4 size-56 rounded-full bg-pink-300/30 blur-3xl" />
-            <div className="relative flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+          <section className="rounded-xl border border-border bg-card p-5 shadow-card sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
               <div>
-                <p className="flex items-center gap-2 text-sm text-white/85">
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   Net pay for {formatMonth(month)}
                   <Badge tone={locked ? "success" : "warning"}>{locked ? "Finalized" : "Draft"}</Badge>
                 </p>
-                <p className="mt-1 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">{taka(sheet.totals.net)}</p>
-                <p className="mt-2 text-sm text-white/85">
+                <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl">{taka(sheet.totals.net)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {locked
                     ? `Version ${sheet.run.version}${
                         sheet.run.finalizedAt
@@ -84,14 +82,14 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
               </div>
               {locked ? null : <RecomputeForm runId={sheet.run.id} />}
             </div>
-            <dl className="relative mt-5 grid grid-cols-3 gap-3 border-t border-white/25 pt-4 text-sm">
+            <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-border pt-4 text-sm">
               {[
                 ["Gross", sheet.totals.gross],
                 ["Deductions", sheet.totals.deductions],
                 ["Additions", sheet.totals.additions],
               ].map(([label, value]) => (
                 <div key={label}>
-                  <dt className="text-xs text-white/80">{label}</dt>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
                   <dd className="mt-0.5 font-semibold tabular-nums">{taka(value)}</dd>
                 </div>
               ))}
@@ -127,7 +125,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
             <>
               <section aria-label="Salary sheet" className="grid gap-3 md:hidden">
                 {sheet.rows.map((row) => (
-                  <div key={row.employeeId} className="rounded-2xl border border-border bg-card p-4 shadow-card">
+                  <div key={row.employeeId} className="rounded-xl border border-border bg-card p-4 shadow-card">
                     <div className="flex items-center gap-3">
                       <Avatar name={row.name} />
                       <div className="min-w-0 flex-1">
@@ -151,7 +149,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                   </div>
                 ))}
               </section>
-              <section aria-label="Salary sheet" className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-card md:block">
+              <section aria-label="Salary sheet" className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card md:block">
                 <table className="w-full min-w-[44rem] text-sm">
                   <thead>
                     <tr className="border-b border-border">
@@ -205,10 +203,10 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
             <section className="grid gap-2">
               <h2 className="text-base font-semibold">How each net pay was worked out</h2>
               {sheet.rows.map((row) => (
-                <details key={row.employeeId} className="rounded-2xl border border-border bg-card px-4 py-3 shadow-card">
+                <details key={row.employeeId} className="rounded-xl border border-border bg-card px-4 py-3 shadow-card">
                   <summary className="cursor-pointer text-sm font-medium">
                     {row.name} <span className="font-normal text-muted-foreground">· net {taka(row.net)}</span>
-                    {row.warnings.length > 0 ? <span className="ml-2 text-destructive">Check this</span> : null}
+                    {row.warnings.length > 0 ? <Badge tone="warning" className="ml-2">Check this</Badge> : null}
                   </summary>
                   <ul className="mt-3 space-y-1 text-sm">
                     {row.lines.map((line) => (
@@ -244,7 +242,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
           ) : null}
 
           {locked ? (
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+            <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
               <p role="status" className="text-sm">
                 Attendance, leave, bonuses and advances for {formatMonth(month)} are locked.
               </p>
@@ -269,7 +267,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
               )}
             </section>
           ) : sheet.rows.length > 0 ? (
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+            <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
               <h2 className="text-base font-semibold">Finalize payroll</h2>
               {user.role === "owner" ? (
                 <>
@@ -286,7 +284,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
             </section>
           ) : null}
 
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
             <h2 className="text-base font-semibold">Bonuses and advances</h2>
             {locked ? (
               <p className="mt-1 text-sm text-muted-foreground">This month is finalized, so amounts cannot be changed.</p>
@@ -322,7 +320,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
       )}
 
       {runs.length > 0 ? (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">All payroll runs</h2>
           <ul className="mt-3 divide-y divide-border text-sm">
             {runs.map((run) => (

@@ -1,4 +1,3 @@
-import { accentClasses, type Accent } from "@/components/accent";
 import { toneClasses, type Tone } from "@/components/ui/tone";
 import { cn } from "@/lib/utils";
 
@@ -11,8 +10,8 @@ export type BarItem = {
   /** Text on the right, such as "92%". */
   display: string;
   tone?: Tone;
-  /** A decorative color instead of a status tone, for bars that compare teams rather than judge them. */
-  accent?: Accent;
+  /** Brand color instead of a status tone, for bars that compare rather than judge. */
+  brand?: boolean;
 };
 
 /** Horizontal bars with a label and a value on each, for comparing teams. */
@@ -36,7 +35,7 @@ export function BarList({ items, max }: { items: readonly BarItem[]; max?: numbe
             className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-secondary"
           >
             <div
-              className={cn("h-full rounded-full", item.accent ? accentClasses[item.accent].solid : toneClasses[item.tone ?? "success"].solid)}
+              className={cn("h-full rounded-full", item.brand ? "bg-primary" : toneClasses[item.tone ?? "success"].solid)}
               style={{ width: `${Math.min(100, Math.max(0, (item.value / top) * 100))}%` }}
             />
           </div>

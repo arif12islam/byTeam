@@ -53,7 +53,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
       </ul>
 
       {grid.rows.map((row) => (
-        <section key={row.employee.id} className="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <section key={row.employee.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
           <div className="flex items-center gap-3">
             <Avatar name={row.employee.name} />
             <div className="min-w-0 flex-1">
@@ -74,9 +74,12 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                 ["Leave", row.totals.leave, "info"],
               ] as const
             ).map(([label, value, tone]) => (
-              <div key={label} className={cn("rounded-xl px-1 py-1.5 shadow-sm", toneClasses[tone].grad)}>
+              <div key={label} className="rounded-lg border px-1 py-1.5">
                 <dd className="text-base font-semibold leading-none tabular-nums">{value}</dd>
-                <dt className="mt-1 text-[11px]">{label}</dt>
+                <dt className="mt-1 flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+                  <span aria-hidden className={cn("size-1.5 rounded-full", toneClasses[tone].solid)} />
+                  {label}
+                </dt>
               </div>
             ))}
           </dl>
@@ -114,9 +117,9 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
                       aria-label={describeCell(date, cell)}
                       title={describeCell(date, cell)}
                       className={cn(
-                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums shadow-sm",
+                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums",
                         statusFill[cell.status],
-                        "font-medium",
+                        "font-semibold",
                         cell.missingOut && "ring-2 ring-amber-300 ring-offset-1 ring-offset-card",
                       )}
                     >

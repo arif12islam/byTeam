@@ -3,151 +3,95 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  byTeam palette: vivid on purpose. Big surfaces (page banners, stat tiles, hero
-  panels, buttons, avatars) are saturated gradients with white text. The page
-  itself has soft indigo and emerald washes behind it. Never pale-on-white.
+  byTeam palette: modern, minimal and neutral.
 
-  primary  #059669  emerald, buttons and links
-  forest   #0A3A40  deep teal for the sidebar, phone tab bar and hero panels
-  canvas   #F1F4FB  page background, washed with indigo and emerald
+  Greys do almost all the work: white surfaces, zinc text and thin borders,
+  and a near-black primary for buttons and the active menu item. There are no
+  colored panels or gradients.
 
-  Status colors carry meaning everywhere: present is green, late is amber,
-  absent is red, leave is blue and a day off is slate. Each has a strong
-  color for text and icons and a soft one for backgrounds.
+  Color only ever means a status, and it stays quiet: a small dot, a soft
+  tint behind a word, a thin bar in a chart. Present is green, late is amber,
+  absent is red, leave is blue and a day off is grey. Each has a text color
+  and a soft background.
 */
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  --background: #f1f4fb;
-  --foreground: #101828;
+  --background: #fafafa;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-foreground: #101828;
+  --card-foreground: #09090b;
   --popover: #ffffff;
-  --popover-foreground: #101828;
-  --primary: #059669;
-  --primary-foreground: #ffffff;
-  --secondary: #e8edf7;
-  --secondary-foreground: #101828;
-  --muted: #e8edf7;
-  --muted-foreground: #576277;
-  --accent: #d1fae5;
-  --accent-foreground: #065f46;
-  --destructive: #be123c;
-  --border: #dde4f0;
-  --input: #c9d2e3;
-  --ring: #059669;
+  --popover-foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
 
-  --forest: #0a3a40;
-  --forest-foreground: #f2faf6;
-  --forest-muted: #8ad3c8;
-  --forest-line: #115761;
-  --forest-active: #059669;
-
-  --success: #047857;
-  --success-soft: #d1fae5;
+  --success: #15803d;
+  --success-soft: #f0fdf4;
   --warning: #b45309;
-  --warning-soft: #fef3c7;
-  --danger: #be123c;
-  --danger-soft: #ffe4e6;
+  --warning-soft: #fffbeb;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
   --info: #1d4ed8;
-  --info-soft: #dbeafe;
-  --off: #475569;
-  --off-soft: #e2e8f0;
+  --info-soft: #eff6ff;
+  --off: #71717a;
+  --off-soft: #f4f4f5;
 
-  --elevation: 0 1px 2px rgb(16 24 40 / 0.06), 0 6px 20px rgb(79 70 229 / 0.07);
-  --canvas-glow-a: rgb(99 102 241 / 0.16);
-  --canvas-glow-b: rgb(16 185 129 / 0.16);
+  --elevation: 0 1px 2px rgb(9 9 11 / 0.04);
 
-  /* Section accents: decorative identity colors for the menu, headings and charts. Status colors keep their own meaning. */
-  --acc-on: #ffffff;
-  --acc-indigo: #4f46e5;
-  --acc-indigo-soft: #e8e9fd;
-  --acc-violet: #7c3aed;
-  --acc-violet-soft: #f0e8fd;
-  --acc-pink: #db2777;
-  --acc-pink-soft: #fce7f1;
-  --acc-orange: #d9660a;
-  --acc-orange-soft: #fdebd8;
-  --acc-teal: #0d8a7f;
-  --acc-teal-soft: #d7f5f1;
-  --acc-sky: #0284c7;
-  --acc-sky-soft: #dcf0fb;
-  --acc-lime: #4d7c0f;
-  --acc-lime-soft: #e4f1cd;
-  --acc-slate: #475569;
-  --acc-slate-soft: #e8ecf1;
-
-
-  --sidebar: #0a3a40;
-  --sidebar-foreground: #f2faf6;
-  --sidebar-border: #115761;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #3f3f46;
+  --sidebar-border: #e4e4e7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1220;
-    --foreground: #e7ecf5;
-    --card: #131c2e;
-    --card-foreground: #e7ecf5;
-    --popover: #131c2e;
-    --popover-foreground: #e7ecf5;
-    --primary: #34d399;
-    --primary-foreground: #052e22;
-    --secondary: #1c2740;
-    --secondary-foreground: #e7ecf5;
-    --muted: #1c2740;
-    --muted-foreground: #9aa7bd;
-    --accent: #0f3a2c;
-    --accent-foreground: #a7f3d0;
-    --destructive: #fb7185;
-    --border: #223049;
-    --input: #31405c;
-    --ring: #34d399;
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #111113;
+    --card-foreground: #fafafa;
+    --popover: #111113;
+    --popover-foreground: #fafafa;
+    --primary: #fafafa;
+    --primary-foreground: #18181b;
+    --secondary: #27272a;
+    --secondary-foreground: #fafafa;
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
+    --accent: #27272a;
+    --accent-foreground: #fafafa;
+    --destructive: #f87171;
+    --border: #27272a;
+    --input: #3f3f46;
+    --ring: #52525b;
 
-    --forest: #071f2b;
-    --forest-foreground: #f2faf6;
-    --forest-muted: #79b8b0;
-    --forest-line: #0f3a47;
-    --forest-active: #059669;
-
-    --success: #34d399;
-    --success-soft: #0f3a2c;
+    --success: #4ade80;
+    --success-soft: #052e16;
     --warning: #fbbf24;
-    --warning-soft: #3d2c0c;
-    --danger: #fb7185;
-    --danger-soft: #4a1522;
+    --warning-soft: #2a1d05;
+    --danger: #f87171;
+    --danger-soft: #2a0b0b;
     --info: #60a5fa;
-    --info-soft: #14284f;
-    --off: #94a3b8;
-    --off-soft: #1e293b;
+    --info-soft: #0c1a33;
+    --off: #a1a1aa;
+    --off-soft: #27272a;
 
-    --elevation: 0 1px 2px rgb(0 0 0 / 0.4);
-    --canvas-glow-a: rgb(99 102 241 / 0.22);
-    --canvas-glow-b: rgb(16 185 129 / 0.16);
+    --elevation: 0 1px 2px rgb(0 0 0 / 0.3);
 
-    --acc-on: #0d1512;
-    --acc-indigo: #8b93ff;
-    --acc-indigo-soft: #23264f;
-    --acc-violet: #b28cff;
-    --acc-violet-soft: #2e2250;
-    --acc-pink: #f472b6;
-    --acc-pink-soft: #4a1d36;
-    --acc-orange: #f59e5b;
-    --acc-orange-soft: #43270f;
-    --acc-teal: #4fd1c5;
-    --acc-teal-soft: #11403c;
-    --acc-sky: #5bbcf0;
-    --acc-sky-soft: #12364a;
-    --acc-lime: #a3e635;
-    --acc-lime-soft: #2f4012;
-    --acc-slate: #a3b1c2;
-    --acc-slate-soft: #263040;
-
-
-    --sidebar: #071f2b;
-    --sidebar-foreground: #f2faf6;
-    --sidebar-border: #0f3a47;
+    --sidebar: #0c0c0e;
+    --sidebar-foreground: #d4d4d8;
+    --sidebar-border: #27272a;
   }
 }
 
@@ -176,12 +120,6 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-border: var(--sidebar-border);
 
-  --color-forest: var(--forest);
-  --color-forest-foreground: var(--forest-foreground);
-  --color-forest-muted: var(--forest-muted);
-  --color-forest-line: var(--forest-line);
-  --color-forest-active: var(--forest-active);
-
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
@@ -195,29 +133,12 @@
 
   --shadow-card: var(--elevation);
 
-  --color-acc-on: var(--acc-on);
-  --color-acc-indigo: var(--acc-indigo);
-  --color-acc-indigo-soft: var(--acc-indigo-soft);
-  --color-acc-violet: var(--acc-violet);
-  --color-acc-violet-soft: var(--acc-violet-soft);
-  --color-acc-pink: var(--acc-pink);
-  --color-acc-pink-soft: var(--acc-pink-soft);
-  --color-acc-orange: var(--acc-orange);
-  --color-acc-orange-soft: var(--acc-orange-soft);
-  --color-acc-teal: var(--acc-teal);
-  --color-acc-teal-soft: var(--acc-teal-soft);
-  --color-acc-sky: var(--acc-sky);
-  --color-acc-sky-soft: var(--acc-sky-soft);
-  --color-acc-lime: var(--acc-lime);
-  --color-acc-lime-soft: var(--acc-lime-soft);
-  --color-acc-slate: var(--acc-slate);
-  --color-acc-slate-soft: var(--acc-slate-soft);
-
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 10px);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 6px);
 }
 
 @layer base {
@@ -228,11 +149,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "tnum" 1;
-    /* Two soft washes of color behind everything, so the page is never flat grey. */
-    background-image:
-      radial-gradient(46rem 28rem at 100% -6%, var(--canvas-glow-a), transparent 70%),
-      radial-gradient(40rem 26rem at -8% 8%, var(--canvas-glow-b), transparent 70%);
-    background-attachment: fixed;
   }
 
   :focus-visible {

@@ -35,7 +35,7 @@ export function RecomputeForm({ runId }: { runId: string }) {
   return (
     <form action={action} className="flex flex-wrap items-center gap-3">
       <input type="hidden" name="runId" value={runId} />
-      <Button type="submit" variant="onColor" size="sm" pending={pending}>
+      <Button type="submit" variant="outline" size="sm" pending={pending}>
         Recompute sheet
       </Button>
       <FormMessage state={state} />

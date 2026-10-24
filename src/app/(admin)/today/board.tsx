@@ -66,10 +66,10 @@ const matches: Record<Filter, (entry: BoardEntry) => boolean> = {
   on_leave: (e) => e.group === "on_leave",
 };
 
-const chips: { filter: Exclude<Filter, "all">; label: string; icon: LucideIcon; count: keyof BoardCounts; tone: Tone }[] = [
+const chips: { filter: Exclude<Filter, "all">; label: string; short?: string; icon: LucideIcon; count: keyof BoardCounts; tone: Tone }[] = [
   { filter: "in", label: "In", icon: UserCheck, count: "in", tone: "success" },
   { filter: "late", label: "Late", icon: AlarmClock, count: "late", tone: "warning" },
-  { filter: "not_in_yet", label: "Not in yet", icon: Hourglass, count: "notInYet", tone: "off" },
+  { filter: "not_in_yet", label: "Not in yet", short: "Not in", icon: Hourglass, count: "notInYet", tone: "off" },
   { filter: "absent", label: "Absent", icon: UserX, count: "absent", tone: "danger" },
   { filter: "on_leave", label: "On leave", icon: Plane, count: "onLeave", tone: "info" },
 ];
@@ -139,7 +139,7 @@ function PersonSheet({ entry, date, onClose }: { entry: BoardEntry; date: string
         role="dialog"
         aria-modal="true"
         aria-label={entry.name}
-        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-card p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card md:inset-auto md:left-1/2 md:top-1/2 md:w-[26rem] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-5"
+        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-card p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card md:inset-auto md:left-1/2 md:top-1/2 md:w-[26rem] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-5"
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border md:hidden" aria-hidden />
         <div className="flex items-center gap-3">
@@ -266,19 +266,17 @@ export function TodayBoard({
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:gap-4">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-3.5 text-white shadow-card sm:rounded-3xl sm:p-5">
-        <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-lime-300/30 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-16 left-1/3 size-48 rounded-full bg-sky-300/30 blur-3xl" />
-        <div className="relative flex items-center gap-4">
-          <Ring size={88} thickness={10} track="stroke-white/20" segments={hero.segments}>
+      <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <div className="flex items-center gap-4">
+          <Ring size={76} thickness={7} track="stroke-secondary" segments={hero.segments}>
             <div>
-              <p className="text-2xl font-semibold leading-none tabular-nums">{counts.in}</p>
-              <p className="mt-0.5 text-[10px] text-white/80">of {hero.expected}</p>
+              <p className="text-lg font-semibold leading-none tabular-nums">{counts.in}</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">of {hero.expected}</p>
             </div>
           </Ring>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xs text-white/85">{hero.title}</h1>
-            <p className="mt-0.5 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">{hero.headline}</p>
+            <h1 className="text-xs text-muted-foreground">{hero.title}</h1>
+            <p className="mt-0.5 text-xl font-semibold tracking-tight">{hero.headline}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
               <LiveRefresh generatedAt={hero.generatedAt} />
               {deviceNote}
@@ -286,8 +284,8 @@ export function TodayBoard({
           </div>
         </div>
 
-        <ul className="relative mt-3 grid grid-cols-5 gap-1.5 sm:gap-2" aria-label="Filter the list">
-          {chips.map(({ filter: f, label, icon: Icon, count, tone }) => {
+        <ul className="mt-4 grid grid-cols-5 gap-1.5 sm:gap-2" aria-label="Filter the list">
+          {chips.map(({ filter: f, label, short, count, tone }) => {
             const pressed = filter === f;
             return (
               <li key={f}>
@@ -296,15 +294,24 @@ export function TodayBoard({
                   aria-pressed={pressed}
                   onClick={() => setFilter(pressed ? "all" : f)}
                   className={cn(
-                    "relative flex h-full w-full flex-col items-center overflow-hidden rounded-xl px-1 py-2 shadow-md shadow-black/15 transition-all active:scale-[0.97]",
-                    toneClasses[tone].grad,
-                    pressed ? "scale-[1.04] ring-2 ring-white" : filter !== "all" && "opacity-60 hover:opacity-90",
+                    "flex h-full w-full flex-col items-start rounded-lg border px-2 py-2 text-left sm:px-2.5 transition-colors",
+                    pressed ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-secondary/60",
                   )}
                 >
-                  <span aria-hidden className="pointer-events-none absolute -right-3 -top-3 size-10 rounded-full bg-white/20" />
-                  <Icon className="relative size-4" aria-hidden />
-                  <span className="relative mt-1 text-lg font-semibold leading-none tabular-nums">{counts[count]}</span>
-                  <span className="relative mt-1 text-[11px] font-medium leading-none opacity-90">{label}</span>
+                  <span className="flex w-full items-center justify-between gap-1">
+                    <span className="text-lg font-semibold leading-none tabular-nums">{counts[count]}</span>
+                    <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", toneClasses[tone].solid)} />
+                  </span>
+                  <span className={cn("mt-1.5 w-full truncate text-[11px] leading-none tracking-tight sm:tracking-normal", pressed ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                    {short ? (
+                      <>
+                        <span className="sm:hidden">{short}</span>
+                        <span className="hidden sm:inline">{label}</span>
+                      </>
+                    ) : (
+                      label
+                    )}
+                  </span>
                 </button>
               </li>
             );

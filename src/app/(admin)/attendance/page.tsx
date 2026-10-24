@@ -1,4 +1,4 @@
-import { CalendarDays, Download, Info } from "lucide-react";
+import { Download, Info } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -26,8 +26,6 @@ export default function AttendancePage(props: PageProps<"/attendance">) {
   return (
     <>
       <PageHeader
-        icon={CalendarDays}
-        accent="indigo"
         title="Attendance"
         description="Attendance for every employee over a month, three months or any dates, built from device punches. Open a day to see the punches behind it."
       />
@@ -99,7 +97,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
           <div className="md:hidden">
             <AttendanceCards grid={grid} />
           </div>
-          <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-card md:block">
+          <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card md:block">
             <table className="w-full border-collapse text-sm">
               <thead>
                 {monthSpans.length > 1 ? (

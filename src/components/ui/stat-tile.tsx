@@ -14,23 +14,24 @@ type StatTileProps = {
   className?: string;
 };
 
-/** A big number on a saturated gradient, for the top of a screen. Becomes a link when `href` is given. */
+/** A number with a label, for the top of a screen. The status shows as a small dot, the rest stays neutral. */
 export function StatTile({ label, value, icon: Icon, tone = "neutral", hint, href, className }: StatTileProps) {
   const body = (
     <>
-      <span aria-hidden className="pointer-events-none absolute -right-5 -top-5 size-24 rounded-full bg-white/20" />
-      <span aria-hidden className="pointer-events-none absolute -bottom-8 -right-2 size-20 rounded-full bg-black/5" />
-      <span className="relative grid size-9 place-items-center rounded-xl bg-white/25 ring-1 ring-white/30">
-        <Icon className="size-[18px]" aria-hidden />
-      </span>
-      <p className="relative mt-3 text-3xl font-semibold leading-none tracking-tight tabular-nums">{value}</p>
-      <p className="relative mt-1.5 text-sm opacity-90">{label}</p>
-      {hint ? <p className="relative mt-0.5 text-xs opacity-75">{hint}</p> : null}
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+          {tone !== "neutral" ? <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", toneClasses[tone].solid)} /> : null}
+          <span className="truncate">{label}</span>
+        </p>
+        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      </div>
+      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
     </>
   );
-  const base = cn("relative block overflow-hidden rounded-2xl p-4 shadow-card", toneClasses[tone].grad);
+  const base = "block rounded-xl border border-border bg-card p-4 shadow-card";
   return href ? (
-    <Link href={href} className={cn(base, "transition-transform hover:-translate-y-0.5", className)}>
+    <Link href={href} className={cn(base, "transition-colors hover:bg-secondary/50", className)}>
       {body}
     </Link>
   ) : (

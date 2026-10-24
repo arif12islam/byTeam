@@ -67,9 +67,9 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 
 ## UI and copy
 
-- Vivid, bold and phone first. The look is saturated color, never pale on white: page banners, stat tiles, hero panels, buttons, avatars and menu icons are gradients with white text (`accentClasses` in `src/components/accent.ts`, `toneClasses` in `src/components/ui/tone.ts`). The page canvas has soft indigo and emerald washes (`globals.css`). Font is Instrument Sans. Do not drop back to white cards with tiny pastel chips.
-- Each screen has its own accent color (Today green, Attendance indigo, Leave violet, Payroll orange, Reports teal, Employees pink, Shifts sky, Devices lime, Settings and Audit slate). Accent colors are decoration only.
-- Status colors always mean the same thing (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, slate day off or inactive. Pair color with an icon or a word, never color alone. Use `PageHeader`, `Card`, `StatTile`, `Badge`, `Avatar` and `Ring` instead of one-off styling. Charts are plain SVG or CSS, no chart library.
+- Modern, minimal and neutral (think Linear or Vercel). Greys do the work: white cards with thin borders on a light grey canvas, zinc text, a near-black primary for buttons and the active menu item. Tokens are in `src/app/globals.css`, with a matching dark theme. Font is Instrument Sans.
+- No brand color, no colored panels, no gradients, no big banners. Color only means a status and stays small: a dot, a soft tint behind a word, a thin bar in a chart. Status colors (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, grey day off or inactive. Pair color with a word, never color alone.
+- Use `PageHeader`, `Card`, `StatTile`, `Badge`, `Avatar` and `Ring` from `src/components/` instead of one-off styling. Charts are plain SVG or CSS, no chart library.
 - Design for the phone first: touch targets at least 40px, inputs 16px text on phones, a bottom tab bar under `md`, wide tables become stacked cards on narrow screens.
 - Sentence case, plain verbs, no emojis, no em dashes, no all-caps labels.
 - Buttons say what they do ("Save shift", "Approve leave"). Empty states tell the user what to do next.

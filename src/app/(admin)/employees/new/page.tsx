@@ -1,4 +1,3 @@
-import { UserPlus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -18,7 +17,7 @@ export default function NewEmployeePage(props: PageProps<"/employees/new">) {
   return (
     <>
       <BackLink href="/employees">Back to employees</BackLink>
-      <PageHeader icon={UserPlus} accent="pink" title="Add employee" description="Create the record, then set their salary." />
+      <PageHeader title="Add employee" description="Create the record, then set their salary." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading</p>}>
         <NewEmployee searchParams={props.searchParams} />
       </Suspense>
@@ -44,7 +43,7 @@ async function NewEmployee({ searchParams }: { searchParams: PageProps<"/employe
   }
 
   return (
-    <section className="mt-6 max-w-3xl rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+    <section className="mt-6 max-w-3xl rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
       <EmployeeForm shifts={shifts} initialCode={code} />
     </section>
   );

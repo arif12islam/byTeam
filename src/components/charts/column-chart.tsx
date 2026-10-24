@@ -1,4 +1,3 @@
-import { accentClasses, type Accent } from "@/components/accent";
 import { cn } from "@/lib/utils";
 
 export type Column = {
@@ -11,7 +10,7 @@ export type Column = {
 };
 
 /** Vertical columns with a label under each, for a few months side by side. */
-export function ColumnChart({ columns, accent = "green" }: { columns: readonly Column[]; accent?: Accent }) {
+export function ColumnChart({ columns }: { columns: readonly Column[] }) {
   const max = Math.max(1, ...columns.map((c) => c.value ?? 0));
   return (
     <div
@@ -29,7 +28,7 @@ export function ColumnChart({ columns, accent = "green" }: { columns: readonly C
               <div className="h-1.5 w-full rounded-full border border-dashed border-border" />
             ) : (
               <div
-                className={cn("w-full rounded-t-lg", c.highlight ? accentClasses[accent].fill : "bg-muted-foreground/25")}
+                className={cn("w-full rounded-t-lg", c.highlight ? "bg-primary" : "bg-muted-foreground/25")}
                 style={{ height: `${Math.max(3, (c.value / max) * 100)}%` }}
               />
             )}
