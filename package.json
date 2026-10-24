@@ -14,6 +14,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "seed:owner": "tsx scripts/seed-owner.ts",
+    "db:seed": "tsx scripts/seed.ts",
     "sim": "tsx scripts/simulator.ts"
   },
   "dependencies": {

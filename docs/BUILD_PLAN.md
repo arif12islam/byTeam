@@ -193,7 +193,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Attendance screen: monthly grid per employee, day detail with raw punches
 - [x] Manual adjustment with required reason, audited
 - [x] Excel export of the monthly grid
-- [ ] `scripts/seed.ts`: 6 to 8 employees, one full month of punches covering every case
+- [x] `scripts/seed.ts`: 6 to 8 employees, one full month of punches covering every case
 - [ ] Tests: one fixture per seeded employee with the expected month grid
 
 **Done when:** the seeded month matches the hand-made expected grid for every employee.

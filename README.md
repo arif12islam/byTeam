@@ -37,6 +37,7 @@ Open http://localhost:3000 and sign in with the owner account. The seed does not
 | `npm run db:generate` | Create a migration from schema changes |
 | `npm run db:migrate` | Apply migrations to `DATABASE_URL_UNPOOLED`, or `DATABASE_URL` if that is not set |
 | `npm run db:studio` | Browse the database |
+| `npm run db:seed -- --yes` | Add 8 demo employees and a month of punches to a test or demo database (see below) |
 | `npm run sim` | Pretend to be the attendance device (see below) |
 | `npm run seed:owner` | Create the first owner login from `OWNER_EMAIL`, `OWNER_NAME`, `OWNER_PASSWORD` |
 
@@ -73,6 +74,12 @@ docs/              design and build plan
 ```
 
 Business logic lives in plain functions under `src/lib`, never inside route handlers or components, so it can be tested and moved off Vercel unchanged.
+
+## Demo data
+
+`npm run db:seed -- --yes` adds eight made-up employees and one month of punches, leave, bonuses and an advance, each person showing one case: always on time, often late, absent with no leave, with paid leave and with unpaid leave, forgotten punch-out, double tap, and joined mid-month. It needs an owner (`npm run seed:owner`) and the weekly off days set in Settings. By default it uses last month and employee codes 9001 to 9008; change them with `--month=2026-09` and `--code-start=9101`. Without `--yes` it only says what it would do.
+
+Use it on a test or demo database only: the punch log can never be cleaned up, so the demo cannot be undone.
 
 ## Deploying to Vercel
 
