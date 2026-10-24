@@ -4,6 +4,7 @@ import { splitLines } from "@/lib/adms/parse";
 import { recalcForNewPunches } from "@/lib/attendance/triggers";
 import { savePunches } from "@/lib/adms/store";
 import { adaptAttlogBody } from "@/lib/adms/zkteco-adapter";
+import { recordClockCheck } from "@/lib/devices/clock";
 import { touchDevice } from "@/lib/devices/receive";
 
 const textHeaders = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
@@ -54,7 +55,8 @@ export async function POST(request: Request) {
   }
 
   const db = getDb();
-  const device = await touchDevice(db, serial, new Date());
+  const receivedAt = new Date();
+  const device = await touchDevice(db, serial, receivedAt);
   if (!device) {
     console.warn(`[iclock] upload refused: ${serial} is not registered or is switched off`);
     return new Response("ERROR: device not registered\n", { status: 403, headers: textHeaders });
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
 
   const { punches, skipped } = adaptAttlogBody(device.serialNo, body);
   const { received, inserted, newPunches } = await savePunches(db, punches);
+  await recordClockCheck(db, device.serialNo, punches.map((p) => p.punchedAt), receivedAt);
   // Punches are saved. Bringing attendance up to date must never make the device resend them.
   await recalcForNewPunches(db, newPunches);
   console.info(

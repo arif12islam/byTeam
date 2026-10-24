@@ -50,6 +50,9 @@ export type DeviceRow = {
   serialNo: string;
   name: string;
   lastSeenAt: Date | null;
+  /** Estimated device clock minus server clock, in seconds. Null until checked. */
+  clockOffsetSeconds: number | null;
+  clockCheckedAt: Date | null;
   active: boolean;
 };
 
@@ -60,6 +63,8 @@ export async function listDevices(db: Db): Promise<DeviceRow[]> {
       serialNo: devices.serialNo,
       name: devices.name,
       lastSeenAt: devices.lastSeenAt,
+      clockOffsetSeconds: devices.clockOffsetSeconds,
+      clockCheckedAt: devices.clockCheckedAt,
       active: devices.active,
     })
     .from(devices)

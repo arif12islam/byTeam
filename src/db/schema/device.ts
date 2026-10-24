@@ -23,6 +23,13 @@ export const devices = pgTable("devices", {
   serialNo: text("serial_no").notNull().unique(),
   name: text("name").notNull(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  /**
+   * The latest estimate of the device clock against the server clock, in
+   * seconds, positive when the device is ahead. Worked out from the newest punch
+   * of an upload against the time we received it. Null until a usable upload.
+   */
+  clockOffsetSeconds: integer("clock_offset_seconds"),
+  clockCheckedAt: timestamp("clock_checked_at", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

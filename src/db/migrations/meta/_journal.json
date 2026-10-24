@@ -64,6 +64,13 @@
       "when": 1792858284142,
       "tag": "0008_m6_office_outages",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792858940342,
+      "tag": "0009_m6_device_clock_check",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
+import { clockState, describeClock } from "@/lib/devices/clock";
 import { describeAge, deviceStatus, listDevices, OFFLINE_AFTER_MINUTES, type DeviceStatus } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
@@ -86,6 +87,7 @@ async function DevicesContent() {
         list.map((device) => {
           const status = deviceStatus(device.lastSeenAt, now);
           const age = describeAge(device.lastSeenAt, now);
+          const clock = clockState(device.clockOffsetSeconds);
           return (
             <section key={device.id} className="rounded-lg border border-border bg-card p-5 md:p-6">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -107,6 +109,18 @@ async function DevicesContent() {
                   "It has not contacted the server yet."
                 )}
               </p>
+              {device.active ? (
+                <p
+                  className={cn(
+                    "mt-2 text-sm",
+                    clock.kind === "drifted" ? "rounded-md border border-destructive/40 bg-destructive/10 p-3 text-foreground" : "text-muted-foreground",
+                  )}
+                  role={clock.kind === "drifted" ? "alert" : undefined}
+                >
+                  {describeClock(clock)}
+                  {clock.kind !== "unchecked" && device.clockCheckedAt ? ` Checked ${formatOfficeDateTime(device.clockCheckedAt)}.` : ""}
+                </p>
+              ) : null}
               <div className="mt-5 border-t border-border pt-5">
                 <DeviceControls device={device} />
               </div>
