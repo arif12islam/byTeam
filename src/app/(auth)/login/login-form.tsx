@@ -6,7 +6,7 @@ import { signIn, type LoginState } from "./actions";
 import { Button } from "@/components/ui/button";
 
 const inputClass =
-  "mt-1.5 block h-10 w-full rounded-md border border-input bg-card px-3 text-sm";
+  "mt-1.5 block h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(signIn, {});

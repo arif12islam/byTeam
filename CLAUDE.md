@@ -67,7 +67,9 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 
 ## UI and copy
 
-- Clean and minimal. Palette and tokens are in `src/app/globals.css` (ledger green accent `#1E6B52`), font is Instrument Sans.
+- Bold, phone first, still uncluttered. Palette and tokens are in `src/app/globals.css`: ledger green `#1E6B52` as the accent, deep forest green `#0C3B2C` for the sidebar, phone tab bar and hero panels. Font is Instrument Sans.
+- Status colors always mean the same thing (`src/components/ui/tone.ts`): green present or done, amber late, red absent or blocked, blue leave, slate day off or inactive. Use the `Card`, `StatTile`, `Badge`, `Avatar` and `Ring` components in `src/components/ui/` instead of one-off styling. Charts are plain SVG, no chart library.
+- Design for the phone first: touch targets at least 40px, inputs 16px text on phones, a bottom tab bar under `md`, wide tables become stacked cards on narrow screens.
 - Sentence case, plain verbs, no emojis, no em dashes, no all-caps labels.
 - Buttons say what they do ("Save shift", "Approve leave"). Empty states tell the user what to do next.
 - Must work at phone width.
