@@ -206,7 +206,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Approve, reject, cancel; each triggers recalc for the covered dates
 - [x] Balance per employee per type for the calendar year
 - [x] Block approval beyond balance unless recorded as unpaid
-- [ ] Tests: balance math, leave overriding absent, off days not counted
+- [x] Tests: balance math, leave overriding absent, off days not counted
 
 **Done when:** approving leave turns those absent days into leave in the grid, and balances are correct.
 
