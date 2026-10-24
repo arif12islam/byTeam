@@ -13,8 +13,10 @@ Read these before starting any milestone:
 
 - M0 done (scaffold, CI, docs). Still open: connect Vercel and Neon.
 - M1 done (auth, owner seed, settings and holidays, shifts, employees, salary structures, audit helper).
-- M2 nearly done: device tables, Devices screen, ADMS routes, command queue, unmatched punches, simulator and database tests. Still open: the run against a Vercel preview (needs M0 Vercel and Neon).
-- Next: M3 Attendance engine.
+- M2 done except the run against a Vercel preview.
+- M3 done except the demo data script and its fixture tests.
+- M4 done (leave types, requests, decisions, balances, balance block).
+- M5 in progress. Pay rules are decided (BUILD_PLAN section 7): gross base, working-days divisor, every 3 lates cost one day. Vercel and Neon are connected and the owner can log in.
 - When an item is finished, tick it in `docs/BUILD_PLAN.md` in the same change.
 
 ## Stack
@@ -58,7 +60,7 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 - Money is `numeric(12,2)`; round net pay to whole taka only at the end.
 - No Vercel-specific APIs (Edge Config, KV, Edge runtime) in core code. The app must run with `next start` on a VPS.
 - Migrations are generated with drizzle-kit and committed. Never edit an applied migration.
-- Payroll rules marked open in `docs/BUILD_PLAN.md` section 7 are not decided. Do not guess them; make them configurable or ask.
+- Pay rules (base, divisor, late policy) are settings in `rule_sets`, never constants in code. Any new pay rule that `docs/BUILD_PLAN.md` section 7 does not cover is not decided: make it configurable or ask.
 
 ## Next.js 16 notes
 
