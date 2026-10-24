@@ -13,7 +13,8 @@ Read these before starting any milestone:
 
 - M0 done (scaffold, CI, docs). Still open: connect Vercel and Neon.
 - M1 done (auth, owner seed, settings and holidays, shifts, employees, salary structures, audit helper).
-- Next: M2 Device integration (devices, ADMS routes, simulator).
+- M2 nearly done: device tables, Devices screen, ADMS routes, command queue, unmatched punches, simulator and database tests. Still open: the run against a Vercel preview (needs M0 Vercel and Neon).
+- Next: M3 Attendance engine.
 - When an item is finished, tick it in `docs/BUILD_PLAN.md` in the same change.
 
 ## Stack
@@ -26,7 +27,7 @@ Next.js 16 (App Router, `cacheComponents` on) + TypeScript, PostgreSQL on Neon, 
 npm run dev          # dev server
 npm run lint
 npm run typecheck    # next typegen + tsc
-npm test             # vitest run
+npm test             # vitest run; tests/db also needs DATABASE_URL_TEST (see README), CI sets it
 npm run build
 npm run db:generate  # migration from schema changes
 npm run db:migrate   # apply to DATABASE_URL in .env.local

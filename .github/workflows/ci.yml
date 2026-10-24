@@ -13,6 +13,23 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # A throwaway database for the tests in tests/db. It is destroyed with the job.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: byteam_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgres://postgres:postgres@localhost:5432/byteam_test
     steps:
       - uses: actions/checkout@v4
 
@@ -24,5 +41,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - name: Apply migrations to the test database
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
       - run: npm test
       - run: npm run build
