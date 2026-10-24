@@ -11,7 +11,7 @@ import { formatTaka } from "@/lib/salary/money";
 import { requireRole } from "@/lib/session";
 import { formatMonth, formatOfficeDate, isValidMonth, shiftMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
 
-import { AdjustmentForm, CreateRunForm, FinalizeForm, RecomputeForm, RemoveAdjustmentForm } from "./run-forms";
+import { AdjustmentForm, CreateRunForm, FinalizeForm, RecomputeForm, RemoveAdjustmentForm, UnlockForm } from "./run-forms";
 
 export const metadata: Metadata = { title: "Payroll" };
 
@@ -201,9 +201,22 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
           ) : null}
 
           {locked ? (
-            <p role="status" className="rounded-md border border-input bg-card p-3 text-sm">
-              Attendance, leave, bonuses and advances for {formatMonth(month)} are locked.
-            </p>
+            <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+              <p role="status" className="text-sm">
+                Attendance, leave, bonuses and advances for {formatMonth(month)} are locked.
+              </p>
+              {user.role === "owner" ? (
+                <div className="mt-4">
+                  <h2 className="text-base font-semibold">Need to change something?</h2>
+                  <p className="mt-1 mb-4 text-sm text-muted-foreground">
+                    Unlocking takes the month back to a draft. Fix what is wrong, recompute the sheet, then finalize again.
+                  </p>
+                  <UnlockForm runId={sheet.run.id} label={formatMonth(month)} />
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">Only the owner can unlock a month.</p>
+              )}
+            </section>
           ) : sheet.rows.length > 0 ? (
             <section className="rounded-lg border border-border bg-card p-5 md:p-6">
               <h2 className="text-base font-semibold">Finalize payroll</h2>
