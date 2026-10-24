@@ -172,7 +172,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Devices screen: add serial number, show last seen, online or offline (offline after 15 min)
 - [x] `GET /iclock/cdata` handshake: reject unknown serial, update last seen, return config
 - [x] `POST /iclock/cdata?table=ATTLOG`: parse lines, adapter to standard punch, insert with `onConflictDoNothing`, reply `OK`
-- [ ] Accept and log `OPERLOG` without using it
+- [x] Accept and log `OPERLOG` without using it
 - [ ] `GET /iclock/getrequest`: return next pending command or `OK`
 - [ ] `POST /iclock/devicecmd`: mark command done or failed
 - [ ] Queue a user-update command when an employee is created or edited
