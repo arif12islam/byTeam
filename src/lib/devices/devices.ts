@@ -30,12 +30,14 @@ export function describeAge(lastSeenAt: Date | null, now: Date): string | null {
   return `${Math.floor(hours / 24)} days ago`;
 }
 
+/** Serial numbers differ by model, so only the shape is checked: no spaces, a sensible length. */
+export const SERIAL_PATTERN = /^[A-Za-z0-9._-]{4,64}$/;
+
 export const newDeviceSchema = z.object({
-  // Serial numbers differ by model, so only the shape is checked: no spaces, a sensible length.
   serialNo: z
     .string()
     .trim()
-    .regex(/^[A-Za-z0-9._-]{4,64}$/, "Enter the serial number exactly as shown on the device, with no spaces."),
+    .regex(SERIAL_PATTERN, "Enter the serial number exactly as shown on the device, with no spaces."),
   name: z.string().trim().min(1, "Enter a name, like Front door.").max(80, "Use 80 characters or fewer."),
 });
 
