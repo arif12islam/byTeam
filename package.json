@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "seed:owner": "tsx scripts/seed-owner.ts"
   },
   "dependencies": {
     "better-auth": "^1.7.12",
