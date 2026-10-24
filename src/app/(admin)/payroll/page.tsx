@@ -212,6 +212,9 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                 <a href={`/payroll/payslip?month=${month}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                   Download all payslips (PDF)
                 </a>
+                <a href={`/payroll/export?month=${month}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  Download salary sheet (Excel)
+                </a>
               </div>
               {user.role === "owner" ? (
                 <div className="mt-4">
