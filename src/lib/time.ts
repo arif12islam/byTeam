@@ -132,3 +132,17 @@ export function officeDateTimeToInstant(date: string, time: string): Date | null
   guess = wall - (officeWallClock(guess) - guess);
   return new Date(guess);
 }
+
+const TIME_OF_DAY = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/;
+
+/** Minutes after midnight for "HH:MM" or "HH:MM:SS", or null when it is not a time of day. */
+export function timeToMinutes(value: string): number | null {
+  const match = TIME_OF_DAY.exec(value);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+/** Whole minutes after midnight on the office clock at an instant. Seconds are dropped, as on a wall clock. */
+export function officeMinuteOfDay(instant: Date): number {
+  const wall = officeWallClock(instant.getTime());
+  return Math.floor((((wall % 86_400_000) + 86_400_000) % 86_400_000) / 60_000);
+}

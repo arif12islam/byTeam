@@ -8,8 +8,10 @@ import {
   isValidMonth,
   isValidOfficeDate,
   officeDateTimeToInstant,
+  officeMinuteOfDay,
   previousDate,
   toOfficeDate,
+  timeToMinutes,
   toOfficeMonth,
   weekdayOf,
 } from "@/lib/time";
@@ -141,5 +143,28 @@ describe("officeDateTimeToInstant", () => {
     expect(officeDateTimeToInstant("2026-10-24", "09:60:00")).toBeNull();
     expect(officeDateTimeToInstant("2026-10-24", "9am")).toBeNull();
     expect(officeDateTimeToInstant("", "09:00:00")).toBeNull();
+  });
+});
+
+describe("timeToMinutes", () => {
+  it("reads HH:MM and HH:MM:SS", () => {
+    expect(timeToMinutes("09:30")).toBe(570);
+    expect(timeToMinutes("18:00:00")).toBe(1080);
+  });
+
+  it("is null for anything else", () => {
+    for (const bad of ["24:00", "9:00", "09:60", "", "9am"]) expect(timeToMinutes(bad), bad).toBeNull();
+  });
+});
+
+describe("officeMinuteOfDay", () => {
+  it("is the Dhaka clock in whole minutes, dropping seconds", () => {
+    expect(officeMinuteOfDay(new Date("2026-10-24T03:00:00Z"))).toBe(9 * 60);
+    expect(officeMinuteOfDay(new Date("2026-10-24T03:10:59Z"))).toBe(9 * 60 + 10);
+  });
+
+  it("handles the day boundary in Dhaka, not UTC", () => {
+    expect(officeMinuteOfDay(new Date("2026-10-23T18:30:00Z"))).toBe(30);
+    expect(officeMinuteOfDay(new Date("2026-10-24T17:59:59Z"))).toBe(23 * 60 + 59);
   });
 });
