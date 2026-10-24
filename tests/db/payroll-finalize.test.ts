@@ -142,6 +142,9 @@ describe.skipIf(!testDatabaseUrl)("finalizing payroll", () => {
     const trail = await db.select().from(auditLog).where(and(eq(auditLog.entityId, runId), eq(auditLog.action, "payroll_run.finalize")));
     expect(trail).toHaveLength(1);
     expect(trail[0].actorId).toBe(userId);
+    // The entry shows what changed, in the same shape before and after.
+    expect(trail[0].before).toEqual({ month: MONTH, status: "draft", version: 1 });
+    expect(trail[0].after).toMatchObject({ month: MONTH, status: "finalized", version: 1, employees: expect.any(Number) });
   });
 
   it("cannot be finalized twice, or recomputed, or given bonuses and advances", async () => {
