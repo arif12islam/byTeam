@@ -67,9 +67,12 @@ describe("buildDemoPlan", () => {
     expect(plan.workingDates.filter((d) => punchesOn(e, d).length === 1)).toEqual([plan.workingDates[2], plan.workingDates[9], plan.workingDates[15]]);
   });
 
-  it("gives the double tap person four punches a day and one worked day off", () => {
+  it("gives the double tap person four punches a day, two on one day, and one worked day off", () => {
     const e = byKey("double_tap");
-    for (const date of plan.workingDates) expect(punchesOn(e, date)).toEqual(["08:55:00", "08:55:25", "18:00:00", "18:00:20"]);
+    const tapOnly = plan.workingDates[5];
+    for (const date of plan.workingDates.filter((d) => d !== tapOnly)) expect(punchesOn(e, date)).toEqual(["08:55:00", "08:55:25", "18:00:00", "18:00:20"]);
+    // On this day only the arrival was read, twice. The second tap is not leaving.
+    expect(punchesOn(e, tapOnly)).toEqual(["08:55:00", "08:55:25"]);
     const offDays = [...new Set(e.punches.map((p) => p.date))].filter((d) => !plan.workingDates.includes(d));
     expect(offDays).toEqual(["2017-03-03"]); // the first Friday
     expect(punchesOn(e, "2017-03-03")).toEqual(["10:00", "14:00"]);
