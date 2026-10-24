@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   CalendarMinus,
+  ChartColumn,
   Clock,
   Fingerprint,
   Timer,
@@ -34,7 +35,10 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Monthly",
-    items: [{ href: "/payroll", label: "Payroll", icon: Wallet }],
+    items: [
+      { href: "/payroll", label: "Payroll", icon: Wallet },
+      { href: "/reports", label: "Reports", icon: ChartColumn },
+    ],
   },
   {
     label: "Setup",
