@@ -79,6 +79,12 @@ export function toOfficeMonth(instant: Date): string {
   return toOfficeDate(instant).slice(0, 7);
 }
 
+/** The month before (-1) or after (+1) the given one, as YYYY-MM. */
+export function shiftMonth(month: string, delta: number): string {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 7);
+}
+
 /** A YYYY-MM month for people to read, like "Jan 2026". */
 export function formatMonth(month: string): string {
   const [y, m] = month.split("-").map(Number);

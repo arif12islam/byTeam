@@ -190,7 +190,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Trigger recalc on: new punch batch, adjustment, shift change
 - [x] Nightly `/api/cron/recalc` for the previous day
 - [x] Today screen: in, late, absent, on leave, device status
-- [ ] Attendance screen: monthly grid per employee, day detail with raw punches
+- [x] Attendance screen: monthly grid per employee, day detail with raw punches
 - [ ] Manual adjustment with required reason, audited
 - [ ] Excel export of the monthly grid
 - [ ] `scripts/seed.ts`: 6 to 8 employees, one full month of punches covering every case

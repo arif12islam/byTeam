@@ -11,6 +11,7 @@ import {
   isValidOfficeDate,
   officeDateTimeToInstant,
   officeMinuteOfDay,
+  shiftMonth,
   formatOfficeTime,
   previousDate,
   toOfficeDate,
@@ -210,5 +211,14 @@ describe("formatOfficeTime", () => {
     expect(formatOfficeTime(new Date("2026-10-24T03:05:00Z"))).toBe("09:05");
     expect(formatOfficeTime(new Date("2026-10-23T18:00:00Z"))).toBe("00:00"); // midnight in Dhaka
     expect(formatOfficeTime(new Date("2026-10-24T17:59:00Z"))).toBe("23:59");
+  });
+});
+
+describe("shiftMonth", () => {
+  it("moves across year ends in both directions", () => {
+    expect(shiftMonth("2026-10", 1)).toBe("2026-11");
+    expect(shiftMonth("2026-12", 1)).toBe("2027-01");
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonth("2026-03", 0)).toBe("2026-03");
   });
 });
