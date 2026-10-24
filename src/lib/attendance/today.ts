@@ -111,3 +111,37 @@ export async function loadTodayBoard(db: Db, now: Date): Promise<TodayBoard> {
   }
   return buildTodayBoard(inputs, now);
 }
+
+export type ArrivalBucket = {
+  /** Start of the bucket as HH:MM, office time. */
+  label: string;
+  /** People whose first punch fell in the bucket, late ones included. */
+  count: number;
+  /** How many of them were late. */
+  late: number;
+};
+
+/**
+ * How arrivals spread over the morning: first punches grouped in buckets of
+ * `bucketMinutes`. Buckets run without gaps from the first arrival to the last
+ * so a quiet stretch shows as an empty bar. Pure.
+ */
+export function arrivalBuckets(entries: readonly TodayEntry[], bucketMinutes = 15): ArrivalBucket[] {
+  const arrivals = entries
+    .filter((e) => e.firstIn !== null && (e.group === "in" || e.group === "worked_off_day"))
+    .map((e) => ({ minute: officeMinuteOfDay(e.firstIn as Date), late: e.status === "late" }));
+  if (arrivals.length === 0) return [];
+
+  const start = (minute: number) => Math.floor(minute / bucketMinutes) * bucketMinutes;
+  const first = Math.min(...arrivals.map((a) => start(a.minute)));
+  const last = Math.max(...arrivals.map((a) => start(a.minute)));
+
+  const buckets: ArrivalBucket[] = [];
+  for (let minute = first; minute <= last; minute += bucketMinutes) {
+    const inBucket = arrivals.filter((a) => start(a.minute) === minute);
+    const hh = String(Math.floor(minute / 60)).padStart(2, "0");
+    const mm = String(minute % 60).padStart(2, "0");
+    buckets.push({ label: `${hh}:${mm}`, count: inBucket.length, late: inBucket.filter((a) => a.late).length });
+  }
+  return buckets;
+}
