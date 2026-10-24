@@ -115,6 +115,8 @@ The device calls our server over plain HTTP using ZKTeco's ADMS (Push) protocol;
 - Device times are read as Asia/Dhaka. Unknown emp\_code is still saved, then shown as an "unmatched punch" for HR.
 - A late batch of punches marks those dates for recalculation.
 
+**Clock check.** A device only tells us when each punch happened, so on every upload we compare the newest punch time with the moment we received it and keep the latest estimate on the device (`clock_offset_seconds`, positive when the device is ahead). More than 5 minutes either way flags the device on the Devices screen. A punch dated in the future proves the device is ahead, whatever the upload size. A lag is only believed for an upload of 3 punches or fewer, because a device sends a backlog after an outage and its newest punch is then old even with a perfect clock. A later punch that shows the clock is right clears the flag. A gap of whole hours usually means the device time zone is wrong.
+
 **Pushing employees to the device:** adding an employee in the app queues a user-update command, so the device PIN always equals `emp_code`. Face and fingerprint enrollment still happens at the device.
 
 Check exact field order and the handshake reply against the real firmware during the LAN test; firmware versions differ.
