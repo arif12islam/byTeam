@@ -200,7 +200,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 
 ### M4: Leave
 
-- [ ] Schema: `leave_types`, `leave_requests`
+- [x] Schema: `leave_types`, `leave_requests`
 - [ ] Leave types screen: name, yearly quota, paid or unpaid
 - [ ] Leave request form for HR, day count skipping off days and holidays
 - [ ] Approve, reject, cancel; each triggers recalc for the covered dates

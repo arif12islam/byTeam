@@ -44,6 +44,11 @@ export const users = pgTable("users", {
  * 0 for Sunday to 6 for Saturday. They start empty because the office has not
  * decided them yet (docs/BUILD_PLAN.md section 7).
  */
+export const LEAVE_YEAR_BASES = ["calendar", "anniversary"] as const;
+export type LeaveYearBasis = (typeof LEAVE_YEAR_BASES)[number];
+
+export const leaveYearBasis = pgEnum("leave_year_basis", LEAVE_YEAR_BASES);
+
 export const companySettings = pgTable(
   "company_settings",
   {
@@ -55,6 +60,13 @@ export const companySettings = pgTable(
       .default(sql`'{}'::smallint[]`),
     timezone: text("timezone").notNull().default("Asia/Dhaka"),
     currency: text("currency").notNull().default("BDT"),
+    /**
+     * Which year a leave quota counts in: the calendar year (January to
+     * December) or each employee's own year starting on their joining date.
+     * The office has not decided (docs/BUILD_PLAN.md section 7), so it starts
+     * as the calendar year and can be changed.
+     */
+    leaveYearBasis: leaveYearBasis("leave_year_basis").notNull().default("calendar"),
     updatedAt: updatedAt(),
   },
   (t) => [
