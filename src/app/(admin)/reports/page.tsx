@@ -1,5 +1,6 @@
 import {
   AlarmClock,
+  Info,
   Banknote,
   CalendarCheck,
   CalendarOff,
@@ -19,9 +20,10 @@ import { Suspense } from "react";
 import { BarList } from "@/components/charts/bar-list";
 import { ColumnChart } from "@/components/charts/column-chart";
 import { DailyBars } from "@/components/charts/daily-bars";
-import { MonthNav } from "@/components/month-nav";
+import { DateRangeFilter } from "@/components/date-range-filter";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui/avatar";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -29,12 +31,13 @@ import { Ring } from "@/components/ui/ring";
 import { StatTile } from "@/components/ui/stat-tile";
 import type { Tone } from "@/components/ui/tone";
 import { getDb } from "@/db";
-import { loadMonthGrid } from "@/lib/attendance/month";
+import { loadPeriodGrid } from "@/lib/attendance/month";
+import { describePeriodNav, periodLabel, periodMonths, periodQuery, resolvePeriod, wholeMonthsIn } from "@/lib/period";
 import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
 import { buildAttendanceReport, formatRate, type PersonFigure } from "@/lib/reports/attendance-report";
-import { formatCompact, formatTaka, payrollByDepartment, payrollTrend } from "@/lib/reports/payroll-report";
+import { combineSheets, formatCompact, formatTaka, payrollByDepartment, payrollTrend, payrollTrendFor } from "@/lib/reports/payroll-report";
 import { requireRole } from "@/lib/session";
-import { formatMonth, isValidMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
+import { formatMonth, toOfficeDate } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Reports" };
 
@@ -44,7 +47,7 @@ export default function ReportsPage(props: PageProps<"/reports">) {
       <PageHeader
         icon={ChartColumn}
         title="Reports"
-        description="The month in numbers: attendance, lateness, leave and what the payroll costs."
+        description="Attendance, lateness, leave and payroll cost for a month, three months or any dates you pick."
       />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading reports</p>}>
         <ReportsContent searchParams={props.searchParams} />
@@ -109,23 +112,39 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
 
   const now = new Date();
   const today = toOfficeDate(now);
-  const thisMonth = toOfficeMonth(now);
-  const { month: requested } = await searchParams;
-  const month = typeof requested === "string" && isValidMonth(requested) ? requested : thisMonth;
+  const params = await searchParams;
+  const { period, notice } = resolvePeriod(params, today);
+  const label = periodLabel(period);
+  const months = periodMonths(period);
+  const payMonths = wholeMonthsIn(period);
+  const single = months.length === 1;
 
   const db = getDb();
-  const [grid, runs, sheet] = await Promise.all([loadMonthGrid(db, month, today), listPayrollRuns(db), loadPayrollSheet(db, month)]);
+  const [grid, runs, sheets] = await Promise.all([
+    loadPeriodGrid(db, period, today),
+    listPayrollRuns(db),
+    Promise.all(payMonths.map((m) => loadPayrollSheet(db, m))),
+  ]);
+  const payrollSheets = sheets.filter((s): s is NonNullable<typeof s> => s !== null);
+  const combined = combineSheets(payrollSheets);
   const report = buildAttendanceReport(grid);
   const { totals } = report;
   const leaveDays = totals.leavePaid + totals.leaveUnpaid;
 
   const nav = (
-    <MonthNav basePath="/reports" month={month} thisMonth={thisMonth}>
-      <a href={`/reports/export?month=${month}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-        <Download aria-hidden />
-        Download CSV
-      </a>
-    </MonthNav>
+    <>
+      <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/reports" nav={describePeriodNav("/reports", period, today)}>
+        <a href={`/reports/export?${periodQuery(period)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Download aria-hidden />
+          Download CSV
+        </a>
+      </DateRangeFilter>
+      {notice ? (
+        <Alert tone="info" icon={Info} className="py-2">
+          {notice}
+        </Alert>
+      ) : null}
+    </>
   );
 
   if (report.people === 0) {
@@ -133,18 +152,19 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       <div className="mt-6 grid gap-5">
         {nav}
         <Card className="border-dashed text-sm text-muted-foreground shadow-none">
-          Nobody was employed in {formatMonth(month)}.{" "}
+          Nobody was employed in {label}.{" "}
           <Link href="/employees" className="font-medium text-primary underline underline-offset-2">
             Add employees on the Employees screen
           </Link>
-          , or pick another month.
+          , or pick other dates.
         </Card>
       </div>
     );
   }
 
-  const trend = payrollTrend(runs, month);
-  const departmentCosts = sheet ? payrollByDepartment(sheet.rows) : [];
+  // One month shows the six months up to it. A longer period shows exactly its own months.
+  const trend = single ? payrollTrend(runs, months[0]) : payrollTrendFor(runs, months);
+  const departmentCosts = payrollByDepartment(combined.rows);
   const departmentMax = Math.max(1, ...departmentCosts.map((d) => d.net));
   const checks = [
     { count: totals.missingOut, text: "with no leaving punch" },
@@ -207,7 +227,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       <Card>
         <CardTitle icon={ChartColumn}>Day by day</CardTitle>
         <p className="mb-4 mt-1.5 text-sm text-muted-foreground">
-          How many people were on time, late, absent or on leave each day of {formatMonth(month)}.
+          How many people were on time, late, absent or on leave each day of {label}.
         </p>
         <DailyBars points={report.daily} />
       </Card>
@@ -232,26 +252,25 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
 
         <Card>
           <CardTitle icon={Banknote}>Payroll cost</CardTitle>
-          {sheet ? (
+          {combined.months > 0 ? (
             <>
               <div className="mb-5 mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  ["Gross", sheet.totals.gross, "text-foreground"],
-                  ["Deductions", sheet.totals.deductions, "text-danger"],
-                  ["Additions", sheet.totals.additions, "text-success"],
-                  ["Net pay", sheet.totals.net, "text-foreground font-semibold"],
-                ].map(([label, value, cls]) => (
-                  <div key={label}>
-                    <p className="text-xs text-muted-foreground">{label}</p>
+                  ["Gross", combined.totals.gross, "text-foreground"],
+                  ["Deductions", combined.totals.deductions, "text-danger"],
+                  ["Additions", combined.totals.additions, "text-success"],
+                  ["Net pay", combined.totals.net, "text-foreground font-semibold"],
+                ].map(([name, value, cls]) => (
+                  <div key={name}>
+                    <p className="text-xs text-muted-foreground">{name}</p>
                     <p className={`mt-0.5 text-base tabular-nums ${cls}`}>{formatTaka(Number(value))}</p>
                   </div>
                 ))}
               </div>
-              <p className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-                Run for {formatMonth(month)}
-                <Badge tone={sheet.run.status === "finalized" ? "success" : "warning"}>
-                  {sheet.run.status === "finalized" ? "Finalized" : "Draft"}
-                </Badge>
+              <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                {combined.months === 1 ? `Run for ${formatMonth(payMonths[0])}` : `${combined.months} monthly runs`}
+                {combined.finalized > 0 ? <Badge tone="success">{combined.finalized === 1 && combined.months === 1 ? "Finalized" : `${combined.finalized} finalized`}</Badge> : null}
+                {combined.drafts > 0 ? <Badge tone="warning">{combined.drafts === 1 && combined.months === 1 ? "Draft" : `${combined.drafts} draft`}</Badge> : null}
               </p>
               <BarList
                 items={departmentCosts.map((d) => ({
@@ -263,11 +282,20 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
                 }))}
                 max={departmentMax}
               />
+              {combined.months < payMonths.length ? (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {payMonths.length - combined.months} of the {payMonths.length} months have no payroll run yet.
+                </p>
+              ) : null}
             </>
+          ) : payMonths.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Payroll is worked out for whole months. Pick a range that covers at least one whole month to see its cost here.
+            </p>
           ) : (
             <p className="mt-3 text-sm text-muted-foreground">
-              No payroll run for {formatMonth(month)} yet.{" "}
-              <Link href={`/payroll?month=${month}`} className="font-medium text-primary underline underline-offset-2">
+              No payroll run for {payMonths.length === 1 ? formatMonth(payMonths[0]) : "these months"} yet.{" "}
+              <Link href={`/payroll?month=${payMonths[0]}`} className="font-medium text-primary underline underline-offset-2">
                 Create the draft on the Payroll screen
               </Link>
               .
@@ -277,7 +305,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
       </div>
 
       <Card>
-        <CardTitle icon={Banknote}>Net pay, last six months</CardTitle>
+        <CardTitle icon={Banknote}>{single ? "Net pay, last six months" : "Net pay by month"}</CardTitle>
         <p className="mb-4 mt-1.5 text-sm text-muted-foreground">The net pay of each payroll run. Months with no run are left empty.</p>
         {trend.some((p) => p.net !== null) ? (
           <ColumnChart
@@ -285,7 +313,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
               label: formatMonth(p.month).split(" ")[0],
               value: p.net,
               display: p.net === null ? undefined : formatCompact(p.net),
-              highlight: p.month === month,
+              highlight: single ? p.month === months[0] : true,
             }))}
           />
         ) : (
@@ -341,7 +369,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
         <p className="mt-3 text-sm text-muted-foreground">
           <CalendarOff className="mr-1.5 inline size-4 align-text-bottom" aria-hidden />
           Open{" "}
-          <Link href={`/attendance?month=${month}`} className="font-medium text-primary underline underline-offset-2">
+          <Link href={`/attendance?${periodQuery(period)}`} className="font-medium text-primary underline underline-offset-2">
             Attendance
           </Link>{" "}
           to fix a missing punch or correct a day.

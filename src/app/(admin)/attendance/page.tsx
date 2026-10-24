@@ -1,20 +1,22 @@
-import { CalendarDays, Download } from "lucide-react";
+import { CalendarDays, Download, Info } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { MonthNav } from "@/components/month-nav";
+import { DateRangeFilter } from "@/components/date-range-filter";
 import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { toneClasses } from "@/components/ui/tone";
 import { statusTone } from "@/components/status";
 import { getDb } from "@/db";
 import type { AttendanceStatus } from "@/db/schema/attendance";
 import { cellText, statusLabel } from "@/lib/attendance/labels";
-import { loadMonthGrid, type GridCell } from "@/lib/attendance/month";
+import { loadPeriodGrid, type GridCell } from "@/lib/attendance/month";
+import { describePeriodNav, periodLabel, periodQuery, resolvePeriod } from "@/lib/period";
 import { requireRole } from "@/lib/session";
-import { formatMonth, isValidMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
+import { formatMonth, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { AttendanceCards } from "./attendance-cards";
@@ -27,7 +29,7 @@ export default function AttendancePage(props: PageProps<"/attendance">) {
       <PageHeader
         icon={CalendarDays}
         title="Attendance"
-        description="Monthly attendance for every employee, built from device punches. Open a day to see the punches behind it."
+        description="Attendance for every employee over a month, three months or any dates, built from device punches. Open a day to see the punches behind it."
       />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading attendance</p>}>
         <AttendanceContent searchParams={props.searchParams} />
@@ -57,28 +59,40 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
 
   const now = new Date();
   const today = toOfficeDate(now);
-  const thisMonth = toOfficeMonth(now);
-  const { month: requested } = await searchParams;
-  const month = typeof requested === "string" && isValidMonth(requested) ? requested : thisMonth;
+  const { period, notice } = resolvePeriod(await searchParams, today);
+  const label = periodLabel(period);
 
-  const grid = await loadMonthGrid(getDb(), month, today);
+  const grid = await loadPeriodGrid(getDb(), period, today);
+  // Dates grouped by month, for the heading row over a long period.
+  const monthSpans: { month: string; days: number }[] = [];
+  for (const date of grid.dates) {
+    const month = date.slice(0, 7);
+    const last = monthSpans.at(-1);
+    if (last?.month === month) last.days += 1;
+    else monthSpans.push({ month, days: 1 });
+  }
 
   return (
     <div className="mt-6 grid gap-5">
-      <MonthNav basePath="/attendance" month={month} thisMonth={thisMonth}>
-        <a href={`/attendance/export?month=${month}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+      <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/attendance" nav={describePeriodNav("/attendance", period, today)}>
+        <a href={`/attendance/export?${periodQuery(period)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           <Download aria-hidden />
           Download Excel
         </a>
-      </MonthNav>
+      </DateRangeFilter>
+      {notice ? (
+        <Alert tone="info" icon={Info} className="py-2">
+          {notice}
+        </Alert>
+      ) : null}
 
       {grid.rows.length === 0 ? (
         <Card className="border-dashed text-sm text-muted-foreground shadow-none">
-          Nobody was employed in {formatMonth(month)}.{" "}
+          Nobody was employed in {label}.{" "}
           <Link href="/employees" className="font-medium text-primary underline underline-offset-2">
             Add employees on the Employees screen
           </Link>
-          , or pick another month.
+          , or pick other dates.
         </Card>
       ) : (
         <>
@@ -88,18 +102,28 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
           <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-card md:block">
             <table className="w-full border-collapse text-sm">
               <thead>
+                {monthSpans.length > 1 ? (
+                  <tr className="text-xs text-muted-foreground">
+                    <th colSpan={5} className="sticky left-0 z-10 bg-card" aria-hidden />
+                    {monthSpans.map((span) => (
+                      <th key={span.month} colSpan={span.days} scope="colgroup" className="border-l border-border bg-secondary/50 px-2 py-1 text-left font-medium">
+                        {formatMonth(span.month)}
+                      </th>
+                    ))}
+                  </tr>
+                ) : null}
                 <tr className="border-b border-border text-left text-muted-foreground">
                   <th scope="col" className="sticky left-0 z-10 min-w-36 bg-card px-3 py-2 font-medium">
                     Employee
                   </th>
+                  {["Present", "Late", "Absent", "Leave"].map((name, i) => (
+                    <th key={name} scope="col" className={cn("px-2 py-2 text-right font-medium", i === 3 && "border-r border-border")}>
+                      {name}
+                    </th>
+                  ))}
                   {grid.dates.map((date) => (
                     <th key={date} scope="col" className="min-w-8 px-0.5 py-2 text-center font-medium tabular-nums">
                       {Number(date.slice(8))}
-                    </th>
-                  ))}
-                  {["Present", "Late", "Absent", "Leave"].map((label) => (
-                    <th key={label} scope="col" className={cn("px-2 py-2 text-right font-medium", label === "Present" && "border-l border-border")}>
-                      {label}
                     </th>
                   ))}
                 </tr>
@@ -111,6 +135,10 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                       {row.employee.name}
                       <span className="block text-xs font-normal text-muted-foreground">Code {row.employee.empCode}</span>
                     </th>
+                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.present}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.late}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.absent}</td>
+                    <td className="border-r border-border px-2 py-2 text-right tabular-nums">{row.totals.leave}</td>
                     {grid.dates.map((date) => {
                       const cell = row.cells.get(date);
                       if (!cell) return <td key={date} className="px-0.5 py-2 text-center text-muted-foreground/40">-</td>;
@@ -127,10 +155,6 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                         </td>
                       );
                     })}
-                    <td className="border-l border-border px-2 py-2 text-right tabular-nums">{row.totals.present}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.late}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.absent}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.leave}</td>
                   </tr>
                 ))}
               </tbody>

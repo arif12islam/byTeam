@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RunSummary } from "@/lib/payroll/runs";
-import { formatCompact, formatTaka, payrollByDepartment, payrollTrend } from "@/lib/reports/payroll-report";
+import { combineSheets, formatCompact, formatTaka, netByEmployee, payrollByDepartment, payrollTrend, payrollTrendFor } from "@/lib/reports/payroll-report";
 
 const run = (month: string, net: string, status: RunSummary["status"] = "finalized"): RunSummary => ({
   id: month,
@@ -64,5 +64,56 @@ describe("formatCompact", () => {
     expect(formatCompact(2000000)).toBe("2M");
     expect(formatCompact(950)).toBe("950");
     expect(formatCompact(0)).toBe("0");
+  });
+});
+
+describe("payrollTrendFor", () => {
+  it("returns exactly the months asked for, with gaps as null", () => {
+    const points = payrollTrendFor([run("2031-01", "90000.00", "draft"), run("2031-03", "100000.00")], ["2031-01", "2031-02", "2031-03"]);
+    expect(points.map((p) => [p.month, p.net, p.status])).toEqual([
+      ["2031-01", 90000, "draft"],
+      ["2031-02", null, null],
+      ["2031-03", 100000, "finalized"],
+    ]);
+  });
+});
+
+describe("combineSheets and netByEmployee", () => {
+  const sheet = (status: "draft" | "finalized", gross: string, net: string, rows: { employeeId: string; department: string | null; gross: string; net: string }[]) => ({
+    run: { status },
+    totals: { gross, deductions: "0.10", additions: "0.20", net },
+    rows,
+  });
+  const jan = sheet("finalized", "60000.10", "55000.05", [
+    { employeeId: "a", department: "Sales", gross: "30000.05", net: "27000.05" },
+    { employeeId: "b", department: "Sales", gross: "30000.05", net: "28000.00" },
+  ]);
+  const feb = sheet("draft", "30000.05", "27000.05", [{ employeeId: "a", department: "Sales", gross: "30000.05", net: "27000.05" }]);
+
+  it("adds every total in paisa, with no drift", () => {
+    const combined = combineSheets([jan, feb]);
+    expect(combined.totals).toEqual({ gross: "90000.15", deductions: "0.20", additions: "0.40", net: "82000.10" });
+    expect(combined.months).toBe(2);
+    expect(combined.finalized).toBe(1);
+    expect(combined.drafts).toBe(1);
+    expect(combined.rows).toHaveLength(3);
+  });
+
+  it("is all zeros for no sheets", () => {
+    expect(combineSheets([])).toMatchObject({ months: 0, totals: { gross: "0.00", net: "0.00" }, rows: [] });
+  });
+
+  it("adds what each person was paid across the months", () => {
+    expect(netByEmployee([jan, feb])).toEqual(
+      new Map([
+        ["a", "54000.10"],
+        ["b", "28000.00"],
+      ]),
+    );
+  });
+
+  it("counts a person once per department even when they are in several months", () => {
+    const [sales] = payrollByDepartment(combineSheets([jan, feb]).rows);
+    expect(sales).toMatchObject({ department: "Sales", people: 2, gross: 90000.15, net: 82000.1 });
   });
 });

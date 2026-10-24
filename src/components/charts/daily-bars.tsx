@@ -2,6 +2,17 @@ import type { DailyPoint } from "@/lib/reports/attendance-report";
 import { cn } from "@/lib/utils";
 
 const weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const monthShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * The text under a bar, or an empty string. One month gets a day number every
+ * five days. A longer period gets the month name on the first of each month,
+ * and nothing between, so the labels never run into each other.
+ */
+export function axisLabel(point: Pick<DailyPoint, "date" | "day">, count: number): string {
+  if (count <= 31) return point.day % 5 === 1 || point.day === count ? String(point.day) : "";
+  return point.day === 1 ? monthShort[Number(point.date.slice(5, 7)) - 1] : "";
+}
 
 /**
  * One column per day of the month, stacked by what people did: green on time,
@@ -10,6 +21,8 @@ const weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
  */
 export function DailyBars({ points }: { points: readonly DailyPoint[] }) {
   const max = Math.max(1, ...points.map((p) => p.onTime + p.late + p.absent + p.leave));
+  // Many bars need thinner gaps to stay readable.
+  const gap = points.length > 45 ? "gap-px" : "gap-[3px]";
   const label = (p: DailyPoint) =>
     p.kind === "working"
       ? `${weekdayShort[p.weekday]} ${p.day}: ${p.onTime} on time, ${p.late} late, ${p.absent} absent, ${p.leave} on leave`
@@ -20,7 +33,7 @@ export function DailyBars({ points }: { points: readonly DailyPoint[] }) {
 
   return (
     <figure>
-      <div role="img" aria-label={`Attendance for each day. ${points.filter((p) => p.kind === "working").map(label).join(". ")}`} className="flex h-40 items-end gap-[3px]">
+      <div role="img" aria-label={`Attendance for each day. ${points.filter((p) => p.kind === "working").map(label).join(". ")}`} className={cn("flex h-40 items-end", gap)}>
         {points.map((p) => (
           <div key={p.date} title={label(p)} className="flex h-full min-w-0 flex-1 flex-col justify-end">
             {p.kind === "working" ? (
@@ -38,13 +51,10 @@ export function DailyBars({ points }: { points: readonly DailyPoint[] }) {
           </div>
         ))}
       </div>
-      <div aria-hidden className="mt-2 flex gap-[3px] text-[10px] text-muted-foreground sm:text-[11px]">
+      <div aria-hidden className={cn("mt-2 flex text-[10px] text-muted-foreground sm:text-[11px]", gap)}>
         {points.map((p) => (
-          <span
-            key={p.date}
-            className={cn("min-w-0 flex-1 text-center tabular-nums", p.day % 5 !== 1 && p.day !== points.length && "invisible")}
-          >
-            {p.day}
+          <span key={p.date} className={cn("min-w-0 flex-1 tabular-nums", points.length > 31 ? "overflow-visible whitespace-nowrap text-left" : "text-center")}>
+            {axisLabel(p, points.length)}
           </span>
         ))}
       </div>

@@ -3,7 +3,8 @@ import { and, asc, eq, gte, isNull, lt, or } from "drizzle-orm";
 import type { getDb } from "@/db";
 import { devices, employees, rawPunches } from "@/db/schema";
 import type { AttendanceStatus } from "@/db/schema/attendance";
-import { daysInMonth, eachDate, nextDate, officeDateTimeToInstant } from "@/lib/time";
+import { monthPeriod, periodDates, type Period } from "@/lib/period";
+import { nextDate, officeDateTimeToInstant } from "@/lib/time";
 
 import type { DayResult } from "./compute-day";
 import { computeDays } from "./recalc";
@@ -40,12 +41,20 @@ export type GridRow = {
   totals: GridTotals;
 };
 
-export type MonthGrid = {
+export type PeriodGrid = {
+  /** The first day of the period. */
+  from: string;
+  /** The last day of the period. */
+  to: string;
+  /** The month the period starts in, YYYY-MM. For a single month this is the month. */
   month: string;
-  /** Every date of the month, YYYY-MM-DD. */
+  /** Every date of the period, YYYY-MM-DD. */
   dates: string[];
   rows: GridRow[];
 };
+
+/** The same grid, from when screens only showed one month. */
+export type MonthGrid = PeriodGrid;
 
 export type GridInput = {
   employee: GridRow["employee"];
@@ -81,35 +90,38 @@ export function totalsOf(cells: Iterable<GridCell>): GridTotals {
 }
 
 /** Lays computed days out as one row per employee, sorted by name. Pure. */
-export function buildMonthGrid(month: string, inputs: readonly GridInput[]): MonthGrid {
-  const dates = eachDate(`${month}-01`, `${month}-${String(daysInMonth(month)).padStart(2, "0")}`);
+export function buildPeriodGrid(period: Period, inputs: readonly GridInput[]): PeriodGrid {
+  const dates = periodDates(period);
   const rows = inputs.map(({ employee, days }) => {
     const cells = new Map(days.map(({ date, result }) => [date, toCell(result)]));
     return { employee, cells, totals: totalsOf(cells.values()) };
   });
   rows.sort((a, b) => a.employee.name.localeCompare(b.employee.name) || a.employee.empCode.localeCompare(b.employee.empCode));
-  return { month, dates, rows };
+  return { from: period.from, to: period.to, month: period.from.slice(0, 7), dates, rows };
+}
+
+/** One whole month as a grid. */
+export function buildMonthGrid(month: string, inputs: readonly GridInput[]): PeriodGrid {
+  return buildPeriodGrid(monthPeriod(month), inputs);
 }
 
 /**
- * The month for everyone employed during it, worked out from the stored inputs
- * now. Days after today have no cell. Saves nothing.
+ * The period for everyone employed during it, worked out from the stored
+ * inputs now. Days after today have no cell. Saves nothing.
  */
-export async function loadMonthGrid(db: Db, month: string, today: string): Promise<MonthGrid> {
-  const first = `${month}-01`;
-  const last = `${month}-${String(daysInMonth(month)).padStart(2, "0")}`;
-  const to = last < today ? last : today;
+export async function loadPeriodGrid(db: Db, period: Period, today: string): Promise<PeriodGrid> {
+  const to = period.to < today ? period.to : today;
 
   const staff = await db
     .select({ id: employees.id })
     .from(employees)
-    .where(and(lt(employees.joinDate, nextDate(last)), or(isNull(employees.exitDate), gte(employees.exitDate, first))));
-  // A person marked inactive without an exit date has left at an unknown time: keep them out of past months.
+    .where(and(lt(employees.joinDate, nextDate(period.to)), or(isNull(employees.exitDate), gte(employees.exitDate, period.from))));
+  // A person marked inactive without an exit date has left at an unknown time: keep them out of past periods.
   const ids = staff.map((s) => s.id);
 
-  if (to < first || ids.length === 0) return buildMonthGrid(month, []);
+  if (to < period.from || ids.length === 0) return buildPeriodGrid(period, []);
 
-  const { people, toSave } = await computeDays(db, { employeeIds: ids, from: first, to });
+  const { people, toSave } = await computeDays(db, { employeeIds: ids, from: period.from, to });
   const daysByEmployee = new Map<string, GridInput["days"]>();
   for (const { employeeId, date, result } of toSave) {
     const list = daysByEmployee.get(employeeId) ?? [];
@@ -123,7 +135,12 @@ export async function loadMonthGrid(db: Db, month: string, today: string): Promi
       employee: { id: p.id, empCode: p.empCode, name: p.name, department: p.department },
       days: daysByEmployee.get(p.id) ?? [],
     }));
-  return buildMonthGrid(month, inputs);
+  return buildPeriodGrid(period, inputs);
+}
+
+/** One whole month for everyone employed during it. */
+export async function loadMonthGrid(db: Db, month: string, today: string): Promise<PeriodGrid> {
+  return loadPeriodGrid(db, monthPeriod(month), today);
 }
 
 export type DayDetail = {

@@ -5,7 +5,7 @@ import { toneClasses } from "@/components/ui/tone";
 import { statusTone } from "@/components/status";
 import { statusLabel } from "@/lib/attendance/labels";
 import type { GridCell, MonthGrid } from "@/lib/attendance/month";
-import { weekdayOf } from "@/lib/time";
+import { formatMonth, weekdayOf } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const weekdayInitials = ["S", "M", "T", "W", "T", "F", "S"];
@@ -24,7 +24,14 @@ function describeCell(date: string, cell: GridCell): string {
  * colored by what happened. Tap a day to see the punches behind it.
  */
 export function AttendanceCards({ grid }: { grid: MonthGrid }) {
-  const offset = weekdayOf(grid.dates[0]);
+  // One small calendar per month the period touches. A single month shows no month heading.
+  const months: { month: string; dates: string[] }[] = [];
+  for (const date of grid.dates) {
+    const month = date.slice(0, 7);
+    const last = months.at(-1);
+    if (last?.month === month) last.dates.push(date);
+    else months.push({ month, dates: [date] });
+  }
 
   return (
     <div className="grid gap-3">
@@ -74,49 +81,54 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
             ))}
           </dl>
 
-          <div className="mt-3 grid grid-cols-7 gap-1" role="group" aria-label={`${row.employee.name}, days of the month`}>
-            {weekdayInitials.map((initial, i) => (
-              <span key={i} aria-hidden className="pb-0.5 text-center text-[10px] text-muted-foreground">
-                {initial}
-              </span>
-            ))}
-            {Array.from({ length: offset }, (_, i) => (
-              <span key={`blank-${i}`} aria-hidden />
-            ))}
-            {grid.dates.map((date) => {
-              const cell = row.cells.get(date);
-              const day = Number(date.slice(8));
-              if (!cell) {
-                return (
-                  <span
-                    key={date}
-                    aria-label={`${date}: no record`}
-                    className="grid aspect-square place-items-center rounded-lg border border-dashed border-border text-[11px] tabular-nums text-muted-foreground/60"
-                  >
-                    {day}
+          {months.map(({ month, dates }) => (
+            <div key={month} className="mt-3">
+              {months.length > 1 ? <p className="pb-1 text-xs font-semibold text-muted-foreground">{formatMonth(month)}</p> : null}
+              <div className="grid grid-cols-7 gap-1" role="group" aria-label={`${row.employee.name}, ${formatMonth(month)}`}>
+                {weekdayInitials.map((initial, i) => (
+                  <span key={i} aria-hidden className="pb-0.5 text-center text-[10px] text-muted-foreground">
+                    {initial}
                   </span>
-                );
-              }
-              const tone = statusTone[cell.status];
-              return (
-                <Link
-                  key={date}
-                  href={`/attendance/${row.employee.id}/${date}`}
-                  aria-label={describeCell(date, cell)}
-                  title={describeCell(date, cell)}
-                  className={cn(
-                    "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums",
-                    toneClasses[tone].soft,
-                    (cell.status === "late" || cell.status === "absent") && "font-semibold",
-                    cell.missingOut && "ring-1 ring-warning",
-                  )}
-                >
-                  {day}
-                  {cell.isManual ? <span aria-hidden className="absolute right-0.5 top-0.5 size-1 rounded-full bg-current" /> : null}
-                </Link>
-              );
-            })}
-          </div>
+                ))}
+                {Array.from({ length: weekdayOf(dates[0]) }, (_, i) => (
+                  <span key={`blank-${i}`} aria-hidden />
+                ))}
+                {dates.map((date) => {
+                  const cell = row.cells.get(date);
+                  const day = Number(date.slice(8));
+                  if (!cell) {
+                    return (
+                      <span
+                        key={date}
+                        aria-label={`${date}: no record`}
+                        className="grid aspect-square place-items-center rounded-lg border border-dashed border-border text-[11px] tabular-nums text-muted-foreground/60"
+                      >
+                        {day}
+                      </span>
+                    );
+                  }
+                  const tone = statusTone[cell.status];
+                  return (
+                    <Link
+                      key={date}
+                      href={`/attendance/${row.employee.id}/${date}`}
+                      aria-label={describeCell(date, cell)}
+                      title={describeCell(date, cell)}
+                      className={cn(
+                        "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums",
+                        toneClasses[tone].soft,
+                        (cell.status === "late" || cell.status === "absent") && "font-semibold",
+                        cell.missingOut && "ring-1 ring-warning",
+                      )}
+                    >
+                      {day}
+                      {cell.isManual ? <span aria-hidden className="absolute right-0.5 top-0.5 size-1 rounded-full bg-current" /> : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </section>
       ))}
       <p className="text-xs leading-relaxed text-muted-foreground">
