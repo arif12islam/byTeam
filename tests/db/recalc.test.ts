@@ -179,11 +179,14 @@ describe.skipIf(!testDatabaseUrl)("recalc", () => {
   });
 
   it("recomputes only active employees unless some are named", async () => {
+    // Recalculating "everyone" writes rows for every active employee in the database, including ones other test
+    // files are using at the same time. A Monday that no other test looks at keeps them apart.
+    const alone = "2031-03-17";
     const left = await setup({ active: false });
-    await recalc(db, { employeeIds: null, from: MON, to: MON });
+    await recalc(db, { employeeIds: null, from: alone, to: alone });
     expect((await daysOf(left.employee.id)).size).toBe(0);
 
-    await recalc(db, { employeeIds: [left.employee.id], from: MON, to: MON });
+    await recalc(db, { employeeIds: [left.employee.id], from: alone, to: alone });
     expect((await daysOf(left.employee.id)).size).toBe(1);
   });
 
