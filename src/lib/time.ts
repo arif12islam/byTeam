@@ -24,6 +24,12 @@ export function previousDate(date: string): string {
   return utc.toISOString().slice(0, 10);
 }
 
+/** The office date after the given one, as YYYY-MM-DD. */
+export function nextDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+}
+
 /** Number of days in a month, where month is "YYYY-MM". */
 export function daysInMonth(month: string): number {
   const [y, m] = month.split("-").map(Number);
@@ -145,4 +151,15 @@ export function timeToMinutes(value: string): number | null {
 export function officeMinuteOfDay(instant: Date): number {
   const wall = officeWallClock(instant.getTime());
   return Math.floor((((wall % 86_400_000) + 86_400_000) % 86_400_000) / 60_000);
+}
+
+/** Every date from `from` to `to`, both included, as YYYY-MM-DD. Empty when `to` is before `from`. */
+export function eachDate(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const end = Date.parse(`${to}T00:00:00Z`);
+  for (let t = Date.UTC(fy, fm - 1, fd); t <= end; t += 86_400_000) {
+    dates.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return dates;
 }
