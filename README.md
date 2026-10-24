@@ -40,6 +40,18 @@ Open http://localhost:3000 and sign in with the owner account. The seed does not
 | `npm run sim` | Pretend to be the attendance device (see below) |
 | `npm run seed:owner` | Create the first owner login from `OWNER_EMAIL`, `OWNER_NAME`, `OWNER_PASSWORD` |
 
+## Tests
+
+`npm test` runs everything that needs no database. The tests in `tests/db` use a real Postgres and are skipped unless `DATABASE_URL_TEST` is set to an empty database that has had the migrations applied:
+
+```bash
+createdb byteam_test
+DATABASE_URL=postgres://localhost/byteam_test npm run db:migrate
+DATABASE_URL_TEST=postgres://localhost/byteam_test npm test
+```
+
+CI does this with a throwaway Postgres. Never point `DATABASE_URL_TEST` at a real database: the tests add rows, and the punch log can never be cleaned up, by design.
+
 ## Trying the device without hardware
 
 The simulator behaves like the face and fingerprint device: it announces itself, sends punches live, sends a delayed batch from an offline period, resends the same batch, and answers commands.
