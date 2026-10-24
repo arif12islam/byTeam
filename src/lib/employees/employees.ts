@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { getDb } from "@/db";
 import { employees, shifts } from "@/db/schema";
 import { audit } from "@/lib/audit";
+import { queueUserUpdate } from "@/lib/devices/queue";
 import { isValidOfficeDate } from "@/lib/time";
 
 type Db = ReturnType<typeof getDb>;
@@ -121,6 +122,7 @@ export async function createEmployee(db: Db, input: NewEmployee, actorId: string
   return db.transaction(async (tx) => {
     const [row] = await tx.insert(employees).values(data).returning();
     await audit(tx, { actorId, action: "employee.create", entity: "employee", entityId: row.id, after: row });
+    await queueUserUpdate(tx, { empCode: row.empCode, name: row.name });
     return row;
   });
 }
@@ -139,6 +141,8 @@ export async function updateEmployee(db: Db, id: string, input: EmployeeDetailsI
 
     const [after] = await tx.update(employees).set(data).where(eq(employees.id, id)).returning();
     await audit(tx, { actorId, action: "employee.update", entity: "employee", entityId: id, before, after });
+    // Only the name is kept on the device, so only a new name needs sending.
+    if (before.name !== after.name) await queueUserUpdate(tx, { empCode: after.empCode, name: after.name });
     return { employee: after, changed: true };
   });
 }
