@@ -1,9 +1,13 @@
+import { ChevronRight, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { countByStatus, listEmployees } from "@/lib/employees/employees";
 import { requireRole } from "@/lib/session";
@@ -15,6 +19,7 @@ export default function EmployeesPage(props: PageProps<"/employees">) {
   return (
     <>
       <PageHeader
+        icon={Users}
         title="Employees"
         description="Staff records, shifts and salaries."
         actions={
@@ -44,8 +49,8 @@ async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employ
       href={value === "active" ? "/employees" : "/employees?show=inactive"}
       aria-current={view === value ? "page" : undefined}
       className={cn(
-        "rounded-md px-3 py-1.5 text-sm",
-        view === value ? "bg-accent font-medium text-accent-foreground" : "text-foreground/80 hover:bg-secondary",
+        "rounded-xl px-4 py-2 text-sm transition-colors",
+        view === value ? "bg-card font-medium shadow-card" : "text-muted-foreground hover:text-foreground",
       )}
     >
       {label} ({count})
@@ -54,39 +59,43 @@ async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employ
 
   return (
     <div className="mt-6">
-      <nav aria-label="Employee status" className="flex gap-1">
+      <nav aria-label="Employee status" className="inline-flex gap-1 rounded-2xl bg-secondary p-1">
         {tab("active", "Active", counts.active)}
         {tab("inactive", "Inactive", counts.inactive)}
       </nav>
 
       {rows.length === 0 ? (
-        <p className="mt-4 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+        <Card className="mt-4 border-dashed text-sm text-muted-foreground shadow-none">
           {view === "active" ? (
             <>
-              No employees yet. <Link href="/employees/new" className="text-primary underline underline-offset-4">Add the first one</Link>
+              No employees yet. <Link href="/employees/new" className="font-medium text-primary underline underline-offset-4">Add the first one</Link>
               , after you have set up a shift.
             </>
           ) : (
             "Nobody is inactive. People you deactivate appear here with their history kept."
           )}
-        </p>
+        </Card>
       ) : (
-        <ul className="mt-4 divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="mt-4 grid gap-2.5 md:grid-cols-2">
           {rows.map((row) => (
             <li key={row.id}>
               <Link
                 href={`/employees/${row.id}`}
-                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-3 hover:bg-secondary/60"
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-card transition-colors hover:border-primary/40"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{row.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                <Avatar name={row.name} className="size-11" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{row.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
                     Code {row.empCode}
-                    {row.designation ? ` · ${row.designation}` : ""}
-                    {row.department ? ` · ${row.department}` : ""}
+                    {row.designation ? `, ${row.designation}` : ""}
+                    {row.department ? `, ${row.department}` : ""}
                   </p>
+                  <Badge tone="off" className="mt-1.5">
+                    {row.shiftName}
+                  </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">{row.shiftName}</p>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
             </li>
           ))}

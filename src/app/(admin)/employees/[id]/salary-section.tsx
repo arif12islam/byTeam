@@ -22,7 +22,7 @@ export async function SalarySection({ employeeId }: { employeeId: string }) {
   };
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
       <h2 className="text-base font-semibold">Salary</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {structures.length === 0
