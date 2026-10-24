@@ -17,7 +17,7 @@ export default function LeaveTypesPage() {
   return (
     <>
       <BackLink href="/leave">Back to leave</BackLink>
-      <PageHeader icon={CalendarMinus} title="Leave types" description="The kinds of leave and how many days each person gets a year." />
+      <PageHeader icon={CalendarMinus} accent="violet" title="Leave types" description="The kinds of leave and how many days each person gets a year." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading leave types</p>}>
         <LeaveTypesContent />
       </Suspense>

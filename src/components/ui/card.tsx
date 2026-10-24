@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { accentClasses, type Accent } from "@/components/accent";
 import { cn } from "@/lib/utils";
 
 /** A raised white panel. Rounded and padded for thumbs as well as cursors. */
@@ -19,19 +20,22 @@ function CardTitle({
   children,
   count,
   action,
+  accent = "green",
   className,
 }: {
   icon?: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   children: React.ReactNode;
   count?: number | string;
   action?: React.ReactNode;
+  /** The color of the icon chip. Defaults to the brand green. */
+  accent?: Accent;
   className?: string;
 }) {
   return (
     <div className={cn("flex items-center justify-between gap-3", className)}>
       <h2 className="flex min-w-0 items-center gap-2.5 text-base font-semibold tracking-tight">
         {Icon ? (
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">
+          <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg", accentClasses[accent].soft)}>
             <Icon className="size-4" aria-hidden />
           </span>
         ) : null}

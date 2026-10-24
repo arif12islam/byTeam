@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { accentClasses } from "@/components/accent";
 import { Wordmark } from "@/components/brand";
 import { allNavItems, navGroups, primaryTabHrefs } from "@/components/nav";
 import { cn } from "@/lib/utils";
@@ -37,13 +38,15 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
+                        "flex items-center gap-3 rounded-xl px-2 py-1.5 text-sm transition-colors",
                         active
-                          ? "bg-forest-active font-medium text-white"
-                          : "text-forest-foreground/80 hover:bg-forest-line hover:text-forest-foreground",
+                          ? "bg-forest-line font-medium text-white"
+                          : "text-forest-foreground/80 hover:bg-forest-line/70 hover:text-forest-foreground",
                       )}
                     >
-                      <Icon className="size-[18px]" aria-hidden />
+                      <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg", accentClasses[item.accent].solid, !active && "opacity-85")}>
+                        <Icon className="size-4" aria-hidden />
+                      </span>
                       {item.label}
                     </Link>
                   </li>
@@ -129,13 +132,13 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex h-full flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center text-sm",
-                        active
-                          ? "border-primary bg-accent font-medium text-accent-foreground"
-                          : "border-border bg-background",
+                        "flex h-full flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 text-center text-sm",
+                        active ? "border-primary bg-accent font-medium text-accent-foreground" : "border-border bg-background",
                       )}
                     >
-                      <Icon className="size-6" aria-hidden />
+                      <span className={cn("grid size-10 place-items-center rounded-xl", accentClasses[item.accent].solid)}>
+                        <Icon className="size-5" aria-hidden />
+                      </span>
                       {item.label}
                     </Link>
                   </li>
@@ -165,7 +168,12 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                     active ? "font-medium text-white" : "text-forest-muted",
                   )}
                 >
-                  <span className={cn("grid h-7 w-14 place-items-center rounded-full transition-colors", active && "bg-forest-active")}>
+                  <span
+                    className={cn(
+                      "grid h-7 w-14 place-items-center rounded-full transition-colors",
+                      active && accentClasses[item.accent].solid,
+                    )}
+                  >
                     <Icon className="size-5" aria-hidden />
                   </span>
                   {item.label}

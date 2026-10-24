@@ -159,7 +159,7 @@ async function TodayContent() {
       <PunchFeed items={feed} now={now} />
       {buckets.length > 0 ? (
         <Card className="p-3 sm:p-3.5">
-          <CardTitle icon={Sunrise}>Arrivals</CardTitle>
+          <CardTitle icon={Sunrise} accent="orange">Arrivals</CardTitle>
           <div className="mt-3">
             <ArrivalsChart buckets={buckets} />
           </div>

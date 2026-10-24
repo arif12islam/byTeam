@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: "Payroll" };
 export default function PayrollPage(props: PageProps<"/payroll">) {
   return (
     <>
-      <PageHeader icon={Wallet} title="Payroll" description="Run the month's salaries from attendance and leave, then review the sheet." />
+      <PageHeader icon={Wallet} accent="orange" title="Payroll" description="Run the month's salaries from attendance and leave, then review the sheet." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading payroll</p>}>
         <PayrollContent searchParams={props.searchParams} />
       </Suspense>
@@ -62,8 +62,9 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
         </section>
       ) : (
         <>
-          <section className="relative overflow-hidden rounded-3xl bg-forest p-5 text-forest-foreground shadow-card sm:p-7">
-            <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-forest-active/40 blur-3xl" />
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest via-forest to-[#0f5a46] p-5 text-forest-foreground shadow-card sm:p-7">
+            <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-acc-orange/40 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-20 left-1/4 size-56 rounded-full bg-acc-lime/20 blur-3xl" />
             <div className="relative flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
               <div>
                 <p className="flex items-center gap-2 text-sm text-forest-muted">

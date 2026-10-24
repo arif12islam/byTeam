@@ -20,6 +20,7 @@ export default function EmployeesPage(props: PageProps<"/employees">) {
     <>
       <PageHeader
         icon={Users}
+        accent="pink"
         title="Employees"
         description="Staff records, shifts and salaries."
         actions={
