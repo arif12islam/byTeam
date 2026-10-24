@@ -216,7 +216,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Rules screen (owner edits, HR views): grace, late mode, late every N, deduction base, divisor, effective month
 - [x] `computePayroll()` as a pure function with a full breakdown object
 - [x] Mid-month join and exit pro-rating
-- [ ] Payroll screen: create draft run, review sheet, add bonus and advance, recompute
+- [x] Payroll screen: create draft run, review sheet, add bonus and advance, recompute
 - [ ] Finalize (owner): snapshot rule set, lock month's attendance and leave
 - [ ] Unlock (owner): reason required, audited
 - [ ] Payslip PDF per employee

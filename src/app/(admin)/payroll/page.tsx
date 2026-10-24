@@ -1,26 +1,251 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/coming-soon";
 import { PageHeader } from "@/components/page-header";
+import { buttonVariants } from "@/components/ui/button";
+import { getDb } from "@/db";
+import { ADJUSTMENT_LABELS } from "@/lib/payroll/adjustments";
+import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
+import { formatTaka } from "@/lib/salary/money";
+import { requireRole } from "@/lib/session";
+import { formatMonth, isValidMonth, shiftMonth, toOfficeMonth } from "@/lib/time";
+
+import { AdjustmentForm, CreateRunForm, RecomputeForm, RemoveAdjustmentForm } from "./run-forms";
 
 export const metadata: Metadata = { title: "Payroll" };
 
-export default function PayrollPage() {
+export default function PayrollPage(props: PageProps<"/payroll">) {
   return (
     <>
-      <PageHeader
-        title="Payroll"
-        description="Run the month's salaries from attendance and leave, then lock it."
-      />
-      <ComingSoon
-        milestone="M5"
-        points={[
-          "Draft run with payable days and deductions per employee",
-          "Bonuses and advances",
-          "Finalize to lock the month",
-          "Payslip PDFs and a salary sheet for bank or bKash",
-        ]}
-      />
+      <PageHeader title="Payroll" description="Run the month's salaries from attendance and leave, then review the sheet." />
+      <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading payroll</p>}>
+        <PayrollContent searchParams={props.searchParams} />
+      </Suspense>
     </>
+  );
+}
+
+/** "1234.50" as "1,234.50" and "-12.00" as "-12.00" with lakh grouping. */
+function taka(amount: string): string {
+  return amount.startsWith("-") ? `-${formatTaka(amount.slice(1))}` : formatTaka(amount);
+}
+
+const cell = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
+const head = "px-3 py-2 text-right text-xs font-medium text-muted-foreground whitespace-nowrap";
+
+async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payroll">["searchParams"] }) {
+  await requireRole("owner", "hr");
+
+  const thisMonth = toOfficeMonth(new Date());
+  const { month: requested } = await searchParams;
+  const month = typeof requested === "string" && isValidMonth(requested) ? requested : thisMonth;
+
+  const db = getDb();
+  const [sheet, runs] = await Promise.all([loadPayrollSheet(db, month), listPayrollRuns(db)]);
+  const locked = sheet?.run.status === "finalized";
+
+  return (
+    <div className="mt-6 grid gap-6">
+      <nav aria-label="Month" className="flex flex-wrap items-center gap-2">
+        <Link href={`/payroll?month=${shiftMonth(month, -1)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          Previous month
+        </Link>
+        <h2 className="min-w-24 text-center text-base font-semibold">{formatMonth(month)}</h2>
+        <Link href={`/payroll?month=${shiftMonth(month, 1)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          Next month
+        </Link>
+        {month !== thisMonth ? (
+          <Link href="/payroll" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            This month
+          </Link>
+        ) : null}
+      </nav>
+
+      {sheet === null ? (
+        <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+          <h2 className="text-base font-semibold">No payroll run for {formatMonth(month)} yet</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A draft works out everyone&apos;s pay from attendance, leave and the pay rules. You can review it, add bonuses and advances and
+            recompute as often as you like before it is finalized.
+          </p>
+          <div className="mt-5">
+            <CreateRunForm month={month} label={formatMonth(month)} />
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm">
+              <span className="font-semibold">{locked ? "Finalized" : "Draft"}</span>
+              <span className="text-muted-foreground">
+                {locked ? ` · version ${sheet.run.version}` : " · not final until the owner finalizes it"}
+              </span>
+            </p>
+            {locked ? null : <RecomputeForm runId={sheet.run.id} />}
+          </section>
+
+          {sheet.notices.map((notice) => (
+            <p key={notice} role="status" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+              {notice}
+            </p>
+          ))}
+
+          {sheet.skipped.length > 0 ? (
+            <p role="status" className="rounded-md border border-input bg-card p-3 text-sm">
+              Not in this sheet because no salary is set:{" "}
+              {sheet.skipped.map((s, i) => (
+                <span key={s.employeeId}>
+                  {i > 0 ? ", " : ""}
+                  <Link href={`/employees/${s.employeeId}`} className="text-primary underline-offset-4 hover:underline">
+                    {s.name}
+                  </Link>
+                </span>
+              ))}
+              .
+            </p>
+          ) : null}
+
+          {sheet.rows.length === 0 ? (
+            <p className="rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+              No one has a salary set for {formatMonth(month)}. Add a salary structure on an employee&apos;s page, then recompute.
+            </p>
+          ) : (
+            <section aria-label="Salary sheet" className="overflow-x-auto rounded-lg border border-border bg-card">
+              <table className="w-full min-w-[44rem] text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
+                      Employee
+                    </th>
+                    <th scope="col" className={head}>Days paid</th>
+                    <th scope="col" className={head}>Absent</th>
+                    <th scope="col" className={head}>Late</th>
+                    <th scope="col" className={head}>Unpaid leave</th>
+                    <th scope="col" className={head}>Gross</th>
+                    <th scope="col" className={head}>Deductions</th>
+                    <th scope="col" className={head}>Additions</th>
+                    <th scope="col" className={head}>Net pay</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sheet.rows.map((row) => (
+                    <tr key={row.employeeId} className="border-b border-border last:border-0">
+                      <th scope="row" className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                        {row.name}
+                        <span className="block text-xs font-normal text-muted-foreground">{row.empCode}</span>
+                      </th>
+                      <td className={cell}>{row.payableDays}</td>
+                      <td className={cell}>{row.absentDays}</td>
+                      <td className={cell}>{row.lateCount}</td>
+                      <td className={cell}>{row.unpaidLeaveDays}</td>
+                      <td className={cell}>{taka(row.gross)}</td>
+                      <td className={cell}>{taka(row.deductions)}</td>
+                      <td className={cell}>{taka(row.additions)}</td>
+                      <td className={`${cell} font-semibold`}>{taka(row.net)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-border bg-muted/50 font-semibold">
+                    <th scope="row" className="px-3 py-2 text-left">Total</th>
+                    <td className={cell} colSpan={4} />
+                    <td className={cell}>{taka(sheet.totals.gross)}</td>
+                    <td className={cell}>{taka(sheet.totals.deductions)}</td>
+                    <td className={cell}>{taka(sheet.totals.additions)}</td>
+                    <td className={cell}>{taka(sheet.totals.net)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </section>
+          )}
+
+          {sheet.rows.length > 0 ? (
+            <section className="grid gap-2">
+              <h2 className="text-base font-semibold">How each net pay was worked out</h2>
+              {sheet.rows.map((row) => (
+                <details key={row.employeeId} className="rounded-lg border border-border bg-card px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    {row.name} <span className="font-normal text-muted-foreground">· net {taka(row.net)}</span>
+                    {row.warnings.length > 0 ? <span className="ml-2 text-destructive">Check this</span> : null}
+                  </summary>
+                  <ul className="mt-3 space-y-1 text-sm">
+                    {row.lines.map((line) => (
+                      <li key={line.code} className="flex justify-between gap-4">
+                        <span>{line.label}</span>
+                        <span className="tabular-nums">
+                          {line.sign === "-" ? "-" : ""}
+                          {taka(line.amount)}
+                        </span>
+                      </li>
+                    ))}
+                    <li className="flex justify-between gap-4 border-t border-border pt-1 font-medium">
+                      <span>Net pay, rounded to a whole taka</span>
+                      <span className="tabular-nums">{taka(row.net)}</span>
+                    </li>
+                  </ul>
+                  {row.warnings.map((w) => (
+                    <p key={w} className="mt-3 text-sm text-destructive">
+                      {w}
+                    </p>
+                  ))}
+                </details>
+              ))}
+            </section>
+          ) : null}
+
+          <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+            <h2 className="text-base font-semibold">Bonuses and advances</h2>
+            {locked ? (
+              <p className="mt-1 text-sm text-muted-foreground">This month is finalized, so amounts cannot be changed.</p>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Added to or taken off one person&apos;s pay for {formatMonth(month)}. The sheet updates straight away.
+                </p>
+                <div className="mt-5">
+                  <AdjustmentForm month={month} people={sheet.rows.map((r) => ({ id: r.employeeId, label: `${r.name} (${r.empCode})` }))} />
+                </div>
+              </>
+            )}
+            {sheet.adjustments.length === 0 ? (
+              <p className="mt-5 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+                No bonuses or advances for this month.
+              </p>
+            ) : (
+              <ul className="mt-5 divide-y divide-border">
+                {sheet.adjustments.map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                    <span>
+                      <span className="font-medium">{a.name}</span> · {ADJUSTMENT_LABELS[a.type]} {taka(a.amount)}
+                      {a.note ? <span className="text-muted-foreground"> · {a.note}</span> : null}
+                    </span>
+                    {locked ? null : <RemoveAdjustmentForm id={a.id} />}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
+
+      {runs.length > 0 ? (
+        <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+          <h2 className="text-base font-semibold">All payroll runs</h2>
+          <ul className="mt-3 divide-y divide-border text-sm">
+            {runs.map((run) => (
+              <li key={run.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link href={`/payroll?month=${run.month}`} className="font-medium text-primary underline-offset-4 hover:underline">
+                  {formatMonth(run.month)}
+                </Link>
+                <span className="text-muted-foreground">
+                  {run.status === "finalized" ? "Finalized" : "Draft"} · {run.employees} {run.employees === 1 ? "person" : "people"} · net {taka(run.net)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   );
 }

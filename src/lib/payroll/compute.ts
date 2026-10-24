@@ -56,6 +56,8 @@ export type PayrollBreakdown = {
   employedTo: string | null;
   payableDays: number;
   monthlyGross: string;
+  /** The rules the item was worked out with. */
+  rules: PayRules;
   /** The amount a day of pay is worked out from: gross or basic. */
   baseAmount: string;
   base: DeductionBase;
@@ -246,6 +248,7 @@ export function computePayroll(input: PayrollInput): PayrollItem {
     employedTo: payableDays > 0 ? to : null,
     payableDays,
     monthlyGross: fromPaisa(grossPaisa),
+    rules: { ...rules },
     baseAmount: fromPaisa(basePaisa),
     base: rules.deductionBase,
     divisor: rules.divisor,
