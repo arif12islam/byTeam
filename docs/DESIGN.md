@@ -232,6 +232,7 @@ One scheduled job, a closed device path, and an audit row for every human change
 
 - `/iclock` routes accept only whitelisted serial numbers, are rate limited, and can only insert punches or read the command queue.
 - Admin routes need a session; role checks run on the server for every action.
+- Only the owner may edit pay rules, finalize payroll and unlock a month; HR does everything else, including payroll drafts. `tests/security/role-checks.test.ts` runs every server action as nobody, as a user with an unknown role, as HR and as the owner, and checks every page and download route for its own guard, so a new action that forgets its check fails the build.
 - Admin traffic is HTTPS. The device path stays plain HTTP only where the firmware requires it.
 - Passwords hashed with argon2 or bcrypt.
 
