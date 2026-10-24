@@ -81,3 +81,19 @@ export function formatMonth(month: string): string {
   );
   return `${name} ${y}`;
 }
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: APP_TIMEZONE,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** An instant in office time for people to read, like "24 Oct 2026, 09:15". */
+export function formatOfficeDateTime(instant: Date): string {
+  const parts = Object.fromEntries(dateTimeFormatter.formatToParts(instant).map((p) => [p.type, p.value]));
+  return `${parts.day} ${parts.month} ${parts.year}, ${parts.hour}:${parts.minute}`;
+}
