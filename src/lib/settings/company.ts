@@ -36,7 +36,7 @@ export type CompanySettings = {
 };
 
 /** The one settings row, or the defaults before anyone has saved. */
-export async function getCompanySettings(db: Db): Promise<CompanySettings> {
+export async function getCompanySettings(db: Pick<Db, "select">): Promise<CompanySettings> {
   const [row] = await db.select().from(companySettings).where(eq(companySettings.id, 1));
   return {
     name: row?.name ?? "",
