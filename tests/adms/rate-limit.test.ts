@@ -49,6 +49,17 @@ describe("createRateLimiter", () => {
     expect(limiter.peek("a")).toEqual({ allowed: false, retryAfterSeconds: 60 });
   });
 
+  it("reset forgets a key at once", () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000, now: clock().now });
+    limiter.hit("a");
+    limiter.hit("a");
+    expect(limiter.peek("a").allowed).toBe(false);
+    limiter.reset("a");
+    expect(limiter.peek("a").allowed).toBe(true);
+    expect(limiter.hit("a").allowed).toBe(true);
+    limiter.reset("never-seen");
+  });
+
   it("does not track more keys than it should when addresses are made up", () => {
     const c = clock();
     const limiter = createRateLimiter({ limit: 1, windowMs: 60_000, now: c.now });
