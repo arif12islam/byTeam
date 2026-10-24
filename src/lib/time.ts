@@ -29,3 +29,36 @@ export function daysInMonth(month: string): number {
   const [y, m] = month.split("-").map(Number);
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
+
+/** True for a real calendar date written as YYYY-MM-DD. */
+export function isValidOfficeDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  if (y < 1900) return false;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
+/** Day of the week for a YYYY-MM-DD date: 0 is Sunday, 6 is Saturday. */
+export function weekdayOf(date: string): number {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+const displayFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "UTC",
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+/** A YYYY-MM-DD date for people to read, like "Fri 21 Feb 2026". */
+export function formatOfficeDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const parts = Object.fromEntries(
+    displayFormatter.formatToParts(new Date(Date.UTC(y, m - 1, d))).map((p) => [p.type, p.value]),
+  );
+  return `${parts.weekday} ${parts.day} ${parts.month} ${parts.year}`;
+}
