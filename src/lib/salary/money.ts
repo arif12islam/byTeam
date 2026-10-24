@@ -46,3 +46,8 @@ export function formatTaka(amount: string): string {
   const cents = parseMoneyToCents(amount);
   return cents === null ? amount : takaFormatter.format(cents / 100);
 }
+
+/** Like `formatTaka`, but also handles a negative amount such as "-12.00". */
+export function formatTakaSigned(amount: string): string {
+  return amount.startsWith("-") ? `-${formatTaka(amount.slice(1))}` : formatTaka(amount);
+}

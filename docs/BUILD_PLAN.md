@@ -219,7 +219,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Payroll screen: create draft run, review sheet, add bonus and advance, recompute
 - [x] Finalize (owner): snapshot rule set, lock month's attendance and leave
 - [x] Unlock (owner): reason required, audited
-- [ ] Payslip PDF per employee
+- [x] Payslip PDF per employee
 - [ ] Salary sheet Excel export
 - [ ] Tests: expected pay per seed employee from a spreadsheet, as golden tests
 
