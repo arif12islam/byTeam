@@ -229,7 +229,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 
 - [x] Office outage action: date + time window, skips late and absent marking for everyone in it, one audit entry
 - [x] Clock drift check: compare device time with received time, flag device if over 5 minutes
-- [ ] Rate limit `/iclock` routes
+- [x] Rate limit `/iclock` routes
 - [ ] Audit log screen with filters
 - [ ] Empty states, loading states, error messages on all screens
 - [ ] Review all role checks on server actions

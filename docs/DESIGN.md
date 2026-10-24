@@ -114,6 +114,7 @@ The device calls our server over plain HTTP using ZKTeco's ADMS (Push) protocol;
 - Insert with the unique key and ignore conflicts, so resent logs after an outage never create duplicates.
 - Device times are read as Asia/Dhaka. Unknown emp\_code is still saved, then shown as an "unmatched punch" for HR.
 - A late batch of punches marks those dates for recalculation.
+- Rate limit, kept in the memory of the running server (no outside service): 60 requests a minute per device and address, and an address that gets 20 requests refused in a minute (unknown or malformed serial numbers) is turned away early for the rest of that minute. Over the limit the reply is 429 with `Retry-After`, and the device simply tries again. A real device sends a few requests a minute. On a host that runs several copies of the server each copy counts for itself.
 
 **Clock check.** A device only tells us when each punch happened, so on every upload we compare the newest punch time with the moment we received it and keep the latest estimate on the device (`clock_offset_seconds`, positive when the device is ahead). More than 5 minutes either way flags the device on the Devices screen. A punch dated in the future proves the device is ahead, whatever the upload size. A lag is only believed for an upload of 3 punches or fewer, because a device sends a backlog after an outage and its newest punch is then old even with a perfect clock. A later punch that shows the clock is right clears the flag. A gap of whole hours usually means the device time zone is wrong.
 
