@@ -37,7 +37,17 @@ Open http://localhost:3000 and sign in with the owner account. The seed does not
 | `npm run db:generate` | Create a migration from schema changes |
 | `npm run db:migrate` | Apply migrations to `DATABASE_URL` |
 | `npm run db:studio` | Browse the database |
+| `npm run sim` | Pretend to be the attendance device (see below) |
 | `npm run seed:owner` | Create the first owner login from `OWNER_EMAIL`, `OWNER_NAME`, `OWNER_PASSWORD` |
+
+## Trying the device without hardware
+
+The simulator behaves like the face and fingerprint device: it announces itself, sends punches live, sends a delayed batch from an offline period, resends the same batch, and answers commands.
+
+1. Start the app and add a device on the Devices screen with serial number `SIM0000001`.
+2. Run `npm run sim -- --url http://localhost:3000`. Add `--verify` to count the stored punches in `DATABASE_URL` and confirm each was stored exactly once. Use `--sn` for another serial number, `--codes 1001,1002` for other employee codes, and `--scenario handshake|live|burst|resend|poll` to run one part.
+
+The same command works against a deployed preview: point `--url` at it and register the serial number there.
 
 ## Project layout
 
