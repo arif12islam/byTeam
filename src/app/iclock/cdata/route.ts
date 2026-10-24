@@ -1,5 +1,6 @@
 import { getDb } from "@/db";
 import { buildHandshakeConfig, readSerial } from "@/lib/adms/handshake";
+import { splitLines } from "@/lib/adms/parse";
 import { savePunches } from "@/lib/adms/store";
 import { adaptAttlogBody } from "@/lib/adms/zkteco-adapter";
 import { touchDevice } from "@/lib/devices/receive";
@@ -32,8 +33,9 @@ export async function GET(request: Request) {
 
 /**
  * Uploads from the device: POST /iclock/cdata?SN=<serial>&table=ATTLOG with one
- * punch per line. The reply must be "OK" or the device keeps resending the
- * batch, so lines that are not punches are skipped and counted, not refused.
+ * punch per line, or table=OPERLOG, which is acknowledged and not used. The
+ * reply must be "OK" or the device keeps resending the batch, so lines that
+ * are not punches are skipped and counted, not refused.
  * A database error is the one case that returns an error: the device tries
  * again later and nothing is lost.
  */
@@ -58,14 +60,20 @@ export async function POST(request: Request) {
   }
 
   const table = url.searchParams.get("table");
-  if (table !== "ATTLOG") {
-    // Other tables (operation log, photos, user lists) are not used yet. Say OK so the device moves on.
+  if (table !== "ATTLOG" && table !== "OPERLOG") {
+    // Photos, user lists and the like are not used. Say OK so the device moves on.
     return new Response("OK", { status: 200, headers: textHeaders });
   }
 
   const body = await request.text();
   if (body.length > MAX_BODY_BYTES) {
     return new Response("ERROR: upload too large\n", { status: 413, headers: textHeaders });
+  }
+
+  if (table === "OPERLOG") {
+    // Admin and user changes made on the device. Not used: only the count is logged, never the content.
+    console.info(`[iclock] ${device.serialNo} OPERLOG: ${splitLines(body).length} lines received, not used`);
+    return new Response("OK", { status: 200, headers: textHeaders });
   }
 
   const { punches, skipped } = adaptAttlogBody(device.serialNo, body);
