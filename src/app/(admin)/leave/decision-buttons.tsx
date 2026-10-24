@@ -31,6 +31,12 @@ export function DecisionButtons({ id, status }: { id: string; status: "pending" 
           {b.label}
         </Button>
       ))}
+      {state.values?.suggestedUnpaid ? (
+        // This button carries its own number, so the plain buttons never send unpaid days.
+        <Button type="submit" name="approveUnpaid" value={state.values.suggestedUnpaid} size="sm" disabled={pending}>
+          Approve with {state.values.suggestedUnpaid} {state.values.suggestedUnpaid === "1" ? "day" : "days"} unpaid
+        </Button>
+      ) : null}
       <FormMessage state={state} />
     </form>
   );

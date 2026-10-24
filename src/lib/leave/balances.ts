@@ -6,7 +6,7 @@ import { employees, leaveRequests, leaveTypes, type LeaveYearBasis } from "@/db/
 import { leaveWorkingDates, splitUnpaid, type CalendarForLeave } from "./days";
 import { loadLeaveCalendar } from "./requests";
 import { getLeaveYearBasis } from "./types";
-import { leaveYearOf, type LeaveYear } from "./year";
+import { leaveYearOf, leaveYearsBetween, type LeaveYear } from "./year";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -83,6 +83,65 @@ export function computeBalances(input: BalanceInput): Balance[] {
     }
   }
   return out;
+}
+
+export type BalanceCheckInput = {
+  /** The request being approved. */
+  request: { fromDate: string; toDate: string; days: number; unpaidDays: number };
+  /** Other approved requests of the same person and type. Never the request itself. */
+  others: Pick<BalanceRequest, "fromDate" | "toDate" | "unpaidDays">[];
+  /** Yearly days, or null for no limit. */
+  quota: number | null;
+  joinDate: string;
+  basis: LeaveYearBasis;
+  calendar: CalendarForLeave;
+};
+
+export type BalanceCheck =
+  | { ok: true }
+  | {
+      ok: false;
+      /** How many days over the balance, added up across the leave years the request touches. */
+      shortBy: number;
+      /** The first leave year that does not have enough days, with what it has left and what the request needs there. */
+      year: LeaveYear;
+      available: number;
+      needed: number;
+    };
+
+/**
+ * Can this request be approved without going past the quota? In every leave
+ * year it touches, the days it counts (not the ones recorded as unpaid) must fit
+ * in what the person's other approved leave of that type has left. No quota
+ * means no limit. Pure.
+ */
+export function checkBalance(input: BalanceCheckInput): BalanceCheck {
+  if (input.quota === null) return { ok: true };
+
+  let shortBy = 0;
+  let first: { year: LeaveYear; available: number; needed: number } | null = null;
+  for (const year of leaveYearsBetween(input.basis, input.joinDate, input.request.fromDate, input.request.toDate)) {
+    const usedByOthers = input.others.reduce((sum, other) => sum + countedDaysInYear(other, input.calendar, year), 0);
+    const available = Math.max(0, input.quota - usedByOthers);
+    const needed = countedDaysInYear(input.request, input.calendar, year);
+    if (needed > available) {
+      shortBy += needed - available;
+      first ??= { year, available, needed };
+    }
+  }
+  return first ? { ok: false, shortBy, ...first } : { ok: true };
+}
+
+/**
+ * The fewest days to record as unpaid, starting from the request's current
+ * unpaid days, so that the rest fits in the balance. Recording every day as
+ * unpaid always fits, so there is always an answer.
+ */
+export function suggestUnpaidDays(input: BalanceCheckInput): number {
+  for (let unpaidDays = input.request.unpaidDays; unpaidDays < input.request.days; unpaidDays++) {
+    if (checkBalance({ ...input, request: { ...input.request, unpaidDays } }).ok) return unpaidDays;
+  }
+  return input.request.days;
 }
 
 /**
