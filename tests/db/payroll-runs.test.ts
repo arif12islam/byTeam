@@ -54,7 +54,7 @@ describe.skipIf(!testDatabaseUrl)("payroll runs", () => {
         housePct: "20",
         medicalPct: "10",
         conveyancePct: "10",
-        effectiveFrom: "2000-01-01",
+        effectiveFrom: "2013-01-01",
       });
     }
     return { id: employee.id, code };

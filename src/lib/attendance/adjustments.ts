@@ -5,6 +5,7 @@ import type { getDb } from "@/db";
 import { attendanceAdjustments, employees, users } from "@/db/schema";
 import { ADJUSTMENT_FIELDS, ATTENDANCE_STATUSES } from "@/db/schema/attendance";
 import { audit } from "@/lib/audit";
+import { finalizedMonthsBetween, lockedMessage } from "@/lib/payroll/lock";
 import { isValidOfficeDate, officeDateTimeToInstant, timeToMinutes, toOfficeDate } from "@/lib/time";
 
 import { computeDays } from "./recalc";
@@ -44,8 +45,8 @@ export type AdjustmentResult = { ok: true } | { ok: false; error: string };
  * away, and an audit row records who changed what and why. An empty value
  * removes the earlier change so the computed value applies again.
  *
- * Refuses a day that has not happened yet, a date outside the person's
- * employment, and a leaving time that is not after the arrival.
+ * Refuses a day that has not happened yet, a day in a month whose payroll is
+ * finalized, a date outside the person's employment, and a leaving time that is not after the arrival.
  */
 export async function addAdjustment(
   db: Db,
@@ -58,6 +59,9 @@ export async function addAdjustment(
   const { employeeId, date, field, value, reason } = parsed.data;
 
   if (date > today) return { ok: false, error: "That day has not happened yet." };
+
+  const locked = await finalizedMonthsBetween(db, date, date);
+  if (locked.size > 0) return { ok: false, error: lockedMessage(locked, "attendance for that day") };
 
   const [person] = await db.select().from(employees).where(eq(employees.id, employeeId));
   if (!person) return { ok: false, error: "That employee no longer exists." };

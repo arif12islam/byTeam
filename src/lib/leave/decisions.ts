@@ -4,6 +4,7 @@ import type { getDb } from "@/db";
 import { employees, leaveRequests, leaveTypes, type LeaveStatus } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { recalcAfterLeaveChange } from "@/lib/attendance/triggers";
+import { finalizedMonthsBetween, lockedMessage } from "@/lib/payroll/lock";
 import { formatOfficeDate, toOfficeDate } from "@/lib/time";
 
 import { checkBalance, suggestUnpaidDays } from "./balances";
@@ -45,6 +46,8 @@ export type DecisionOptions = {
  * days were or become leave (approved, or an approved request cancelled), the
  * attendance days from the first day up to today are recomputed straight away.
  *
+ * Refused when the request touches a month whose payroll is finalized.
+ *
  * The status change is a single guarded UPDATE, so two people deciding the same
  * request at once cannot both win.
  *
@@ -68,6 +71,9 @@ export async function decideLeave(
   const outcome = await db.transaction(async (tx) => {
     const [before] = await tx.select().from(leaveRequests).where(eq(leaveRequests.id, requestId));
     if (!before) return { ok: false as const, error: "That leave request no longer exists. Reload the page." };
+
+    const locked = await finalizedMonthsBetween(tx, before.fromDate, before.toDate, { lock: true });
+    if (locked.size > 0) return { ok: false as const, error: lockedMessage(locked, "this leave request") };
 
     let unpaidDays = before.unpaidDays;
     if (decision === "approve") {
