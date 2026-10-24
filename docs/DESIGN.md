@@ -175,6 +175,15 @@ A payroll run reads one month of attendance days and the rule set in effect for 
 - days employed covers joining and leaving mid-month; it equals days in month for everyone else.
 - The breakdown json keeps every input and step, so the payslip can show how net pay was reached.
 
+**How the numbers are worked out** (`src/lib/payroll/compute.ts`)
+
+- Days employed run from the join date (or the 1st) to the exit date (or the last day), both included.
+- Gross earned is the monthly gross times days employed divided by days in the month. It is stored as the item's `gross`; the full monthly gross is in the breakdown.
+- A day of pay is the base divided by the divisor. With the working-days divisor, that is the working days of the whole month (weekly offs and holidays removed), also for people who joined or left mid-month.
+- "Every N lates cost one day" counts whole groups: 7 lates at N = 3 cost 2 days.
+- Money is counted in whole paisa. Each amount line (absent, unpaid leave, late) is rounded to the paisa, half up. Net pay is rounded to a whole taka once, at the end, half up.
+- Days with no attendance row cost nothing and raise a warning. Net pay below zero is kept and raises a warning; nothing is clamped silently.
+
 **Run lifecycle**
 
 1. Create a draft run for the month. Any open recalculation finishes first.
