@@ -6,23 +6,18 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
+import { listDayAdjustments, type DayAdjustment } from "@/lib/attendance/adjustments";
+import { statusLabel } from "@/lib/attendance/labels";
 import { loadDayDetail } from "@/lib/attendance/month";
 import { requireRole } from "@/lib/session";
-import { formatOfficeDate, formatOfficeTime, isValidOfficeDate, toOfficeDate } from "@/lib/time";
+import { formatOfficeDate, formatOfficeDateTime, formatOfficeTime, isValidOfficeDate, toOfficeDate } from "@/lib/time";
+
+import { AdjustForm } from "./adjust-form";
 
 export const metadata: Metadata = { title: "Attendance day" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const statusText = {
-  present: "Present",
-  late: "Late",
-  absent: "Absent",
-  leave_paid: "Paid leave",
-  leave_unpaid: "Unpaid leave",
-  weekly_off: "Weekly off day",
-  holiday: "Holiday",
-} as const;
 
 export default function AttendanceDayPage(props: PageProps<"/attendance/[employeeId]/[date]">) {
   return (
@@ -30,6 +25,13 @@ export default function AttendanceDayPage(props: PageProps<"/attendance/[employe
       <DayContent params={props.params} />
     </Suspense>
   );
+}
+
+function describeAdjustment(a: DayAdjustment): string {
+  const what = a.field === "status" ? "status" : a.field === "first_in" ? "came in time" : "left time";
+  if (a.newValue === null) return `Removed the earlier change to ${what}`;
+  if (a.field === "status") return `Set status to ${statusLabel[a.newValue as keyof typeof statusLabel] ?? a.newValue}`;
+  return `Set ${what} to ${formatOfficeTime(new Date(a.newValue))}`;
 }
 
 function Fact({ label, value }: { label: string; value: string }) {
@@ -48,7 +50,8 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
   if (!UUID.test(employeeId) || !isValidOfficeDate(date)) notFound();
 
   const today = toOfficeDate(new Date());
-  const detail = await loadDayDetail(getDb(), employeeId, date);
+  const db = getDb();
+  const [detail, adjustments] = await Promise.all([loadDayDetail(db, employeeId, date), listDayAdjustments(db, employeeId, date)]);
   if (!detail) notFound();
 
   const { employee, result, punches } = detail;
@@ -77,7 +80,7 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
             </p>
           ) : (
             <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-              <Fact label="Status" value={statusText[result.status] + (result.isManual ? " (corrected by hand)" : "")} />
+              <Fact label="Status" value={statusLabel[result.status] + (result.isManual ? " (corrected by hand)" : "")} />
               <Fact label="Came in" value={result.firstIn ? formatOfficeTime(result.firstIn) : "No punch"} />
               <Fact label="Left" value={result.lastOut ? formatOfficeTime(result.lastOut) : result.firstIn ? "No leaving punch" : "No punch"} />
               <Fact label="Late" value={result.lateMinutes > 0 ? `${result.lateMinutes} min` : "No"} />
@@ -108,6 +111,38 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
             </ul>
           )}
         </section>
+
+        {result !== null && date <= today ? (
+          <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+            <h2 className="text-base font-semibold">Correct this day</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use this when the device missed a punch or the status is wrong. The punches stay as they are; your change
+              is added on top and the reason is kept.
+            </p>
+            <div className="mt-5">
+              <AdjustForm employeeId={employee.id} date={date} />
+            </div>
+          </section>
+        ) : null}
+
+        {adjustments.length > 0 ? (
+          <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+            <h2 className="text-base font-semibold">
+              Changes made by hand <span className="font-normal text-muted-foreground">({adjustments.length})</span>
+            </h2>
+            <ul className="mt-4 divide-y divide-border rounded-md border border-border">
+              {adjustments.map((a) => (
+                <li key={a.id} className="px-3 py-3 text-sm">
+                  <p className="font-medium">{describeAdjustment(a)}</p>
+                  <p className="mt-0.5 text-muted-foreground">{a.reason}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {a.by ?? "Unknown"}, {formatOfficeDateTime(a.createdAt)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
     </>
   );

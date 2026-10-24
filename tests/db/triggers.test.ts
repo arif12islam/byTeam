@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { attendanceAdjustments, attendanceDays, auditLog, employees, shifts, users } from "@/db/schema";
 import { savePunches } from "@/lib/adms/store";
-import { addAdjustment } from "@/lib/attendance/adjustments";
+import { addAdjustment, listDayAdjustments } from "@/lib/attendance/adjustments";
 import { recalc } from "@/lib/attendance/recalc";
 import {
   recalcAfterEmployeeChange,
@@ -326,5 +326,35 @@ describe.skipIf(!testDatabaseUrl)("manual adjustments", () => {
     expect((await addAdjustment(db, { ...base, field: "last_out", value: "09:00" }, userId, AFTER)).ok).toBe(false);
     expect(await addAdjustment(db, { ...base, field: "first_in", value: "17:30" }, userId, AFTER)).toEqual({ ok: false, error: "The arrival time must be before the leaving time." });
     expect((await addAdjustment(db, { ...base, field: "last_out", value: "18:10" }, userId, AFTER)).ok).toBe(true);
+  });
+
+  it("refuses a leaving time when the day has no arrival, until an arrival is set", async () => {
+    const { employee } = await setup();
+    const base = { employeeId: employee.id, date: MON, reason: "A good reason" };
+
+    const refused = await addAdjustment(db, { ...base, field: "last_out", value: "17:00" }, userId, AFTER);
+    expect(refused).toEqual({ ok: false, error: "There is no arrival time for this day. Set the arrival time first." });
+    expect(await db.select().from(attendanceAdjustments).where(eq(attendanceAdjustments.employeeId, employee.id))).toHaveLength(0);
+
+    expect((await addAdjustment(db, { ...base, field: "first_in", value: "09:05" }, userId, AFTER)).ok).toBe(true);
+    expect((await addAdjustment(db, { ...base, field: "last_out", value: "17:00" }, userId, AFTER)).ok).toBe(true);
+    expect(await day(employee.id, MON)).toMatchObject({ status: "present", missingOut: false, isManual: true });
+    // Never saved a day row before the first correction: the checks use the day as calculated, not a stored row.
+  });
+
+  it("lists a day's changes newest first, with who made them and the reason", async () => {
+    const { employee } = await setup();
+    const base = { employeeId: employee.id, date: MON };
+    await addAdjustment(db, { ...base, field: "status", value: "present", reason: "First entry" }, userId, AFTER);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await addAdjustment(db, { ...base, field: "first_in", value: "09:05", reason: "Second entry" }, userId, AFTER);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await addAdjustment(db, { ...base, field: "status", value: "", reason: "Third entry" }, userId, AFTER);
+
+    const list = await listDayAdjustments(db, employee.id, MON);
+    expect(list.map((a) => a.reason)).toEqual(["Third entry", "Second entry", "First entry"]);
+    expect(list[0]).toMatchObject({ field: "status", newValue: null, by: "Tester" });
+    expect(list[1]).toMatchObject({ field: "first_in", newValue: at(MON, "09:05").toISOString() });
+    expect(await listDayAdjustments(db, employee.id, TUE)).toEqual([]);
   });
 });
