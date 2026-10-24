@@ -62,8 +62,8 @@ async function loadActions() {
   for (const file of actionFiles.filter((f) => !OPEN_ACTION_FILES.includes(f))) {
     const key = Object.keys(all).find((k) => path.resolve(__dirname, k) === file);
     if (!key) throw new Error(`Test cannot find ${file}`);
-    const module = await all[key]();
-    for (const [name, value] of Object.entries(module)) {
+    const exported = await all[key]();
+    for (const [name, value] of Object.entries(exported)) {
       if (typeof value !== "function") continue;
       const fn = value as Action;
       // Form actions take (previous state, form data); a plain one takes only the form data.
