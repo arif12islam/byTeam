@@ -50,6 +50,13 @@
       "when": 1792840469083,
       "tag": "0006_m4_leave_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792843405040,
+      "tag": "0007_m5_payroll_tables",
+      "breakpoints": true
     }
   ]
 }

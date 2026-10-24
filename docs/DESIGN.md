@@ -10,12 +10,13 @@ One internal web app for the Sand'Sun office that turns face and fingerprint pun
 
 **Out of scope for MVP:** employee self-service app, overtime and night shifts, tax and provident fund, loans, geofenced check-in, Hikvision, multiple branches or tenants, SMS and email alerts.
 
-**Decisions still open (needed before payroll)**
+**Payroll decisions (made 2026-10-24, all editable as settings)**
 
-- [ ] Absent day deduction base: gross or basic
-- [ ] Divisor: fixed 30, days in month, or working days only
-- [ ] Late policy: grace minutes and how many lates count as one day
-- [ ] Weekly off day(s) and yearly quota per leave type
+- Absent day deduction base: gross
+- Divisor: working days in the month
+- Late policy: every 3 lates cost one day, grace minutes come from the shift
+- Weekly off days: Friday and Saturday
+- Leave quotas: per calendar year
 
 ## Architecture
 
@@ -64,7 +65,7 @@ One Next.js app holds the admin UI, the API and the ADMS receiver, so testing an
 | shifts | Working hours | name, start\_time, end\_time, grace\_minutes |
 | employees | Staff records | emp\_code (matches device PIN, unique), name, department, designation, join\_date, exit\_date, shift\_id, active |
 | salary\_structures | Pay per employee, versioned | employee\_id, gross, basic\_pct, house\_pct, medical\_pct, conveyance\_pct, effective\_from |
-| rule\_sets | Late and deduction rules, versioned | effective\_from\_month, late\_mode, late\_every\_n, late\_amount, deduction\_base (gross, basic), divisor (30, month\_days, working\_days), unpaid\_leave\_as\_absent |
+| rule\_sets | Late and deduction rules, versioned | effective\_from\_month, late\_mode (none, days\_per\_lates, fixed\_per\_late), late\_every\_n, late\_amount, deduction\_base (gross, basic), divisor (thirty, month\_days, working\_days), unpaid\_leave\_as\_absent |
 
 **Device**
 
@@ -87,9 +88,9 @@ One Next.js app holds the admin UI, the API and the ADMS receiver, so testing an
 
 | Table | Purpose | Key fields |
 | --- | --- | --- |
-| payroll\_runs | One per month | month, status (draft, finalized), rule\_set\_snapshot (json), finalized\_by, finalized\_at |
+| payroll\_runs | One per month | month, status (draft, finalized), version, rule\_set\_snapshot (json), finalized\_by, finalized\_at |
 | payroll\_items | One per employee per run | run\_id, employee\_id, payable\_days, absent\_days, late\_count, unpaid\_leave\_days, gross, deductions, additions, net, breakdown (json) |
-| payroll\_adjustments | Bonus, advance, other | employee\_id, month, type, amount, note |
+| payroll\_adjustments | Bonus, advance, other | employee\_id, month, type (bonus, advance, other\_addition, other\_deduction), amount (always positive), note |
 | audit\_log | Who changed what | actor\_id, action, entity, entity\_id, before (json), after (json), created\_at |
 
 Store money as numeric(12,2) and round net pay to whole taka at the end.
@@ -153,7 +154,7 @@ HR enters and approves leave on the employee's behalf; there is no employee logi
 - Approving, cancelling or editing a request recalculates the attendance days it covers.
 - A request inside a finalized payroll month cannot change until the month is unlocked.
 
-Open question: calendar year (Jan to Dec) or each employee's joining anniversary for quotas. Calendar year is the simpler default.
+Quotas are counted per calendar year by default. The owner can switch to each employee's joining anniversary in Leave types.
 
 ## Payroll engine
 

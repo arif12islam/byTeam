@@ -212,7 +212,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 
 ### M5: Payroll
 
-- [ ] Schema: `rule_sets`, `payroll_runs`, `payroll_items`, `payroll_adjustments`
+- [x] Schema: `rule_sets`, `payroll_runs`, `payroll_items`, `payroll_adjustments`
 - [ ] Rules screen (owner edits, HR views): grace, late mode, late every N, deduction base, divisor, effective month
 - [ ] `computePayroll()` as a pure function with a full breakdown object
 - [ ] Mid-month join and exit pro-rating
@@ -267,10 +267,12 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - Any human change to data writes an audit entry
 - No business logic inside route handlers or components; it lives in `src/lib`
 
-## 7. Open decisions before M5
+## 7. Decisions before M5
 
-- [ ] Absent deduction base: gross or basic
-- [ ] Divisor: 30, days in month, or working days
-- [ ] Late policy: grace minutes, lates per deducted day
-- [ ] Weekly off days
-- [ ] Leave quotas per type, calendar year or joining anniversary
+All decided on 2026-10-24. Every one is still a setting, not hard-coded, so the owner can change it later.
+
+- [x] Absent deduction base: gross
+- [x] Divisor: working days in the month (days left after weekly offs and holidays)
+- [x] Late policy: every 3 lates cost one day of pay. Grace minutes stay on each shift.
+- [x] Weekly off days: Friday and Saturday
+- [x] Leave quotas: counted per calendar year

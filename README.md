@@ -35,7 +35,7 @@ Open http://localhost:3000 and sign in with the owner account. The seed does not
 | `npm run typecheck` | Generate route types, then run `tsc` |
 | `npm test` | Run Vitest once |
 | `npm run db:generate` | Create a migration from schema changes |
-| `npm run db:migrate` | Apply migrations to `DATABASE_URL` |
+| `npm run db:migrate` | Apply migrations to `DATABASE_URL_UNPOOLED`, or `DATABASE_URL` if that is not set |
 | `npm run db:studio` | Browse the database |
 | `npm run sim` | Pretend to be the attendance device (see below) |
 | `npm run seed:owner` | Create the first owner login from `OWNER_EMAIL`, `OWNER_NAME`, `OWNER_PASSWORD` |
@@ -78,7 +78,7 @@ Business logic lives in plain functions under `src/lib`, never inside route hand
 
 1. Import the repo in Vercel.
 2. Add `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CRON_SECRET` and `APP_TIMEZONE` under Project Settings > Environment Variables.
-3. Deploy. The nightly job in `vercel.json` calls `/api/cron/recalc` at 02:00 Dhaka time.
+3. Deploy. Every build first applies new migrations (`buildCommand` in `vercel.json`), so a failed migration stops the deploy. The nightly job in `vercel.json` calls `/api/cron/recalc` at 02:00 Dhaka time.
 
 The ZKTeco device may not support HTTPS, so test the real device against your laptop on the office network. See milestone M7 in the build plan.
 
