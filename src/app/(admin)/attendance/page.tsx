@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import type { AttendanceStatus } from "@/db/schema/attendance";
+import { cellText, statusLabel } from "@/lib/attendance/labels";
 import { loadMonthGrid, type GridCell } from "@/lib/attendance/month";
 import { requireRole } from "@/lib/session";
 import { formatMonth, isValidMonth, shiftMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
@@ -27,18 +28,18 @@ export default function AttendancePage(props: PageProps<"/attendance">) {
   );
 }
 
-const codes: Record<AttendanceStatus, { code: string; label: string; className: string }> = {
-  present: { code: "P", label: "Present", className: "text-foreground" },
-  late: { code: "L", label: "Late", className: "font-semibold text-destructive" },
-  absent: { code: "A", label: "Absent", className: "bg-destructive/10 font-semibold text-destructive" },
-  leave_paid: { code: "PL", label: "Paid leave", className: "text-primary" },
-  leave_unpaid: { code: "UL", label: "Unpaid leave", className: "text-primary" },
-  weekly_off: { code: "W", label: "Weekly off day", className: "bg-muted text-muted-foreground" },
-  holiday: { code: "H", label: "Holiday", className: "bg-muted text-muted-foreground" },
+const cellStyle: Record<AttendanceStatus, string> = {
+  present: "text-foreground",
+  late: "font-semibold text-destructive",
+  absent: "bg-destructive/10 font-semibold text-destructive",
+  leave_paid: "text-primary",
+  leave_unpaid: "text-primary",
+  weekly_off: "bg-muted text-muted-foreground",
+  holiday: "bg-muted text-muted-foreground",
 };
 
 function describeCell(date: string, cell: GridCell): string {
-  const parts = [`${date}: ${codes[cell.status].label}`];
+  const parts = [`${date}: ${statusLabel[cell.status]}`];
   if (cell.status === "late") parts.push(`${cell.lateMinutes} min late`);
   if (cell.missingOut) parts.push("no leaving punch");
   if (cell.workedOnOffDay) parts.push("came in on a day off");
@@ -68,6 +69,12 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
         <Link href={`/attendance?month=${shiftMonth(month, 1)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Next month
         </Link>
+        <a
+          href={`/attendance/export?month=${month}`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "sm:ml-auto")}
+        >
+          Download Excel
+        </a>
         {month !== thisMonth ? (
           <Link href="/attendance" className={buttonVariants({ variant: "ghost", size: "sm" })}>
             This month
@@ -113,18 +120,15 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                   {grid.dates.map((date) => {
                     const cell = row.cells.get(date);
                     if (!cell) return <td key={date} className="px-0.5 py-2 text-center text-muted-foreground/40">-</td>;
-                    const { code, className } = codes[cell.status];
                     return (
                       <td key={date} className="p-0.5 text-center">
                         <Link
                           href={`/attendance/${row.employee.id}/${date}`}
                           aria-label={describeCell(date, cell)}
                           title={describeCell(date, cell)}
-                          className={cn("block rounded px-1 py-1.5 text-xs hover:ring-1 hover:ring-primary", className)}
+                          className={cn("block rounded px-1 py-1.5 text-xs hover:ring-1 hover:ring-primary", cellStyle[cell.status])}
                         >
-                          {code}
-                          {cell.missingOut ? "!" : ""}
-                          {cell.isManual ? "*" : ""}
+                          {cellText(cell)}
                         </Link>
                       </td>
                     );
