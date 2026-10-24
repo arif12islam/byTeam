@@ -11,6 +11,7 @@ import {
   isValidOfficeDate,
   officeDateTimeToInstant,
   officeMinuteOfDay,
+  formatOfficeTime,
   previousDate,
   toOfficeDate,
   timeToMinutes,
@@ -201,5 +202,13 @@ describe("eachDate", () => {
 
   it("covers a whole month", () => {
     expect(eachDate("2026-10-01", "2026-10-31")).toHaveLength(31);
+  });
+});
+
+describe("formatOfficeTime", () => {
+  it("reads the office clock with two digits", () => {
+    expect(formatOfficeTime(new Date("2026-10-24T03:05:00Z"))).toBe("09:05");
+    expect(formatOfficeTime(new Date("2026-10-23T18:00:00Z"))).toBe("00:00"); // midnight in Dhaka
+    expect(formatOfficeTime(new Date("2026-10-24T17:59:00Z"))).toBe("23:59");
   });
 });

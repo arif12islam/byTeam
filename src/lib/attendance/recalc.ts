@@ -9,6 +9,9 @@ import { effectiveOverrides, type AdjustmentRow } from "./overrides";
 
 type Db = ReturnType<typeof getDb>;
 
+/** Anything that can read: the db client or a transaction. */
+type Reader = Pick<Db, "select">;
+
 /** One call never covers more than this many days, so a typo cannot lock the database. */
 export const MAX_RANGE_DAYS = 366;
 
@@ -30,6 +33,103 @@ function key(employeeId: string, date: string): string {
   return `${employeeId}|${date}`;
 }
 
+export type DayRow = { employeeId: string; date: string; result: DayResult };
+
+export type ComputedDays = {
+  people: (typeof employees.$inferSelect)[];
+  shiftById: Map<string, typeof shifts.$inferSelect>;
+  /** One entry for every employee and date that has a day. */
+  toSave: DayRow[];
+  /** Dates that should have no row (before the join date or after the exit date), per employee. */
+  toRemove: Map<string, string[]>;
+};
+
+/**
+ * Works out the days in the scope from the stored inputs and returns them
+ * without saving anything. recalc() saves the result; the Today screen shows it.
+ */
+export async function computeDays(reader: Reader, scope: RecalcScope): Promise<ComputedDays> {
+  const dates = eachDate(scope.from, scope.to);
+  if (dates.length > MAX_RANGE_DAYS) throw new Error(`Recalculation covers at most ${MAX_RANGE_DAYS} days at a time.`);
+
+  const people = await reader
+    .select()
+    .from(employees)
+    .where(
+      scope.employeeIds === null
+        ? eq(employees.active, true)
+        : scope.employeeIds.length === 0
+          ? sql`false`
+          : inArray(employees.id, scope.employeeIds),
+    );
+  if (people.length === 0) return { people: [], toSave: [], toRemove: new Map<string, string[]>(), shiftById: new Map() };
+
+  const ids = people.map((p) => p.id);
+  const codes = people.map((p) => p.empCode);
+
+  const [settings] = await reader.select().from(companySettings).where(eq(companySettings.id, 1));
+  const weeklyOffDays = settings?.weeklyOffDays ?? [];
+
+  const holidayRows = await reader.select({ date: holidays.date }).from(holidays).where(between(holidays.date, scope.from, scope.to));
+  const holidayDates = new Set(holidayRows.map((h) => h.date));
+
+  const shiftRows = await reader.select().from(shifts).where(inArray(shifts.id, [...new Set(people.map((p) => p.shiftId))]));
+  const shiftById = new Map(shiftRows.map((s) => [s.id, s]));
+
+  // Punches for the whole range: from midnight at the start to midnight after the end, office time.
+  const rangeStart = officeDateTimeToInstant(scope.from, "00:00")!;
+  const afterEnd = officeDateTimeToInstant(nextDate(scope.to), "00:00")!;
+  const punchRows = await reader
+    .select({ empCode: rawPunches.empCode, punchedAt: rawPunches.punchedAt })
+    .from(rawPunches)
+    .where(and(inArray(rawPunches.empCode, codes), gte(rawPunches.punchedAt, rangeStart), lt(rawPunches.punchedAt, afterEnd)));
+  const punchesByCode = new Map<string, Date[]>();
+  for (const p of punchRows) {
+    const list = punchesByCode.get(p.empCode) ?? [];
+    list.push(p.punchedAt);
+    punchesByCode.set(p.empCode, list);
+  }
+
+  const adjustmentRows = await reader
+    .select()
+    .from(attendanceAdjustments)
+    .where(and(inArray(attendanceAdjustments.employeeId, ids), between(attendanceAdjustments.date, scope.from, scope.to)))
+    .orderBy(asc(attendanceAdjustments.createdAt));
+  const adjustmentsByDay = new Map<string, AdjustmentRow[]>();
+  for (const a of adjustmentRows) {
+    const k = key(a.employeeId, a.date);
+    const list = adjustmentsByDay.get(k) ?? [];
+    list.push({ field: a.field, newValue: a.newValue, createdAt: a.createdAt });
+    adjustmentsByDay.set(k, list);
+  }
+
+  const toSave: DayRow[] = [];
+  const toRemove = new Map<string, string[]>();
+
+  for (const person of people) {
+    const shift = shiftById.get(person.shiftId);
+    if (!shift) throw new Error(`Employee ${person.empCode} has a shift that no longer exists.`);
+    const punches = punchesByCode.get(person.empCode) ?? [];
+
+    for (const date of dates) {
+      const result = computeDay({
+        date,
+        employee: { joinDate: person.joinDate, exitDate: person.exitDate },
+        shift: { startTime: shift.startTime, endTime: shift.endTime, graceMinutes: shift.graceMinutes },
+        weeklyOffDays,
+        isHoliday: holidayDates.has(date),
+        punches,
+        leave: null,
+        overrides: effectiveOverrides(adjustmentsByDay.get(key(person.id, date)) ?? []),
+      });
+      if (result) toSave.push({ employeeId: person.id, date, result });
+      else toRemove.set(person.id, [...(toRemove.get(person.id) ?? []), date]);
+    }
+  }
+
+  return { people, shiftById, toSave, toRemove };
+}
+
 /**
  * Rebuilds attendance_days for the employees and dates in the scope from the
  * raw inputs: punches, shifts, weekly off days, holidays and manual
@@ -42,85 +142,11 @@ function key(employeeId: string, date: string): string {
  * payroll is finalized.
  */
 export async function recalc(db: Db, scope: RecalcScope): Promise<RecalcSummary> {
-  const dates = eachDate(scope.from, scope.to);
-  if (dates.length === 0) return { employees: 0, days: 0, removed: 0 };
-  if (dates.length > MAX_RANGE_DAYS) throw new Error(`Recalculation covers at most ${MAX_RANGE_DAYS} days at a time.`);
+  if (eachDate(scope.from, scope.to).length === 0) return { employees: 0, days: 0, removed: 0 };
 
   return db.transaction(async (tx) => {
-    const people = await tx
-      .select()
-      .from(employees)
-      .where(
-        scope.employeeIds === null
-          ? eq(employees.active, true)
-          : scope.employeeIds.length === 0
-            ? sql`false`
-            : inArray(employees.id, scope.employeeIds),
-      );
+    const { people, toSave, toRemove } = await computeDays(tx, scope);
     if (people.length === 0) return { employees: 0, days: 0, removed: 0 };
-
-    const ids = people.map((p) => p.id);
-    const codes = people.map((p) => p.empCode);
-
-    const [settings] = await tx.select().from(companySettings).where(eq(companySettings.id, 1));
-    const weeklyOffDays = settings?.weeklyOffDays ?? [];
-
-    const holidayRows = await tx.select({ date: holidays.date }).from(holidays).where(between(holidays.date, scope.from, scope.to));
-    const holidayDates = new Set(holidayRows.map((h) => h.date));
-
-    const shiftRows = await tx.select().from(shifts).where(inArray(shifts.id, [...new Set(people.map((p) => p.shiftId))]));
-    const shiftById = new Map(shiftRows.map((s) => [s.id, s]));
-
-    // Punches for the whole range: from midnight at the start to midnight after the end, office time.
-    const rangeStart = officeDateTimeToInstant(scope.from, "00:00")!;
-    const afterEnd = officeDateTimeToInstant(nextDate(scope.to), "00:00")!;
-    const punchRows = await tx
-      .select({ empCode: rawPunches.empCode, punchedAt: rawPunches.punchedAt })
-      .from(rawPunches)
-      .where(and(inArray(rawPunches.empCode, codes), gte(rawPunches.punchedAt, rangeStart), lt(rawPunches.punchedAt, afterEnd)));
-    const punchesByCode = new Map<string, Date[]>();
-    for (const p of punchRows) {
-      const list = punchesByCode.get(p.empCode) ?? [];
-      list.push(p.punchedAt);
-      punchesByCode.set(p.empCode, list);
-    }
-
-    const adjustmentRows = await tx
-      .select()
-      .from(attendanceAdjustments)
-      .where(and(inArray(attendanceAdjustments.employeeId, ids), between(attendanceAdjustments.date, scope.from, scope.to)))
-      .orderBy(asc(attendanceAdjustments.createdAt));
-    const adjustmentsByDay = new Map<string, AdjustmentRow[]>();
-    for (const a of adjustmentRows) {
-      const k = key(a.employeeId, a.date);
-      const list = adjustmentsByDay.get(k) ?? [];
-      list.push({ field: a.field, newValue: a.newValue, createdAt: a.createdAt });
-      adjustmentsByDay.set(k, list);
-    }
-
-    const toSave: { employeeId: string; date: string; result: DayResult }[] = [];
-    const toRemove = new Map<string, string[]>();
-
-    for (const person of people) {
-      const shift = shiftById.get(person.shiftId);
-      if (!shift) throw new Error(`Employee ${person.empCode} has a shift that no longer exists.`);
-      const punches = punchesByCode.get(person.empCode) ?? [];
-
-      for (const date of dates) {
-        const result = computeDay({
-          date,
-          employee: { joinDate: person.joinDate, exitDate: person.exitDate },
-          shift: { startTime: shift.startTime, endTime: shift.endTime, graceMinutes: shift.graceMinutes },
-          weeklyOffDays,
-          isHoliday: holidayDates.has(date),
-          punches,
-          leave: null,
-          overrides: effectiveOverrides(adjustmentsByDay.get(key(person.id, date)) ?? []),
-        });
-        if (result) toSave.push({ employeeId: person.id, date, result });
-        else toRemove.set(person.id, [...(toRemove.get(person.id) ?? []), date]);
-      }
-    }
 
     let removed = 0;
     for (const [employeeId, removeDates] of toRemove) {
