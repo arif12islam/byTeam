@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -229,29 +230,6 @@ async function TodayContent() {
       )}
 
       {board.entries.length === 0 ? <DeviceCard devices={devices} now={now} /> : null}
-    </div>
-  );
-}
-
-function Alert({
-  tone,
-  icon: Icon,
-  children,
-}: {
-  tone: "danger" | "warning";
-  icon: LucideIcon;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      role="status"
-      className={cn(
-        "flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm",
-        tone === "danger" ? "border-danger/30 bg-danger-soft text-danger" : "border-warning/30 bg-warning-soft text-warning",
-      )}
-    >
-      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <p className="min-w-0 text-foreground">{children}</p>
     </div>
   );
 }

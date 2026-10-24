@@ -1,9 +1,13 @@
+import { Fingerprint, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { clockState, describeClock } from "@/lib/devices/clock";
 import { describeAge, deviceStatus, listDevices, OFFLINE_AFTER_MINUTES, type DeviceStatus } from "@/lib/devices/devices";
@@ -21,6 +25,7 @@ export default function DevicesPage() {
   return (
     <>
       <PageHeader
+        icon={Fingerprint}
         title="Devices"
         description="Only devices listed here can send punches. Add the serial number of each one."
       />
@@ -38,27 +43,13 @@ const statusLabel: Record<DeviceStatus, string> = {
 };
 
 function StatusBadge({ status, active }: { status: DeviceStatus; active: boolean }) {
-  if (!active) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-        <span aria-hidden className="size-2 rounded-full border border-muted-foreground" />
-        Not accepted
-      </span>
-    );
-  }
+  const tone = !active ? "off" : status === "online" ? "success" : status === "offline" ? "danger" : "off";
+  const dot = !active ? "border border-current" : status === "online" ? "bg-current" : status === "offline" ? "bg-current" : "bg-current/50";
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 text-sm font-medium",
-        status === "online" ? "text-primary" : "text-muted-foreground",
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn("size-2 rounded-full", status === "online" ? "bg-primary" : "bg-muted-foreground/50")}
-      />
-      {statusLabel[status]}
-    </span>
+    <Badge tone={tone} className="px-3 py-1 text-sm">
+      <span aria-hidden className={cn("size-2 rounded-full", dot)} />
+      {active ? statusLabel[status] : "Not accepted"}
+    </Badge>
   );
 }
 
@@ -72,7 +63,7 @@ async function DevicesContent() {
 
   return (
     <div className="mt-6 grid max-w-3xl gap-6">
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Add a device</h2>
         <div className="mt-5">
           <AddDeviceForm />
@@ -80,16 +71,16 @@ async function DevicesContent() {
       </section>
 
       {list.length === 0 ? (
-        <p className="rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+        <Card className="border-dashed text-sm text-muted-foreground shadow-none">
           No devices yet. Add the serial number above, then point the device at this server.
-        </p>
+        </Card>
       ) : (
         list.map((device) => {
           const status = deviceStatus(device.lastSeenAt, now);
           const age = describeAge(device.lastSeenAt, now);
           const clock = clockState(device.clockOffsetSeconds);
           return (
-            <section key={device.id} className="rounded-lg border border-border bg-card p-5 md:p-6">
+            <section key={device.id} className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="truncate text-base font-semibold">{device.name}</h2>
@@ -110,16 +101,17 @@ async function DevicesContent() {
                 )}
               </p>
               {device.active ? (
-                <p
-                  className={cn(
-                    "mt-2 text-sm",
-                    clock.kind === "drifted" ? "rounded-md border border-destructive/40 bg-destructive/10 p-3 text-foreground" : "text-muted-foreground",
-                  )}
-                  role={clock.kind === "drifted" ? "alert" : undefined}
-                >
-                  {describeClock(clock)}
-                  {clock.kind !== "unchecked" && device.clockCheckedAt ? ` Checked ${formatOfficeDateTime(device.clockCheckedAt)}.` : ""}
-                </p>
+                clock.kind === "drifted" ? (
+                  <Alert tone="danger" icon={TriangleAlert} className="mt-3">
+                    {describeClock(clock)}
+                    {device.clockCheckedAt ? ` Checked ${formatOfficeDateTime(device.clockCheckedAt)}.` : ""}
+                  </Alert>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {describeClock(clock)}
+                    {clock.kind !== "unchecked" && device.clockCheckedAt ? ` Checked ${formatOfficeDateTime(device.clockCheckedAt)}.` : ""}
+                  </p>
+                )
               ) : null}
               <div className="mt-5 border-t border-border pt-5">
                 <DeviceControls device={device} />
@@ -129,7 +121,7 @@ async function DevicesContent() {
         })
       )}
 
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Punches from unknown employee codes</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           These codes punched on a device but no employee has them. Usually someone was enrolled at the device and not

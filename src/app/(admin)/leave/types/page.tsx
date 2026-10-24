@@ -1,3 +1,4 @@
+import { CalendarMinus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -17,6 +18,7 @@ export default function LeaveTypesPage() {
   return (
     <>
       <PageHeader
+        icon={CalendarMinus}
         title="Leave types"
         description="The kinds of leave and how many days each person gets a year."
         actions={
@@ -40,7 +42,7 @@ async function LeaveTypesContent() {
 
   return (
     <div className="mt-6 grid max-w-4xl gap-6">
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Leave year</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Decide this before approving leave. Changing it later changes every balance.
@@ -50,7 +52,7 @@ async function LeaveTypesContent() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Add a leave type</h2>
         <div className="mt-5">
           <LeaveTypeForm />
@@ -64,7 +66,7 @@ async function LeaveTypesContent() {
         </p>
       ) : (
         types.map((type) => (
-          <section key={type.id} className="rounded-lg border border-border bg-card p-5 md:p-6">
+          <section key={type.id} className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-base font-semibold">
                 {type.name}

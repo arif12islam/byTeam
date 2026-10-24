@@ -70,7 +70,7 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
       />
 
       <div className="mt-6 grid max-w-3xl gap-6">
-        <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">The day</h2>
           {date > today ? (
             <p className="mt-3 text-sm text-muted-foreground">That day has not happened yet.</p>
@@ -91,7 +91,7 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
           )}
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">
             Punches <span className="font-normal text-muted-foreground">({punches.length})</span>
           </h2>
@@ -113,7 +113,7 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
         </section>
 
         {result !== null && date <= today ? (
-          <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
             <h2 className="text-base font-semibold">Correct this day</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Use this when the device missed a punch or the status is wrong. The punches stay as they are; your change
@@ -126,7 +126,7 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
         ) : null}
 
         {adjustments.length > 0 ? (
-          <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
             <h2 className="text-base font-semibold">
               Changes made by hand <span className="font-normal text-muted-foreground">({adjustments.length})</span>
             </h2>

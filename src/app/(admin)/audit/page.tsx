@@ -1,3 +1,4 @@
+import { History } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -26,6 +27,7 @@ export default function AuditPage(props: PageProps<"/audit">) {
   return (
     <>
       <PageHeader
+        icon={History}
         title="Audit log"
         description="Every manual change, approval and payroll action, with who made it. Nothing here can be edited."
       />
@@ -94,7 +96,7 @@ async function AuditContent({ searchParams }: { searchParams: PageProps<"/audit"
 
   return (
     <div className="mt-6 grid max-w-4xl gap-6">
-      <form method="get" className="rounded-lg border border-border bg-card p-5 md:p-6">
+      <form method="get" className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Filter</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Who" htmlFor="audit-actor">

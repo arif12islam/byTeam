@@ -1,9 +1,13 @@
+import { CalendarMinus, ListChecks, Scale } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { listEmployees } from "@/lib/employees/employees";
 import { loadBalances, type Balance } from "@/lib/leave/balances";
@@ -22,6 +26,7 @@ export default function LeavePage() {
   return (
     <>
       <PageHeader
+        icon={CalendarMinus}
         title="Leave"
         description="Record leave, approve it, and track what each employee has left."
         actions={
@@ -38,33 +43,36 @@ export default function LeavePage() {
 }
 
 const statusLabel = { pending: "Waiting for approval", approved: "Approved", rejected: "Rejected", cancelled: "Cancelled" } as const;
+const statusTone = { pending: "warning", approved: "success", rejected: "danger", cancelled: "off" } as const;
 
 function dates(from: string, to: string): string {
   return from === to ? formatOfficeDate(from) : `${formatOfficeDate(from)} to ${formatOfficeDate(to)}`;
 }
 
-function BalanceCell({ balance }: { balance: Balance | undefined }) {
-  if (!balance) return <span className="text-muted-foreground">-</span>;
-  const pending = balance.pending > 0 ? <span className="block text-xs text-muted-foreground">{balance.pending} waiting for approval</span> : null;
-  if (balance.quota === null || balance.remaining === null) {
-    return (
-      <>
-        <span>{balance.used === 1 ? "1 day taken" : `${balance.used} days taken`}</span>
-        <span className="block text-xs text-muted-foreground">No limit</span>
-        {pending}
-      </>
-    );
-  }
+function BalanceRow({ name, balance }: { name: string; balance: Balance | undefined }) {
+  if (!balance) return null;
+  const limited = balance.quota !== null && balance.remaining !== null;
+  const share = limited && balance.quota! > 0 ? Math.min(1, balance.used / balance.quota!) : 0;
   return (
-    <>
-      <span className={cn("font-medium tabular-nums", balance.remaining < 0 && "text-destructive")}>
-        {balance.remaining} left
-      </span>
-      <span className="block text-xs text-muted-foreground">
-        {balance.used} of {balance.quota} taken
-      </span>
-      {pending}
-    </>
+    <li>
+      <div className="flex items-baseline justify-between gap-3 text-sm">
+        <span className="min-w-0 truncate">{name}</span>
+        {limited ? (
+          <span className={cn("shrink-0 font-semibold tabular-nums", balance.remaining! < 0 && "text-danger")}>{balance.remaining} left</span>
+        ) : (
+          <span className="shrink-0 text-muted-foreground">{balance.used === 1 ? "1 day taken" : `${balance.used} days taken`}</span>
+        )}
+      </div>
+      {limited ? (
+        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-secondary" role="meter" aria-label={`${name} used`} aria-valuemin={0} aria-valuemax={balance.quota!} aria-valuenow={Math.min(balance.used, balance.quota!)}>
+          <div className={cn("h-full rounded-full", balance.remaining! < 0 ? "bg-danger" : "bg-info")} style={{ width: `${share * 100}%` }} />
+        </div>
+      ) : null}
+      <p className="mt-1 text-xs text-muted-foreground">
+        {limited ? `${balance.used} of ${balance.quota} taken` : "No limit"}
+        {balance.pending > 0 ? `, ${balance.pending} waiting for approval` : ""}
+      </p>
+    </li>
   );
 }
 
@@ -83,9 +91,9 @@ async function LeaveContent() {
   const balanceOf = new Map(balances.map((b) => [`${b.employeeId}|${b.leaveTypeId}`, b]));
 
   return (
-    <div className="mt-6 grid max-w-4xl gap-6">
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
-        <h2 className="text-base font-semibold">Record leave</h2>
+    <div className="mt-6 grid max-w-4xl gap-5">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <CardTitle icon={CalendarMinus}>Record leave</CardTitle>
         {types.length === 0 ? (
           <p className="mt-3 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
             There are no leave types yet.{" "}
@@ -113,81 +121,62 @@ async function LeaveContent() {
       </section>
 
       {people.length > 0 && types.length > 0 ? (
-        <section className="rounded-lg border border-border bg-card p-5 md:p-6">
-          <h2 className="text-base font-semibold">Balances</h2>
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <CardTitle icon={Scale}>Balances</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             {basis === "calendar"
               ? `Days left this year, 1 January to 31 December ${today.slice(0, 4)}.`
               : "Days left this year, counted from each person's joining date."}{" "}
             Only approved leave is taken off. Weekly off days and holidays are not counted.
           </p>
-          <div className="mt-4 overflow-x-auto rounded-md border border-border">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th scope="col" className="sticky left-0 bg-card px-3 py-2 font-medium">
-                    Employee
-                  </th>
+          <ul className="mt-4 grid gap-3 md:grid-cols-2">
+            {people.map((p) => (
+              <li key={p.id} className="rounded-2xl border border-border bg-background p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar name={p.name} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">Code {p.empCode}</p>
+                  </div>
+                </div>
+                <ul className="mt-4 grid gap-4">
                   {types.map((t) => (
-                    <th key={t.id} scope="col" className="min-w-28 px-3 py-2 font-medium">
-                      {t.name}
-                    </th>
+                    <BalanceRow key={t.id} name={t.name} balance={balanceOf.get(`${p.id}|${t.id}`)} />
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {people.map((p) => (
-                  <tr key={p.id} className="border-b border-border last:border-b-0">
-                    <th scope="row" className="sticky left-0 bg-card px-3 py-2 text-left font-medium">
-                      {p.name}
-                      <span className="block text-xs font-normal text-muted-foreground">Code {p.empCode}</span>
-                    </th>
-                    {types.map((t) => (
-                      <td key={t.id} className="px-3 py-2">
-                        <BalanceCell balance={balanceOf.get(`${p.id}|${t.id}`)} />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </ul>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
-        <h2 className="text-base font-semibold">
-          Requests <span className="font-normal text-muted-foreground">({requests.length})</span>
-        </h2>
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <CardTitle icon={ListChecks} count={requests.length}>
+          Requests
+        </CardTitle>
         {requests.length === 0 ? (
           <p className="mt-3 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
             No leave recorded yet. Use the form above when an employee asks for leave.
           </p>
         ) : (
-          <ul className="mt-4 divide-y divide-border rounded-md border border-border">
+          <ul className="mt-2 divide-y divide-border">
             {requests.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1 px-3 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    {r.employeeName} <span className="font-normal text-muted-foreground">({r.empCode})</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
+              <li key={r.id} className="flex items-start gap-3 py-4">
+                <Avatar name={r.employeeName} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <p className="text-sm font-semibold">
+                      {r.employeeName} <span className="font-normal text-muted-foreground">({r.empCode})</span>
+                    </p>
+                    <Badge tone={statusTone[r.status]}>{statusLabel[r.status]}</Badge>
+                  </div>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {r.leaveTypeName}, {dates(r.fromDate, r.toDate)}, {r.days} {r.days === 1 ? "working day" : "working days"}
                     {r.unpaidDays > 0 ? `, ${r.unpaidDays} unpaid` : ""}
                   </p>
                   {r.note ? <p className="text-sm text-muted-foreground">{r.note}</p> : null}
                   <DecisionButtons id={r.id} status={r.status} />
                 </div>
-                <p
-                  className={cn(
-                    "text-sm font-medium",
-                    r.status === "pending" && "text-foreground",
-                    r.status === "approved" && "text-primary",
-                    (r.status === "rejected" || r.status === "cancelled") && "text-muted-foreground",
-                  )}
-                >
-                  {statusLabel[r.status]}
-                </p>
               </li>
             ))}
           </ul>
