@@ -1,12 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import type { getDb } from "@/db";
-import { attendanceAdjustments, attendanceDays, employees } from "@/db/schema";
+import { attendanceAdjustments, employees, users } from "@/db/schema";
 import { ADJUSTMENT_FIELDS, ATTENDANCE_STATUSES } from "@/db/schema/attendance";
 import { audit } from "@/lib/audit";
 import { isValidOfficeDate, officeDateTimeToInstant, timeToMinutes, toOfficeDate } from "@/lib/time";
 
+import { computeDays } from "./recalc";
 import { recalcDay } from "./triggers";
 
 type Db = ReturnType<typeof getDb>;
@@ -64,10 +65,9 @@ export async function addAdjustment(
     return { ok: false, error: "That date is outside this person's time at the company." };
   }
 
-  const [before] = await db
-    .select()
-    .from(attendanceDays)
-    .where(and(eq(attendanceDays.employeeId, employeeId), eq(attendanceDays.date, date)));
+  // The day as it stands now: punches plus any earlier changes.
+  const { toSave } = await computeDays(db, { employeeIds: [employeeId], from: date, to: date });
+  const before = toSave[0]?.result ?? null;
 
   let newValue: string | null = null;
   if (value !== null) {
@@ -78,8 +78,9 @@ export async function addAdjustment(
       if (!instant) return { ok: false, error: "Enter a time like 09:30." };
       newValue = instant.toISOString();
 
-      if (field === "last_out" && before?.firstIn && instant <= before.firstIn) {
-        return { ok: false, error: "The leaving time must be after the arrival time." };
+      if (field === "last_out") {
+        if (!before?.firstIn) return { ok: false, error: "There is no arrival time for this day. Set the arrival time first." };
+        if (instant <= before.firstIn) return { ok: false, error: "The leaving time must be after the arrival time." };
       }
       if (field === "first_in" && before?.lastOut && instant >= before.lastOut) {
         return { ok: false, error: "The arrival time must be before the leaving time." };
@@ -103,4 +104,33 @@ export async function addAdjustment(
 
   await recalcDay(db, employeeId, date);
   return { ok: true };
+}
+
+export type DayAdjustment = {
+  id: string;
+  field: (typeof ADJUSTMENT_FIELDS)[number];
+  /** A status name, an ISO time, or null when the change removed an earlier one. */
+  newValue: string | null;
+  reason: string;
+  createdAt: Date;
+  /** Who made the change. Null if that account has been removed. */
+  by: string | null;
+};
+
+/** The manual changes made to one day, newest first. */
+export async function listDayAdjustments(db: Db, employeeId: string, date: string): Promise<DayAdjustment[]> {
+  const rows = await db
+    .select({
+      id: attendanceAdjustments.id,
+      field: attendanceAdjustments.field,
+      newValue: attendanceAdjustments.newValue,
+      reason: attendanceAdjustments.reason,
+      createdAt: attendanceAdjustments.createdAt,
+      by: users.name,
+    })
+    .from(attendanceAdjustments)
+    .leftJoin(users, eq(users.id, attendanceAdjustments.createdBy))
+    .where(and(eq(attendanceAdjustments.employeeId, employeeId), eq(attendanceAdjustments.date, date)))
+    .orderBy(desc(attendanceAdjustments.createdAt), desc(attendanceAdjustments.id));
+  return rows;
 }
