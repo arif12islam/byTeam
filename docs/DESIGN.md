@@ -190,7 +190,7 @@ A payroll run reads one month of attendance days and the rule set in effect for 
 2. The engine computes all items. HR reviews the sheet and fixes attendance or adds bonuses and advances; the draft recomputes.
 3. Owner finalizes: the rule set is copied into the run, the month's attendance and leave are locked.
 4. Payslip PDFs and the salary sheet (Excel, for bank or bKash) are generated from the finalized items.
-5. Unlocking is Owner only, needs a reason, and is written to the audit log. Re-finalizing creates a new version of the items.
+5. Unlocking is Owner only, needs a reason, and is written to the audit log with the finalized copy it replaces. The run goes back to a draft with its items as they were and its version raised by one; recompute, then finalize again for a new version.
 
 ## Screens and roles
 

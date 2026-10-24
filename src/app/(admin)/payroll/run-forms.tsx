@@ -8,7 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { fieldValue } from "@/lib/form";
 
-import { addAdjustmentAction, createRunAction, finalizeRunAction, recomputeRunAction, removeAdjustmentAction } from "./actions";
+import {
+  addAdjustmentAction,
+  createRunAction,
+  finalizeRunAction,
+  recomputeRunAction,
+  removeAdjustmentAction,
+  unlockRunAction,
+} from "./actions";
 
 export function CreateRunForm({ month, label }: { month: string; label: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createRunAction, {});
@@ -128,6 +135,38 @@ export function FinalizeForm({ runId, label }: { runId: string; label: string })
       ) : (
         <Button type="button" onClick={() => setConfirming(true)}>
           Finalize payroll
+        </Button>
+      )}
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/** Asks for a reason first. The reason goes in the audit log. */
+export function UnlockForm({ runId, label }: { runId: string; label: string }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(unlockRunAction, {});
+  const [open, setOpen] = useState(false);
+
+  return (
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="runId" value={runId} />
+      {open || state.error ? (
+        <>
+          <Field label="Why are you unlocking it?" htmlFor="unlock-reason" hint="For example: a leave day was recorded wrongly. This is kept in the audit log.">
+            <Input id="unlock-reason" name="reason" type="text" maxLength={500} defaultValue={fieldValue(state, "reason")} required autoFocus />
+          </Field>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={pending}>
+              {pending ? "Unlocking" : `Unlock ${label}`}
+            </Button>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>
+              Keep it locked
+            </Button>
+          </div>
+        </>
+      ) : (
+        <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+          Unlock month
         </Button>
       )}
       <FormMessage state={state} />

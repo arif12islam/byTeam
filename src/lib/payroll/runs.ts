@@ -1,4 +1,5 @@
 import { asc, count, desc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import type { getDb } from "@/db";
 import { employees, payrollAdjustments, payrollItems, payrollRuns, users, type PayrollRunStatus } from "@/db/schema";
@@ -218,6 +219,46 @@ export async function finalizeRun(
       after: { month, version: after.version, employees: computed.items.length, net },
     });
     return { ok: true as const, employees: computed.items.length, net };
+  });
+}
+
+export const unlockReasonSchema = z
+  .string("Say why you are unlocking this month, in a few words.")
+  .trim()
+  .min(3, "Say why you are unlocking this month, in a few words.")
+  .max(500, "Keep the reason under 500 characters.");
+
+/**
+ * Reopens a finalized month (the owner's decision) so attendance, leave, bonuses
+ * and advances can change again. A reason is required and goes in the audit log
+ * together with the finalized copy it replaces. The run goes back to a draft with
+ * its items as they were and its version raised by one, so finalizing again makes
+ * a new version. Nothing is recomputed: the owner fixes what needs fixing, then
+ * recomputes and finalizes again.
+ */
+export async function unlockRun(db: Db, runId: string, reason: string, actorId: string): Promise<RunResult<{ version: number }>> {
+  const parsed = unlockReasonSchema.safeParse(reason);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  return db.transaction(async (tx) => {
+    const [run] = await tx.select().from(payrollRuns).where(eq(payrollRuns.id, runId)).for("update");
+    if (!run) return gone;
+    if (run.status !== "finalized") return { ok: false as const, error: "This month is not finalized, so there is nothing to unlock." };
+
+    const [after] = await tx
+      .update(payrollRuns)
+      .set({ status: "draft", version: run.version + 1, ruleSetSnapshot: null, finalizedBy: null, finalizedAt: null, updatedAt: new Date() })
+      .where(eq(payrollRuns.id, runId))
+      .returning();
+    await audit(tx, {
+      actorId,
+      action: "payroll_run.unlock",
+      entity: "payroll_run",
+      entityId: runId,
+      before: run,
+      after: { ...after, reason: parsed.data },
+    });
+    return { ok: true as const, version: after.version };
   });
 }
 

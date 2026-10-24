@@ -6,7 +6,7 @@ import type { FormState } from "@/components/field";
 import { getDb } from "@/db";
 import { formError } from "@/lib/form";
 import { addPayrollAdjustment, removePayrollAdjustment } from "@/lib/payroll/adjustments";
-import { createDraftRun, finalizeRun, recomputeRun } from "@/lib/payroll/runs";
+import { createDraftRun, finalizeRun, recomputeRun, unlockRun } from "@/lib/payroll/runs";
 import { requireRole } from "@/lib/session";
 import { formatMonth, isValidMonth } from "@/lib/time";
 
@@ -81,4 +81,18 @@ export async function finalizeRunAction(_previous: FormState, formData: FormData
 
   revalidatePath("/payroll");
   return { message: "Payroll finalized." };
+}
+
+export async function unlockRunAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  // Only the owner reopens a month.
+  const user = await requireRole("owner");
+
+  const id = formData.get("runId");
+  if (typeof id !== "string" || id === "") return { error: "Reload the page and try again." };
+
+  const result = await unlockRun(getDb(), id, String(formData.get("reason") ?? ""), user.id);
+  if (!result.ok) return formError(formData, result.error);
+
+  revalidatePath("/payroll");
+  return { message: "Month unlocked. Make your changes, then recompute the sheet and finalize again." };
 }
