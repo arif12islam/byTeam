@@ -34,8 +34,9 @@ type Pay = {
 };
 type Fixture = { key: string; name: string; story: string; pay: Pay };
 
-const MONTH = "2017-03";
-const TODAY = "2017-04-05";
+// May 2017, not the March the grid test uses: this test finalizes its month, and a finalized month refuses new leave and bonuses.
+const MONTH = "2017-05";
+const TODAY = "2017-06-05";
 const DIR = path.join(__dirname, "..", "fixtures", "demo", MONTH);
 const fixtures: Fixture[] = readdirSync(DIR)
   .filter((f) => f.endsWith(".json"))

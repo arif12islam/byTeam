@@ -1,0 +1,58 @@
+{
+  "key": "joined_mid_month",
+  "name": "Sabina Khatun",
+  "story": "Joined on the 10th working day. Late once at 09:30. Gets a 1,500 bonus.",
+  "month": "2017-05",
+  "joinDate": "2017-05-15",
+  "grid": {
+    "2017-05-15": "present",
+    "2017-05-16": "present",
+    "2017-05-17": "late",
+    "2017-05-18": "present",
+    "2017-05-19": "weekly_off",
+    "2017-05-20": "weekly_off",
+    "2017-05-21": "present",
+    "2017-05-22": "present",
+    "2017-05-23": "present",
+    "2017-05-24": "present",
+    "2017-05-25": "present",
+    "2017-05-26": "weekly_off",
+    "2017-05-27": "weekly_off",
+    "2017-05-28": "present",
+    "2017-05-29": "present",
+    "2017-05-30": "present",
+    "2017-05-31": "present"
+  },
+  "lateMinutes": {
+    "2017-05-17": 30
+  },
+  "missingOut": [],
+  "workedOnOffDay": [],
+  "totals": {
+    "present": 13,
+    "late": 1,
+    "absent": 0,
+    "leave": 0,
+    "missingOut": 0,
+    "workedOffDays": 0,
+    "lateMinutes": 30
+  },
+  "pay": {
+    "monthlyGross": "36000.00",
+    "payableDays": 17,
+    "absentDays": 0,
+    "lateCount": 1,
+    "unpaidLeaveDays": 0,
+    "lateDaysDeducted": 0,
+    "grossEarned": "19741.94",
+    "absentDeduction": "0.00",
+    "unpaidLeaveDeduction": "0.00",
+    "lateDeduction": "0.00",
+    "advance": "0.00",
+    "bonus": "1500.00",
+    "deductions": "0.00",
+    "additions": "1500.00",
+    "netBeforeRounding": "21241.94",
+    "net": "21242.00"
+  }
+}
