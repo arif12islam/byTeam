@@ -58,6 +58,26 @@
 
   --elevation: 0 1px 2px rgb(12 59 44 / 0.06), 0 4px 16px rgb(12 59 44 / 0.05);
 
+  /* Section accents: decorative identity colors for the menu, headings and charts. Status colors keep their own meaning. */
+  --acc-on: #ffffff;
+  --acc-indigo: #4f46e5;
+  --acc-indigo-soft: #e8e9fd;
+  --acc-violet: #7c3aed;
+  --acc-violet-soft: #f0e8fd;
+  --acc-pink: #db2777;
+  --acc-pink-soft: #fce7f1;
+  --acc-orange: #d9660a;
+  --acc-orange-soft: #fdebd8;
+  --acc-teal: #0d8a7f;
+  --acc-teal-soft: #d7f5f1;
+  --acc-sky: #0284c7;
+  --acc-sky-soft: #dcf0fb;
+  --acc-lime: #4d7c0f;
+  --acc-lime-soft: #e4f1cd;
+  --acc-slate: #475569;
+  --acc-slate-soft: #e8ecf1;
+
+
   --sidebar: #0c3b2c;
   --sidebar-foreground: #f2faf6;
   --sidebar-border: #1d5442;
@@ -102,6 +122,25 @@
     --off-soft: #232b2f;
 
     --elevation: 0 1px 2px rgb(0 0 0 / 0.4);
+
+    --acc-on: #0d1512;
+    --acc-indigo: #8b93ff;
+    --acc-indigo-soft: #23264f;
+    --acc-violet: #b28cff;
+    --acc-violet-soft: #2e2250;
+    --acc-pink: #f472b6;
+    --acc-pink-soft: #4a1d36;
+    --acc-orange: #f59e5b;
+    --acc-orange-soft: #43270f;
+    --acc-teal: #4fd1c5;
+    --acc-teal-soft: #11403c;
+    --acc-sky: #5bbcf0;
+    --acc-sky-soft: #12364a;
+    --acc-lime: #a3e635;
+    --acc-lime-soft: #2f4012;
+    --acc-slate: #a3b1c2;
+    --acc-slate-soft: #263040;
+
 
     --sidebar: #0a2c21;
     --sidebar-foreground: #f2faf6;
@@ -152,6 +191,24 @@
   --color-off-soft: var(--off-soft);
 
   --shadow-card: var(--elevation);
+
+  --color-acc-on: var(--acc-on);
+  --color-acc-indigo: var(--acc-indigo);
+  --color-acc-indigo-soft: var(--acc-indigo-soft);
+  --color-acc-violet: var(--acc-violet);
+  --color-acc-violet-soft: var(--acc-violet-soft);
+  --color-acc-pink: var(--acc-pink);
+  --color-acc-pink-soft: var(--acc-pink-soft);
+  --color-acc-orange: var(--acc-orange);
+  --color-acc-orange-soft: var(--acc-orange-soft);
+  --color-acc-teal: var(--acc-teal);
+  --color-acc-teal-soft: var(--acc-teal-soft);
+  --color-acc-sky: var(--acc-sky);
+  --color-acc-sky-soft: var(--acc-sky-soft);
+  --color-acc-lime: var(--acc-lime);
+  --color-acc-lime-soft: var(--acc-lime-soft);
+  --color-acc-slate: var(--acc-slate);
+  --color-acc-slate-soft: var(--acc-slate-soft);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

@@ -10,7 +10,7 @@ import { formatOfficeTime } from "@/lib/time";
 export function PunchFeed({ items, now }: { items: readonly FeedItem[]; now: Date }) {
   return (
     <Card className="p-3 sm:p-3.5">
-      <CardTitle icon={Fingerprint}>
+      <CardTitle icon={Fingerprint} accent="indigo">
         Latest punches
       </CardTitle>
       {items.length === 0 ? (

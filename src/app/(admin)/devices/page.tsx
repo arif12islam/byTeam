@@ -26,6 +26,7 @@ export default function DevicesPage() {
     <>
       <PageHeader
         icon={Fingerprint}
+        accent="lime"
         title="Devices"
         description="Only devices listed here can send punches. Add the serial number of each one."
       />

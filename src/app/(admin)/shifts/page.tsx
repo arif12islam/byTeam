@@ -16,6 +16,7 @@ export default function ShiftsPage() {
     <>
       <PageHeader
         icon={Timer}
+        accent="sky"
         title="Shifts"
         description="Working hours. A person is late when their first punch is after the start plus the grace minutes."
       />

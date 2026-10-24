@@ -18,7 +18,7 @@ export default function NewEmployeePage(props: PageProps<"/employees/new">) {
   return (
     <>
       <BackLink href="/employees">Back to employees</BackLink>
-      <PageHeader icon={UserPlus} title="Add employee" description="Create the record, then set their salary." />
+      <PageHeader icon={UserPlus} accent="pink" title="Add employee" description="Create the record, then set their salary." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading</p>}>
         <NewEmployee searchParams={props.searchParams} />
       </Suspense>
