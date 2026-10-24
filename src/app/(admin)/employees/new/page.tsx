@@ -1,0 +1,46 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+
+import { PageHeader } from "@/components/page-header";
+import { getDb } from "@/db";
+import { requireRole } from "@/lib/session";
+import { listShifts } from "@/lib/shifts/shifts";
+
+import { EmployeeForm } from "../employee-form";
+
+export const metadata: Metadata = { title: "Add employee" };
+
+export default function NewEmployeePage() {
+  return (
+    <>
+      <PageHeader title="Add employee" description="Create the record, then set their salary." />
+      <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading</p>}>
+        <NewEmployee />
+      </Suspense>
+    </>
+  );
+}
+
+async function NewEmployee() {
+  await requireRole("owner", "hr");
+  const shifts = await listShifts(getDb());
+
+  if (shifts.length === 0) {
+    return (
+      <p className="mt-6 max-w-xl rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+        Every employee needs a shift.{" "}
+        <Link href="/shifts" className="text-primary underline underline-offset-4">
+          Add a shift first
+        </Link>
+        , then come back.
+      </p>
+    );
+  }
+
+  return (
+    <section className="mt-6 max-w-3xl rounded-lg border border-border bg-card p-5 md:p-6">
+      <EmployeeForm shifts={shifts} />
+    </section>
+  );
+}
