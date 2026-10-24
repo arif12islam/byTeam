@@ -1,6 +1,9 @@
 # Demo month fixtures
 
-One JSON file per demo employee for March 2017, with the grid the attendance engine must produce and the pay the payroll engine must reach. `2017-03/expected-pay.csv` has the same pay figures as one table, the way a spreadsheet would show them.
+One JSON file per demo employee for two months, with the grid the attendance engine must produce and the pay the payroll engine must reach. `<month>/expected-pay.csv` has the same pay figures as one table, the way a spreadsheet would show them.
+
+- `2017-03` is used by the grid test (`tests/db/demo-grid.test.ts`).
+- `2017-05` is used by the golden pay test (`tests/db/payroll-golden.test.ts`), which finalizes its month. It has its own month so that finalizing never blocks the grid test from adding leave and bonuses.
 
 They are written by `generate.py`, which works everything out by hand-style rules and exact fractions and shares no code with byTeam, so the tests compare two independent calculations. Run it again after changing the story in `src/lib/demo/scenarios.ts`:
 

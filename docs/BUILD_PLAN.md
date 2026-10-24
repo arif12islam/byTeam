@@ -221,7 +221,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Unlock (owner): reason required, audited
 - [x] Payslip PDF per employee
 - [x] Salary sheet Excel export
-- [ ] Tests: expected pay per seed employee from a spreadsheet, as golden tests
+- [x] Tests: expected pay per seed employee from a spreadsheet, as golden tests
 
 **Done when:** every seeded employee's net pay matches the spreadsheet to the taka, and a finalized month cannot be edited.
 
