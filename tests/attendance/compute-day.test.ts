@@ -244,3 +244,65 @@ describe("it only reads its inputs", () => {
     }
   });
 });
+
+describe("office outages", () => {
+  const outage = (startTime: string, endTime: string) => ({ startTime, endTime });
+
+  it("moves the on-time limit to the end of an outage that covered the start, plus the usual grace", () => {
+    // Power was off from 08:30 to 10:00. Grace is 10 minutes, so arriving up to 10:10 is on time.
+    const powerCut = [outage("08:30", "10:00")];
+    expect(computeDay(day({ outages: powerCut, punches: [at("10:05")] }))).toMatchObject({ status: "present", lateMinutes: 0 });
+    expect(computeDay(day({ outages: powerCut, punches: [at("10:10")] }))?.status).toBe("present");
+    expect(computeDay(day({ outages: powerCut, punches: [at("10:11")] }))).toMatchObject({ status: "late", lateMinutes: 71 });
+  });
+
+  it("changes nothing without an outage, or when the outage did not cover the on-time limit", () => {
+    expect(computeDay(day({ punches: [at("10:05")] }))?.status).toBe("late");
+    // The outage began after people could already have punched in time.
+    expect(computeDay(day({ outages: [outage("09:30", "10:30")], punches: [at("10:35")] }))?.status).toBe("late");
+    // The outage ended before the limit.
+    expect(computeDay(day({ outages: [outage("08:00", "09:05")], punches: [at("09:30")] }))?.status).toBe("late");
+  });
+
+  it("counts an outage that covers the limit exactly at its start, but not exactly at its end", () => {
+    // The limit is 09:10. An outage from 09:10 to 10:00 covers that minute.
+    expect(computeDay(day({ outages: [outage("09:10", "10:00")], punches: [at("10:10")] }))?.status).toBe("present");
+    // An outage that ended at 09:10 had already finished.
+    expect(computeDay(day({ outages: [outage("08:00", "09:10")], punches: [at("09:20")] }))?.status).toBe("late");
+  });
+
+  it("follows a second outage that covers the new limit", () => {
+    // First outage to 10:00 moves the limit to 10:10. A second one from 10:05 to 11:00 covers that, so 11:10.
+    const two = [outage("08:30", "10:00"), outage("10:05", "11:00")];
+    expect(computeDay(day({ outages: two, punches: [at("11:10")] }))?.status).toBe("present");
+    expect(computeDay(day({ outages: two, punches: [at("11:11")] }))?.status).toBe("late");
+    // The order they are given in does not matter.
+    expect(computeDay(day({ outages: [two[1], two[0]], punches: [at("11:10")] }))?.status).toBe("present");
+  });
+
+  it("does not mark a day absent when an outage covered the whole shift", () => {
+    expect(computeDay(day({ outages: [outage("08:00", "18:30")] }))).toMatchObject({ status: "present", punchCount: 0, firstIn: null, missingOut: false });
+    expect(computeDay(day({ outages: [outage("09:00", "18:00")] }))?.status).toBe("present");
+  });
+
+  it("still marks absent when the outage covered only part of the shift", () => {
+    expect(computeDay(day({ outages: [outage("09:00", "17:59")] }))?.status).toBe("absent");
+    expect(computeDay(day({ outages: [outage("09:01", "18:00")] }))?.status).toBe("absent");
+    // Two outages that together cover the shift are not one outage.
+    expect(computeDay(day({ outages: [outage("09:00", "12:00"), outage("12:00", "18:00")] }))?.status).toBe("absent");
+  });
+
+  it("keeps the usual order: holidays, days off and leave come before the outage rule", () => {
+    const all = [outage("08:00", "19:00")];
+    expect(computeDay(day({ outages: all, isHoliday: true }))?.status).toBe("holiday");
+    expect(computeDay(day({ outages: all, date: FRIDAY }))?.status).toBe("weekly_off");
+    expect(computeDay(day({ outages: all, leave: { paid: false } }))?.status).toBe("leave_unpaid");
+  });
+
+  it("ignores windows that are not valid times, and does not change early minutes or missing out", () => {
+    expect(computeDay(day({ outages: [outage("nine", "ten")], punches: [at("10:05")] }))?.status).toBe("late");
+    expect(computeDay(day({ outages: [outage("11:00", "10:00")] }))?.status).toBe("absent");
+    expect(computeDay(day({ outages: [outage("08:30", "10:00")], punches: [at("10:05"), at("17:00")] }))).toMatchObject({ status: "present", earlyMinutes: 60, missingOut: false });
+    expect(computeDay(day({ outages: [outage("08:30", "10:00")], punches: [at("10:05")] }))?.missingOut).toBe(true);
+  });
+});

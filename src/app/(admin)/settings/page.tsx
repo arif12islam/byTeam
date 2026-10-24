@@ -4,12 +4,14 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
+import { listRecentOutages } from "@/lib/attendance/outages";
 import { getCompanySettings } from "@/lib/settings/company";
 import { groupByYear, listHolidays } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
 import { formatOfficeDate } from "@/lib/time";
 
 import { removeHolidayAction } from "./actions";
+import { OutageForm, RemoveOutageForm } from "./outage-forms";
 import { CompanyForm } from "./company-form";
 import { HolidayForm } from "./holiday-form";
 
@@ -20,7 +22,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Company details, weekly off days and public holidays."
+        description="Company details, weekly off days, public holidays and office outages."
       />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading settings</p>}>
         <SettingsContent />
@@ -43,7 +45,7 @@ async function SettingsContent() {
   await requireRole("owner", "hr");
 
   const db = getDb();
-  const [company, holidays] = await Promise.all([getCompanySettings(db), listHolidays(db)]);
+  const [company, holidays, outages] = await Promise.all([getCompanySettings(db), listHolidays(db), listRecentOutages(db)]);
   const groups = groupByYear(holidays);
 
   return (
@@ -86,6 +88,33 @@ async function SettingsContent() {
               </div>
             ))}
           </div>
+        )}
+      </Section>
+
+      <Section
+        title="Office outages"
+        description="When the power or the device was off and people could not punch, record it. Nobody is marked late for an arrival the outage caused, and a day it covered from start to finish is not marked absent."
+      >
+        <OutageForm />
+
+        {outages.length === 0 ? (
+          <p className="mt-6 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+            No outages in the last month. Record one here as soon as you know the date and the times.
+          </p>
+        ) : (
+          <ul className="mt-6 divide-y divide-border rounded-md border border-border">
+            {outages.map((outage) => (
+              <li key={outage.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{outage.reason}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatOfficeDate(outage.date)}, {outage.startTime} to {outage.endTime}
+                  </p>
+                </div>
+                <RemoveOutageForm id={outage.id} label={`${outage.reason} on ${outage.date}`} />
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
     </div>

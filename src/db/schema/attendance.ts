@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, pgEnum, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, pgEnum, pgTable, text, time, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { createdAt } from "./columns";
 import { employees, users } from "./setup";
@@ -85,5 +85,32 @@ export const attendanceAdjustments = pgTable(
     index("attendance_adjustments_lookup_idx").on(t.employeeId, t.date, t.field, t.createdAt),
     // btrim only trims spaces, so test for any character that is not whitespace, tabs and line breaks included.
     check("attendance_adjustments_reason_not_blank", sql`${t.reason} ~ '\\S'`),
+  ],
+);
+
+/**
+ * A stretch of one day when the office could not record punches, such as a
+ * power cut that switched the device off. Late arrivals that the outage caused
+ * are not marked late, and a day the outage covered from start to finish is not
+ * marked absent. Times are on the office clock. Removed outages are deleted,
+ * with an audit row for both the adding and the removing.
+ */
+export const officeOutages = pgTable(
+  "office_outages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    date: date("date", { mode: "string" }).notNull(),
+    startTime: time("start_time").notNull(),
+    endTime: time("end_time").notNull(),
+    reason: text("reason").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("office_outages_date_idx").on(t.date),
+    check("office_outages_window_in_order", sql`${t.endTime} > ${t.startTime}`),
+    check("office_outages_reason_not_blank", sql`${t.reason} ~ '\\S'`),
   ],
 );

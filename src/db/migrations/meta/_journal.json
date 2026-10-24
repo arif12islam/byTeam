@@ -57,6 +57,13 @@
       "when": 1792843405040,
       "tag": "0007_m5_payroll_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792858284142,
+      "tag": "0008_m6_office_outages",
+      "breakpoints": true
     }
   ]
 }
