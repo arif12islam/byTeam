@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
-import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listDayAdjustments, type DayAdjustment } from "@/lib/attendance/adjustments";
 import { statusLabel } from "@/lib/attendance/labels";
@@ -59,14 +58,11 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
 
   return (
     <>
+      <BackLink href={back}>Back to attendance</BackLink>
       <PageHeader
+        avatar={employee.name}
         title={employee.name}
         description={`${formatOfficeDate(date)}. Code ${employee.empCode}${employee.department ? `, ${employee.department}` : ""}.`}
-        actions={
-          <Link href={back} className={buttonVariants({ variant: "outline" })}>
-            Back to the month
-          </Link>
-        }
       />
 
       <div className="mt-6 grid max-w-3xl gap-6">

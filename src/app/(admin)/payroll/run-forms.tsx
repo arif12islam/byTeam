@@ -22,8 +22,8 @@ export function CreateRunForm({ month, label }: { month: string; label: string }
   return (
     <form action={action} className="flex flex-wrap items-center gap-4">
       <input type="hidden" name="month" value={month} />
-      <Button type="submit" disabled={pending}>
-        {pending ? "Creating" : `Create draft for ${label}`}
+      <Button type="submit" pending={pending}>
+        {`Create draft for ${label}`}
       </Button>
       <FormMessage state={state} />
     </form>
@@ -35,8 +35,8 @@ export function RecomputeForm({ runId }: { runId: string }) {
   return (
     <form action={action} className="flex flex-wrap items-center gap-3">
       <input type="hidden" name="runId" value={runId} />
-      <Button type="submit" variant="outline" size="sm" disabled={pending}>
-        {pending ? "Recomputing" : "Recompute sheet"}
+      <Button type="submit" variant="outline" size="sm" pending={pending}>
+        Recompute sheet
       </Button>
       <FormMessage state={state} />
     </form>
@@ -88,8 +88,8 @@ export function AdjustmentForm({ month, people }: { month: string; people: { id:
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending || people.length === 0}>
-          {pending ? "Adding" : "Add amount"}
+        <Button type="submit" pending={pending} disabled={people.length === 0}>
+          Add amount
         </Button>
         <FormMessage state={state} />
       </div>
@@ -102,8 +102,8 @@ export function RemoveAdjustmentForm({ id }: { id: string }) {
   return (
     <form action={action} className="flex items-center gap-2">
       <input type="hidden" name="id" value={id} />
-      <Button type="submit" variant="outline" size="sm" disabled={pending}>
-        {pending ? "Removing" : "Remove"}
+      <Button type="submit" variant="outline" size="sm" pending={pending}>
+        Remove
       </Button>
       <FormMessage state={state} />
     </form>
@@ -124,8 +124,8 @@ export function FinalizeForm({ runId, label }: { runId: string; label: string })
             Finalize payroll for {label}? Attendance, leave, bonuses and advances for the month will be locked until you unlock it.
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" disabled={pending}>
-              {pending ? "Finalizing" : `Finalize ${label}`}
+            <Button type="submit" pending={pending}>
+              {`Finalize ${label}`}
             </Button>
             <Button type="button" variant="outline" disabled={pending} onClick={() => setConfirming(false)}>
               Not yet
@@ -156,8 +156,8 @@ export function UnlockForm({ runId, label }: { runId: string; label: string }) {
             <Input id="unlock-reason" name="reason" type="text" maxLength={500} defaultValue={fieldValue(state, "reason")} required autoFocus />
           </Field>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" disabled={pending}>
-              {pending ? "Unlocking" : `Unlock ${label}`}
+            <Button type="submit" pending={pending}>
+              {`Unlock ${label}`}
             </Button>
             <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>
               Keep it locked

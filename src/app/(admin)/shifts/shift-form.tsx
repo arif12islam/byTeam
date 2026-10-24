@@ -45,8 +45,8 @@ export function ShiftForm({ shift }: Props) {
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : shift ? "Save shift" : "Add shift"}
+        <Button type="submit" pending={pending}>
+          {shift ? "Save shift" : "Add shift"}
         </Button>
         <FormMessage state={state} />
       </div>

@@ -120,8 +120,8 @@ export function RuleSetForm({ ruleSet, defaultMonth }: Props) {
       </label>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : ruleSet ? "Save rules" : "Add rules"}
+        <Button type="submit" pending={pending}>
+          {ruleSet ? "Save rules" : "Add rules"}
         </Button>
         <FormMessage state={state} />
       </div>

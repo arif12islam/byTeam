@@ -106,8 +106,8 @@ export function EmployeeForm({ shifts, employee, initialCode }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : employee ? "Save employee" : "Add employee"}
+        <Button type="submit" pending={pending}>
+          {employee ? "Save employee" : "Add employee"}
         </Button>
         {employee ? null : (
           <Link href="/employees" className="text-sm text-muted-foreground hover:text-foreground">

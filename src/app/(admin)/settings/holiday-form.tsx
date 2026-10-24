@@ -30,8 +30,8 @@ export function HolidayForm() {
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Adding" : "Add holiday"}
+        <Button type="submit" pending={pending}>
+          Add holiday
         </Button>
         <FormMessage state={state} />
       </div>

@@ -55,7 +55,8 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
         {!paused ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none" /> : null}
         <span className={cn("relative inline-flex size-2.5 rounded-full", paused ? "bg-forest-muted" : "bg-success")} />
       </span>
-      <span role="status" aria-live="off">
+      {/* A fixed width, so the text changing from "just now" to "12 s ago" does not push the buttons around. */}
+      <span role="status" aria-live="off" className="inline-block min-w-[7.5rem] tabular-nums">
         {paused ? "Paused" : "Live"}, {describeAge(seconds)}
       </span>
       <button

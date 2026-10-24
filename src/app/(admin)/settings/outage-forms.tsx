@@ -29,8 +29,8 @@ export function OutageForm() {
         <Input id="outage-reason" name="reason" maxLength={200} defaultValue={fieldValue(state, "reason")} required placeholder="Power cut" />
       </Field>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : "Record outage"}
+        <Button type="submit" pending={pending}>
+          Record outage
         </Button>
         <FormMessage state={state} />
       </div>
@@ -44,8 +44,8 @@ export function RemoveOutageForm({ id, label }: { id: string; label: string }) {
   return (
     <form action={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="id" value={id} />
-      <Button type="submit" variant="ghost" size="sm" disabled={pending} aria-label={`Remove outage ${label}`}>
-        {pending ? "Removing" : "Remove"}
+      <Button type="submit" variant="ghost" size="sm" pending={pending} aria-label={`Remove outage ${label}`}>
+        Remove
       </Button>
       <FormMessage state={state} />
     </form>

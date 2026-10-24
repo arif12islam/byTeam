@@ -43,8 +43,8 @@ export function AddDeviceForm() {
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Adding" : "Add device"}
+        <Button type="submit" pending={pending}>
+          Add device
         </Button>
         <FormMessage state={state} />
       </div>

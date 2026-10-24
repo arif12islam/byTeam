@@ -57,8 +57,8 @@ export function LeaveTypeForm({ leaveType }: Props) {
         </label>
       ) : null}
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : leaveType ? "Save leave type" : "Add leave type"}
+        <Button type="submit" pending={pending}>
+          {leaveType ? "Save leave type" : "Add leave type"}
         </Button>
         <FormMessage state={state} />
       </div>

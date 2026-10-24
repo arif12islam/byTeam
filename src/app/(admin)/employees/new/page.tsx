@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db";
 import { suggestedCode } from "@/lib/punches/unmatched";
@@ -16,6 +17,7 @@ export const metadata: Metadata = { title: "Add employee" };
 export default function NewEmployeePage(props: PageProps<"/employees/new">) {
   return (
     <>
+      <BackLink href="/employees">Back to employees</BackLink>
       <PageHeader icon={UserPlus} title="Add employee" description="Create the record, then set their salary." />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading</p>}>
         <NewEmployee searchParams={props.searchParams} />
