@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   daysInMonth,
   formatMonth,
+  formatOfficeDateTime,
   formatOfficeDate,
   isValidMonth,
   isValidOfficeDate,
@@ -104,5 +105,15 @@ describe("formatMonth", () => {
   it("writes the short month and year", () => {
     expect(formatMonth("2026-01")).toBe("Jan 2026");
     expect(formatMonth("2026-12")).toBe("Dec 2026");
+  });
+});
+
+describe("formatOfficeDateTime", () => {
+  it("shows the Dhaka date and 24 hour time", () => {
+    expect(formatOfficeDateTime(new Date("2026-10-24T03:15:00Z"))).toBe("24 Oct 2026, 09:15");
+  });
+
+  it("rolls into the next Dhaka day after 18:00 UTC", () => {
+    expect(formatOfficeDateTime(new Date("2026-10-23T18:30:00Z"))).toBe("24 Oct 2026, 00:30");
   });
 });

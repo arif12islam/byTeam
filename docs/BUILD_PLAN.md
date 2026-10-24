@@ -169,7 +169,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 ### M2: Device integration
 
 - [x] Schema: `devices`, `raw_punches` (unique on device_sn + emp_code + punched_at), `device_commands`
-- [ ] Devices screen: add serial number, show last seen, online or offline (offline after 15 min)
+- [x] Devices screen: add serial number, show last seen, online or offline (offline after 15 min)
 - [ ] `GET /iclock/cdata` handshake: reject unknown serial, update last seen, return config
 - [ ] `POST /iclock/cdata?table=ATTLOG`: parse lines, adapter to standard punch, insert with `onConflictDoNothing`, reply `OK`
 - [ ] Accept and log `OPERLOG` without using it
