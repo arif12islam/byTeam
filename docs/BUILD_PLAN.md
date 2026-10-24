@@ -161,8 +161,8 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Settings screen: company, weekly off days, holidays
 - [x] Shifts screen: name, start, end, grace minutes
 - [x] Employees screen: list, create, edit, deactivate, assign shift
-- [ ] Salary structure form with effective-from month
-- [ ] `audit()` helper, used on every create and update above
+- [x] Salary structure form with effective-from month
+- [x] `audit()` helper, used on every create and update above
 
 **Done when:** HR can log in, add employees with shifts and salaries, and each change appears in `audit_log`.
 

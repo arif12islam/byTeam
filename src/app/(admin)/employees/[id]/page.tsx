@@ -12,6 +12,7 @@ import { requireRole } from "@/lib/session";
 import { listShifts } from "@/lib/shifts/shifts";
 
 import { setActiveAction } from "../actions";
+import { SalarySection } from "./salary-section";
 import { EmployeeForm } from "../employee-form";
 
 export const metadata: Metadata = { title: "Employee" };
@@ -53,6 +54,10 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
             <EmployeeForm employee={employee} shifts={shifts} />
           </div>
         </section>
+
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Loading salary</p>}>
+          <SalarySection employeeId={employee.id} />
+        </Suspense>
 
         <section className="rounded-lg border border-border bg-card p-5 md:p-6">
           <h2 className="text-base font-semibold">{employee.active ? "Deactivate" : "Reactivate"}</h2>
