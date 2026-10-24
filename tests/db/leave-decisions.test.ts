@@ -72,7 +72,7 @@ describe.skipIf(!testDatabaseUrl)("leave decisions", () => {
     const { employee, requestId } = await pending({ from: SUN, to: SAT });
     expect([...(await days(employee.id)).values()].filter((d) => d.status === "absent")).toHaveLength(5);
 
-    expect(await decideLeave(db, requestId, "approve", userId, AFTER)).toEqual({ ok: true, status: "approved" });
+    expect(await decideLeave(db, requestId, "approve", userId, { today: AFTER })).toEqual({ ok: true, status: "approved" });
     const after = await days(employee.id);
     for (const d of [SUN, MON, TUE, WED, THU]) expect(after.get(d)?.status, d).toBe("leave_paid");
     expect(after.get(FRI)?.status).toBe("weekly_off");
@@ -88,7 +88,7 @@ describe.skipIf(!testDatabaseUrl)("leave decisions", () => {
 
   it("makes unpaid leave types unpaid days", async () => {
     const { employee, requestId } = await pending({ typeId: unpaidTypeId, from: MON, to: TUE });
-    await decideLeave(db, requestId, "approve", userId, AFTER);
+    await decideLeave(db, requestId, "approve", userId, { today: AFTER });
     const after = await days(employee.id);
     expect(after.get(MON)?.status).toBe("leave_unpaid");
     expect(after.get(TUE)?.status).toBe("leave_unpaid");
@@ -97,7 +97,7 @@ describe.skipIf(!testDatabaseUrl)("leave decisions", () => {
   it("makes the last days of a request unpaid when some are recorded as unpaid", async () => {
     const { employee, requestId } = await pending({ from: SUN, to: THU });
     await db.update(leaveRequests).set({ unpaidDays: 2 }).where(eq(leaveRequests.id, requestId));
-    await decideLeave(db, requestId, "approve", userId, AFTER);
+    await decideLeave(db, requestId, "approve", userId, { today: AFTER });
     const after = await days(employee.id);
     expect([SUN, MON, TUE, WED, THU].map((d) => after.get(d)?.status)).toEqual(["leave_paid", "leave_paid", "leave_paid", "leave_unpaid", "leave_unpaid"]);
   });
@@ -109,7 +109,7 @@ describe.skipIf(!testDatabaseUrl)("leave decisions", () => {
     await addTestDevice(db, serial);
     await savePunches(db, [{ deviceSn: serial, empCode: employee.empCode, punchedAt: officeDateTimeToInstant(MON, "09:00")!, statusCode: 0, verifyCode: 1, rawLine: "x" }]);
     const { requestId } = await pending({ employee, from: MON, to: THU });
-    await decideLeave(db, requestId, "approve", userId, AFTER);
+    await decideLeave(db, requestId, "approve", userId, { today: AFTER });
     const after = await days(employee.id);
     expect(after.get(MON)).toMatchObject({ status: "leave_paid", punchCount: 1 });
     expect(after.get(WED)?.status).toBe("holiday");
@@ -120,49 +120,49 @@ describe.skipIf(!testDatabaseUrl)("leave decisions", () => {
 
   it("cancelling approved leave puts the days back, and rejecting changes no days", async () => {
     const approved = await pending({ from: MON, to: TUE });
-    await decideLeave(db, approved.requestId, "approve", userId, AFTER);
+    await decideLeave(db, approved.requestId, "approve", userId, { today: AFTER });
     expect((await days(approved.employee.id)).get(MON)?.status).toBe("leave_paid");
 
-    expect(await decideLeave(db, approved.requestId, "cancel", userId, AFTER)).toEqual({ ok: true, status: "cancelled" });
+    expect(await decideLeave(db, approved.requestId, "cancel", userId, { today: AFTER })).toEqual({ ok: true, status: "cancelled" });
     expect((await days(approved.employee.id)).get(MON)?.status).toBe("absent");
     expect((await days(approved.employee.id)).get(TUE)?.status).toBe("absent");
 
     const rejected = await pending({ from: MON, to: TUE });
-    expect(await decideLeave(db, rejected.requestId, "reject", userId, AFTER)).toEqual({ ok: true, status: "rejected" });
+    expect(await decideLeave(db, rejected.requestId, "reject", userId, { today: AFTER })).toEqual({ ok: true, status: "rejected" });
     expect((await days(rejected.employee.id)).get(MON)?.status).toBe("absent");
     expect(await request(rejected.requestId)).toMatchObject({ status: "rejected", decidedBy: userId });
   });
 
   it("lets a pending request be cancelled, with no change to the days", async () => {
     const { employee, requestId } = await pending({ from: MON, to: MON });
-    expect(await decideLeave(db, requestId, "cancel", userId, AFTER)).toEqual({ ok: true, status: "cancelled" });
+    expect(await decideLeave(db, requestId, "cancel", userId, { today: AFTER })).toEqual({ ok: true, status: "cancelled" });
     expect((await days(employee.id)).get(MON)?.status).toBe("absent");
   });
 
   it("refuses a decision that does not fit the request's status, and says so", async () => {
     const { requestId } = await pending({ from: MON, to: MON });
-    await decideLeave(db, requestId, "approve", userId, AFTER);
-    expect(await decideLeave(db, requestId, "approve", userId, AFTER)).toEqual({ ok: false, error: "That request is already approved, so it cannot be approved." });
-    expect(await decideLeave(db, requestId, "reject", userId, AFTER)).toMatchObject({ ok: false });
-    await decideLeave(db, requestId, "cancel", userId, AFTER);
-    expect(await decideLeave(db, requestId, "cancel", userId, AFTER)).toMatchObject({ ok: false, error: expect.stringContaining("already cancelled") });
-    expect(await decideLeave(db, requestId, "approve", userId, AFTER)).toMatchObject({ ok: false });
+    await decideLeave(db, requestId, "approve", userId, { today: AFTER });
+    expect(await decideLeave(db, requestId, "approve", userId, { today: AFTER })).toEqual({ ok: false, error: "That request is already approved, so it cannot be approved." });
+    expect(await decideLeave(db, requestId, "reject", userId, { today: AFTER })).toMatchObject({ ok: false });
+    await decideLeave(db, requestId, "cancel", userId, { today: AFTER });
+    expect(await decideLeave(db, requestId, "cancel", userId, { today: AFTER })).toMatchObject({ ok: false, error: expect.stringContaining("already cancelled") });
+    expect(await decideLeave(db, requestId, "approve", userId, { today: AFTER })).toMatchObject({ ok: false });
     expect(await request(requestId)).toMatchObject({ status: "cancelled" });
   });
 
   it("refuses an unknown request and an unknown decision", async () => {
-    expect(await decideLeave(db, "00000000-0000-4000-8000-000000000000", "approve", userId, AFTER)).toEqual({
+    expect(await decideLeave(db, "00000000-0000-4000-8000-000000000000", "approve", userId, { today: AFTER })).toEqual({
       ok: false,
       error: "That leave request no longer exists. Reload the page.",
     });
     const { requestId } = await pending({ from: MON, to: MON });
-    expect(await decideLeave(db, requestId, "delete" as never, userId, AFTER)).toMatchObject({ ok: false });
+    expect(await decideLeave(db, requestId, "delete" as never, userId, { today: AFTER })).toMatchObject({ ok: false });
     expect(await request(requestId)).toMatchObject({ status: "pending" });
   });
 
   it("lets only one of two simultaneous approvals win", async () => {
     const { requestId } = await pending({ from: MON, to: MON });
-    const results = await Promise.all([decideLeave(db, requestId, "approve", userId, AFTER), decideLeave(db, requestId, "approve", userId, AFTER)]);
+    const results = await Promise.all([decideLeave(db, requestId, "approve", userId, { today: AFTER }), decideLeave(db, requestId, "approve", userId, { today: AFTER })]);
     expect(results.filter((r) => r.ok)).toHaveLength(1);
     const entries = await db.select().from(auditLog).where(and(eq(auditLog.entityId, requestId), eq(auditLog.action, "leave.approve")));
     expect(entries).toHaveLength(1);
@@ -172,14 +172,14 @@ describe.skipIf(!testDatabaseUrl)("leave decisions", () => {
     const { employee, requestId } = await pending({ from: WED, to: THU });
     await db.delete(attendanceDays).where(eq(attendanceDays.employeeId, employee.id));
     // "Today" is the Sunday before the leave starts.
-    expect(await decideLeave(db, requestId, "approve", userId, SUN)).toMatchObject({ ok: true });
+    expect(await decideLeave(db, requestId, "approve", userId, { today: SUN })).toMatchObject({ ok: true });
     expect([...(await days(employee.id)).keys()]).toEqual([]);
   });
 
   it("recomputes only up to today for leave that has started", async () => {
     const { employee, requestId } = await pending({ from: SUN, to: THU });
     await db.delete(attendanceDays).where(eq(attendanceDays.employeeId, employee.id));
-    await decideLeave(db, requestId, "approve", userId, TUE);
+    await decideLeave(db, requestId, "approve", userId, { today: TUE });
     expect([...(await days(employee.id)).keys()].sort()).toEqual([SUN, MON, TUE]);
   });
 });

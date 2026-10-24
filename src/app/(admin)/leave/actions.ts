@@ -39,11 +39,20 @@ export async function createLeaveRequestAction(_previous: FormState, formData: F
 export async function decideLeaveAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const user = await requireRole("owner", "hr");
 
-  const decision = text(formData, "decision");
+  // "Approve with N days unpaid" is its own button: it approves, and carries the number of unpaid days.
+  const approveUnpaid = text(formData, "approveUnpaid");
+  const decision = approveUnpaid !== "" ? "approve" : text(formData, "decision");
   if (!(LEAVE_DECISIONS as readonly string[]).includes(decision)) return { error: "That is not something you can do to a leave request." };
 
-  const result = await decideLeave(getDb(), text(formData, "id"), decision as LeaveDecision, user.id);
-  if (!result.ok) return { error: result.error };
+  const result = await decideLeave(getDb(), text(formData, "id"), decision as LeaveDecision, user.id, {
+    unpaidDays: approveUnpaid === "" ? undefined : Number(approveUnpaid),
+  });
+  if (!result.ok) {
+    // When only the balance is in the way, hand back how many unpaid days would make it fit.
+    return result.suggestedUnpaidDays === undefined
+      ? { error: result.error }
+      : { error: result.error, values: { suggestedUnpaid: String(result.suggestedUnpaidDays) } };
+  }
 
   revalidatePath("/leave");
   revalidatePath("/attendance", "layout");

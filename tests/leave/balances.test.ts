@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeBalances, countedDaysInYear, type BalanceRequest } from "@/lib/leave/balances";
+import { checkBalance, computeBalances, countedDaysInYear, suggestUnpaidDays, type BalanceRequest } from "@/lib/leave/balances";
 
 // 2026: Friday and Saturday are off.
 const calendar = { weeklyOffDays: [5, 6], holidayDates: new Set<string>() };
@@ -99,5 +99,75 @@ describe("computeBalances", () => {
     expect(b).toMatchObject({ used: 1, remaining: 9 });
     // Same leave under the calendar year counts both.
     expect(computeBalances({ ...base, employees: [joined], requests: [inYear, lastYear] })[0].used).toBe(2);
+  });
+});
+
+describe("checkBalance", () => {
+  // Friday and Saturday off. Sun 4 Oct to Thu 8 Oct 2026 is five working days.
+  const request = { fromDate: "2026-10-04", toDate: "2026-10-08", days: 5, unpaidDays: 0 };
+  const input = { request, others: [], quota: 10, joinDate: "2020-01-01", basis: "calendar" as const, calendar };
+
+  it("allows a request that fits, including one that uses the balance exactly", () => {
+    expect(checkBalance(input)).toEqual({ ok: true });
+    expect(checkBalance({ ...input, quota: 5 })).toEqual({ ok: true });
+  });
+
+  it("refuses a request that goes past what is left, and says by how much", () => {
+    const result = checkBalance({ ...input, quota: 4 });
+    expect(result).toMatchObject({ ok: false, shortBy: 1, available: 4, needed: 5, year: year2026 });
+  });
+
+  it("counts the person's other approved leave of the type against the quota", () => {
+    const others = [{ fromDate: "2026-09-27", toDate: "2026-09-30", unpaidDays: 0 }]; // Sun to Wed: 4 days
+    expect(checkBalance({ ...input, quota: 8, others })).toMatchObject({ ok: false, shortBy: 1, available: 4 });
+    expect(checkBalance({ ...input, quota: 9, others })).toEqual({ ok: true });
+  });
+
+  it("does not count other leave from a different year", () => {
+    const others = [{ fromDate: "2025-10-05", toDate: "2025-10-09", unpaidDays: 0 }];
+    expect(checkBalance({ ...input, quota: 5, others })).toEqual({ ok: true });
+  });
+
+  it("lets days recorded as unpaid sit outside the quota", () => {
+    expect(checkBalance({ ...input, quota: 3, request: { ...request, unpaidDays: 2 } })).toEqual({ ok: true });
+    expect(checkBalance({ ...input, quota: 3, request: { ...request, unpaidDays: 1 } })).toMatchObject({ ok: false, shortBy: 1 });
+  });
+
+  it("has no limit without a quota, and none left with a quota of zero", () => {
+    expect(checkBalance({ ...input, quota: null })).toEqual({ ok: true });
+    expect(checkBalance({ ...input, quota: 0 })).toMatchObject({ ok: false, shortBy: 5, available: 0 });
+  });
+
+  it("does not go negative when other leave already used more than a lowered quota", () => {
+    const others = [{ fromDate: "2026-09-27", toDate: "2026-09-30", unpaidDays: 0 }];
+    expect(checkBalance({ ...input, quota: 2, others })).toMatchObject({ ok: false, shortBy: 5, available: 0 });
+  });
+
+  it("checks each leave year a request runs across", () => {
+    // Wed 30 Dec 2026 to Sun 3 Jan 2027: two days in 2026 and one in 2027.
+    const across = { fromDate: "2026-12-30", toDate: "2027-01-03", days: 3, unpaidDays: 0 };
+    const used2026 = [{ fromDate: "2026-02-01", toDate: "2026-02-08", unpaidDays: 0 }]; // Sun to Sun: Sun to Thu twice, six working days
+    // Quota 7: 2026 has 1 left but needs 2 (short by 1). 2027 has 7 left and needs 1.
+    expect(checkBalance({ ...input, request: across, quota: 7, others: used2026 })).toMatchObject({ ok: false, shortBy: 1, year: year2026, available: 1, needed: 2 });
+    expect(checkBalance({ ...input, request: across, quota: 8, others: used2026 })).toEqual({ ok: true });
+  });
+});
+
+describe("suggestUnpaidDays", () => {
+  const request = { fromDate: "2026-10-04", toDate: "2026-10-08", days: 5, unpaidDays: 0 };
+  const input = { request, others: [], quota: 3, joinDate: "2020-01-01", basis: "calendar" as const, calendar };
+
+  it("is the fewest unpaid days that make the rest fit", () => {
+    expect(suggestUnpaidDays(input)).toBe(2);
+    expect(suggestUnpaidDays({ ...input, quota: 5 })).toBe(0);
+    expect(suggestUnpaidDays({ ...input, quota: 4 })).toBe(1);
+  });
+
+  it("is every day when nothing is left, and never more than the request's days", () => {
+    expect(suggestUnpaidDays({ ...input, quota: 0 })).toBe(5);
+  });
+
+  it("starts from the days already recorded as unpaid", () => {
+    expect(suggestUnpaidDays({ ...input, request: { ...request, unpaidDays: 4 } })).toBe(4);
   });
 });

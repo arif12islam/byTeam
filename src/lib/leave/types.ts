@@ -96,7 +96,7 @@ export async function updateLeaveType(db: Db, id: string, input: LeaveTypeInput,
 export const leaveYearBasisSchema = z.enum(LEAVE_YEAR_BASES, "Choose how the leave year is counted.");
 
 /** Calendar year until someone chooses, because the office has not decided. */
-export async function getLeaveYearBasis(db: Db): Promise<LeaveYearBasis> {
+export async function getLeaveYearBasis(db: Pick<Db, "select">): Promise<LeaveYearBasis> {
   const [row] = await db.select({ basis: companySettings.leaveYearBasis }).from(companySettings).where(eq(companySettings.id, 1));
   return row?.basis ?? "calendar";
 }
