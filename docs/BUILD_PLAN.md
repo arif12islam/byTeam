@@ -213,7 +213,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 ### M5: Payroll
 
 - [x] Schema: `rule_sets`, `payroll_runs`, `payroll_items`, `payroll_adjustments`
-- [ ] Rules screen (owner edits, HR views): grace, late mode, late every N, deduction base, divisor, effective month
+- [x] Rules screen (owner edits, HR views): grace, late mode, late every N, deduction base, divisor, effective month
 - [ ] `computePayroll()` as a pure function with a full breakdown object
 - [ ] Mid-month join and exit pro-rating
 - [ ] Payroll screen: create draft run, review sheet, add bonus and advance, recompute
