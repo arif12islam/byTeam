@@ -1,5 +1,8 @@
+import { and, asc, eq, gte, lt } from "drizzle-orm";
+
 import type { getDb } from "@/db";
-import { officeMinuteOfDay, timeToMinutes, toOfficeDate } from "@/lib/time";
+import { devices, rawPunches } from "@/db/schema";
+import { nextDate, officeDateTimeToInstant, officeMinuteOfDay, timeToMinutes, toOfficeDate } from "@/lib/time";
 
 import type { AttendanceStatus } from "@/db/schema/attendance";
 
@@ -144,4 +147,61 @@ export function arrivalBuckets(entries: readonly TodayEntry[], bucketMinutes = 1
     buckets.push({ label: `${hh}:${mm}`, count: inBucket.length, late: inBucket.filter((a) => a.late).length });
   }
   return buckets;
+}
+
+export type DayPunch = { empCode: string; at: Date; deviceName: string | null };
+
+/** Every raw punch of one office date, oldest first. */
+export async function loadDayPunches(db: Db, date: string): Promise<DayPunch[]> {
+  const start = officeDateTimeToInstant(date, "00:00")!;
+  const end = officeDateTimeToInstant(nextDate(date), "00:00")!;
+  return db
+    .select({ empCode: rawPunches.empCode, at: rawPunches.punchedAt, deviceName: devices.name })
+    .from(rawPunches)
+    .leftJoin(devices, eq(devices.serialNo, rawPunches.deviceSn))
+    .where(and(gte(rawPunches.punchedAt, start), lt(rawPunches.punchedAt, end)))
+    .orderBy(asc(rawPunches.punchedAt));
+}
+
+/** Each employee code's punch times, oldest first. Pure. */
+export function groupPunchesByCode(punches: readonly DayPunch[]): Map<string, Date[]> {
+  const byCode = new Map<string, Date[]>();
+  for (const punch of punches) {
+    const list = byCode.get(punch.empCode) ?? [];
+    list.push(punch.at);
+    byCode.set(punch.empCode, list);
+  }
+  for (const list of byCode.values()) list.sort((a, b) => a.getTime() - b.getTime());
+  return byCode;
+}
+
+export type FeedItem = {
+  empCode: string;
+  /** The employee's name, or null when no employee has this code. */
+  name: string | null;
+  at: Date;
+  /** The person's first punch of the day is when they arrived, later ones are punches again. */
+  kind: "arrived" | "again";
+  deviceName: string | null;
+};
+
+/** The latest punches of the day, newest first. Pure. */
+export function buildPunchFeed(punches: readonly DayPunch[], entries: readonly Pick<TodayEntry, "empCode" | "name">[], limit = 8): FeedItem[] {
+  const nameByCode = new Map(entries.map((e) => [e.empCode, e.name]));
+  const firstByCode = new Map<string, number>();
+  for (const punch of punches) {
+    const t = punch.at.getTime();
+    const seen = firstByCode.get(punch.empCode);
+    if (seen === undefined || t < seen) firstByCode.set(punch.empCode, t);
+  }
+  return [...punches]
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .slice(0, limit)
+    .map((punch) => ({
+      empCode: punch.empCode,
+      name: nameByCode.get(punch.empCode) ?? null,
+      at: punch.at,
+      kind: firstByCode.get(punch.empCode) === punch.at.getTime() ? "arrived" : "again",
+      deviceName: punch.deviceName,
+    }));
 }
