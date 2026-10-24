@@ -232,7 +232,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Rate limit `/iclock` routes
 - [ ] Audit log screen with filters
 - [ ] Empty states, loading states, error messages on all screens
-- [ ] Review all role checks on server actions
+- [x] Review all role checks on server actions
 
 **Done when:** a simulated outage day produces no wrong late or absent marks, and an HR user cannot finalize, unlock or edit rules.
 
