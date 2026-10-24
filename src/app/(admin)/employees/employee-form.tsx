@@ -15,6 +15,8 @@ type ShiftOption = { id: string; name: string; startTime: string; endTime: strin
 
 type Props = {
   shifts: ShiftOption[];
+  /** A code to start with when adding, for example one that punched with no employee. */
+  initialCode?: string;
   /** Set when editing a saved employee. Leave out to add a new one. */
   employee?: {
     id: string;
@@ -28,7 +30,7 @@ type Props = {
   };
 };
 
-export function EmployeeForm({ shifts, employee }: Props) {
+export function EmployeeForm({ shifts, employee, initialCode }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     employee ? updateEmployeeAction : createEmployeeAction,
     {},
@@ -54,7 +56,7 @@ export function EmployeeForm({ shifts, employee }: Props) {
             inputMode="numeric"
             pattern="[0-9]*"
             maxLength={24}
-            defaultValue={fieldValue(state, "empCode", employee?.empCode)}
+            defaultValue={fieldValue(state, "empCode", employee?.empCode ?? initialCode)}
             readOnly={Boolean(employee)}
             required
             placeholder="1001"
