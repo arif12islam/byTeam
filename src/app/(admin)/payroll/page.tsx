@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { ADJUSTMENT_LABELS } from "@/lib/payroll/adjustments";
 import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
-import { formatTaka } from "@/lib/salary/money";
+import { formatTakaSigned as taka } from "@/lib/salary/money";
 import { requireRole } from "@/lib/session";
 import { formatMonth, formatOfficeDate, isValidMonth, shiftMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
 
@@ -24,11 +24,6 @@ export default function PayrollPage(props: PageProps<"/payroll">) {
       </Suspense>
     </>
   );
-}
-
-/** "1234.50" as "1,234.50" and "-12.00" as "-12.00" with lakh grouping. */
-function taka(amount: string): string {
-  return amount.startsWith("-") ? `-${formatTaka(amount.slice(1))}` : formatTaka(amount);
 }
 
 const cell = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
@@ -195,6 +190,14 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                       {w}
                     </p>
                   ))}
+                  {locked ? (
+                    <a
+                      href={`/payroll/payslip?month=${month}&employee=${row.employeeId}`}
+                      className={`${buttonVariants({ variant: "outline", size: "sm" })} mt-3`}
+                    >
+                      Download payslip (PDF)
+                    </a>
+                  ) : null}
                 </details>
               ))}
             </section>
@@ -205,6 +208,11 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
               <p role="status" className="text-sm">
                 Attendance, leave, bonuses and advances for {formatMonth(month)} are locked.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a href={`/payroll/payslip?month=${month}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  Download all payslips (PDF)
+                </a>
+              </div>
               {user.role === "owner" ? (
                 <div className="mt-4">
                   <h2 className="text-base font-semibold">Need to change something?</h2>

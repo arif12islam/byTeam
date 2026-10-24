@@ -17,6 +17,7 @@
     "sim": "tsx scripts/simulator.ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "better-auth": "^1.7.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
