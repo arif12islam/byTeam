@@ -12,22 +12,16 @@ import {
   smallint,
   text,
   time,
-  timestamp,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+
+import { createdAt, updatedAt } from "./columns";
 
 export const USER_ROLES = ["owner", "hr"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const userRole = pgEnum("user_role", USER_ROLES);
-
-const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
-const updatedAt = () =>
-  timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date());
 
 /**
  * Admin logins. The shape follows what Better Auth expects of a user table

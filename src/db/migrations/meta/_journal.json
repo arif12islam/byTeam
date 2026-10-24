@@ -15,6 +15,13 @@
       "when": 1792824103429,
       "tag": "0001_m1_setup_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792824418413,
+      "tag": "0002_better_auth_tables",
+      "breakpoints": true
     }
   ]
 }
