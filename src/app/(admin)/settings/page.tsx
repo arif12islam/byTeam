@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/coming-soon";
 import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { getDb } from "@/db";
+import { getCompanySettings } from "@/lib/settings/company";
+import { groupByYear, listHolidays } from "@/lib/settings/holidays";
+import { requireRole } from "@/lib/session";
+import { formatOfficeDate } from "@/lib/time";
+
+import { removeHolidayAction } from "./actions";
+import { CompanyForm } from "./company-form";
+import { HolidayForm } from "./holiday-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -10,16 +20,74 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Company details, working week, holidays and devices."
+        description="Company details, weekly off days and public holidays."
       />
-      <ComingSoon
-        milestone="M1 and M2"
-        points={[
-          "Weekly off days and public holidays",
-          "Shifts with start time, end time and grace",
-          "Attendance devices by serial number",
-        ]}
-      />
+      <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading settings</p>}>
+        <SettingsContent />
+      </Suspense>
     </>
+  );
+}
+
+function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+      <h2 className="text-base font-semibold">{title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
+async function SettingsContent() {
+  await requireRole("owner", "hr");
+
+  const db = getDb();
+  const [company, holidays] = await Promise.all([getCompanySettings(db), listHolidays(db)]);
+  const groups = groupByYear(holidays);
+
+  return (
+    <div className="mt-6 grid max-w-3xl gap-6">
+      <Section title="Company" description="Shown on payslips and reports.">
+        <CompanyForm {...company} />
+      </Section>
+
+      <Section
+        title="Holidays"
+        description="Public holidays are paid days off. Attendance skips them."
+      >
+        <HolidayForm />
+
+        {groups.length === 0 ? (
+          <p className="mt-6 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+            No holidays yet. Add the public holidays for this year so they are not marked absent.
+          </p>
+        ) : (
+          <div className="mt-6 space-y-5">
+            {groups.map((group) => (
+              <div key={group.year}>
+                <h3 className="text-sm font-medium text-muted-foreground">{group.year}</h3>
+                <ul className="mt-2 divide-y divide-border rounded-md border border-border">
+                  {group.holidays.map((holiday) => (
+                    <li key={holiday.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{holiday.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatOfficeDate(holiday.date)}</p>
+                      </div>
+                      <form action={removeHolidayAction}>
+                        <input type="hidden" name="id" value={holiday.id} />
+                        <Button type="submit" variant="ghost" size="sm" aria-label={`Remove ${holiday.name}`}>
+                          Remove
+                        </Button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    </div>
   );
 }

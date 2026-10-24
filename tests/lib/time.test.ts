@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { daysInMonth, previousDate, toOfficeDate } from "@/lib/time";
+import {
+  daysInMonth,
+  formatOfficeDate,
+  isValidOfficeDate,
+  previousDate,
+  toOfficeDate,
+  weekdayOf,
+} from "@/lib/time";
 
 describe("toOfficeDate", () => {
   it("uses the Dhaka date, not the UTC date", () => {
@@ -30,5 +37,39 @@ describe("daysInMonth", () => {
     expect(daysInMonth("2028-02")).toBe(29);
     expect(daysInMonth("2026-10")).toBe(31);
     expect(daysInMonth("2026-11")).toBe(30);
+  });
+});
+
+describe("isValidOfficeDate", () => {
+  it("accepts real dates including a leap day", () => {
+    expect(isValidOfficeDate("2026-10-24")).toBe(true);
+    expect(isValidOfficeDate("2028-02-29")).toBe(true);
+  });
+
+  it("rejects dates that do not exist", () => {
+    expect(isValidOfficeDate("2026-02-29")).toBe(false);
+    expect(isValidOfficeDate("2026-13-01")).toBe(false);
+    expect(isValidOfficeDate("2026-04-31")).toBe(false);
+  });
+
+  it("rejects other formats", () => {
+    expect(isValidOfficeDate("24/10/2026")).toBe(false);
+    expect(isValidOfficeDate("2026-1-5")).toBe(false);
+    expect(isValidOfficeDate("")).toBe(false);
+  });
+});
+
+describe("weekdayOf", () => {
+  it("returns 0 for Sunday to 6 for Saturday", () => {
+    expect(weekdayOf("2026-10-25")).toBe(0);
+    expect(weekdayOf("2026-10-24")).toBe(6);
+    expect(weekdayOf("2026-10-23")).toBe(5);
+  });
+});
+
+describe("formatOfficeDate", () => {
+  it("writes weekday, day, month and year", () => {
+    expect(formatOfficeDate("2026-02-21")).toBe("Sat 21 Feb 2026");
+    expect(formatOfficeDate("2026-12-01")).toBe("Tue 1 Dec 2026");
   });
 });

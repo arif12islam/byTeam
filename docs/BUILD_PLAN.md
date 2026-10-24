@@ -158,7 +158,7 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 - [x] Schema: `users`, `company_settings`, `holidays`, `shifts`, `employees`, `salary_structures`, `audit_log`
 - [x] Better Auth with `owner` and `hr` roles, server-side role checks helper
 - [x] Seed first owner account via script
-- [ ] Settings screen: company, weekly off days, holidays
+- [x] Settings screen: company, weekly off days, holidays
 - [ ] Shifts screen: name, start, end, grace minutes
 - [ ] Employees screen: list, create, edit, deactivate, assign shift
 - [ ] Salary structure form with effective-from month
