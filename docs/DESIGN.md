@@ -1,0 +1,241 @@
+# byTeam: MVP Design
+
+Last updated: 24 October 2026
+
+## Overview
+
+One internal web app for the Sand'Sun office that turns face and fingerprint punches into attendance, leave and a monthly salary sheet. It runs for one company, one office and one ZKTeco device for now.
+
+**In scope:** employees, one ADMS-capable device, shifts, daily attendance, leave with admin approval, monthly payroll with payslips.
+
+**Out of scope for MVP:** employee self-service app, overtime and night shifts, tax and provident fund, loans, geofenced check-in, Hikvision, multiple branches or tenants, SMS and email alerts.
+
+**Decisions still open (needed before payroll)**
+
+- [ ] Absent day deduction base: gross or basic
+- [ ] Divisor: fixed 30, days in month, or working days only
+- [ ] Late policy: grace minutes and how many lates count as one day
+- [ ] Weekly off day(s) and yearly quota per leave type
+
+## Architecture
+
+```mermaid
+flowchart TD
+    device["ZKTeco device<br/>face, fingerprint or card"] -->|HTTP push, resent after outages| receiver["ADMS receiver<br/>/iclock routes, serial whitelist, dedup"]
+    sim["Device simulator<br/>testing only"] -.-> receiver
+    receiver --> raw["Raw punches<br/>append-only, never edited"]
+    raw --> engine["Attendance engine<br/>nightly and on demand"]
+    leave["Leave approvals"] --> engine
+    engine --> days["Attendance days<br/>manual fixes audit-logged"]
+    days --> payroll["Payroll engine<br/>rule snapshot and month lock"]
+    rules["Rule sets"] --> payroll
+    payroll --> out["Payslips and salary sheet"]
+```
+
+Punches flow one way from the device to the payslip. Only the raw punch log is permanent; attendance days and payroll items are derived and can be rebuilt whenever a rule, leave or punch changes, until the month is finalized.
+
+## Tech stack
+
+One Next.js app holds the admin UI, the API and the ADMS receiver, so testing and production run the same code.
+
+| Layer | Choice | Note |
+| --- | --- | --- |
+| App | Next.js (App Router) + TypeScript | UI, server actions, `/iclock` routes |
+| Database | PostgreSQL | Neon free tier for testing, self-hosted on the VPS later |
+| ORM | Drizzle (postgres.js driver) | Unique constraints do the punch dedup |
+| Auth | Better Auth, email + password | Two roles: Owner, HR |
+| UI | Tailwind + shadcn/ui | Tables, calendar grid, forms |
+| Exports | exceljs, react-pdf | Salary sheet, payslips |
+| Tests | Vitest | Rule and payroll calculations |
+| Hosting (testing) | Vercel Hobby + Neon; device tested on office LAN against a laptop | No paid plan needed |
+| Hosting (production) | One VPS with Nginx, Postgres, system cron | Plain HTTP for the device, HTTPS for admin |
+
+## Data model
+
+18 tables in four groups. Raw punches are append-only; everything computed from them can be deleted and rebuilt.
+
+**Setup**
+
+| Table | Purpose | Key fields |
+| --- | --- | --- |
+| users | Admin logins | email, password\_hash, role (owner, hr) |
+| company\_settings | One row of company config | weekly\_off\_days, timezone (Asia/Dhaka), currency |
+| holidays | Public holiday calendar | date, name |
+| shifts | Working hours | name, start\_time, end\_time, grace\_minutes |
+| employees | Staff records | emp\_code (matches device PIN, unique), name, department, designation, join\_date, exit\_date, shift\_id, active |
+| salary\_structures | Pay per employee, versioned | employee\_id, gross, basic\_pct, house\_pct, medical\_pct, conveyance\_pct, effective\_from |
+| rule\_sets | Late and deduction rules, versioned | effective\_from\_month, late\_mode, late\_every\_n, late\_amount, deduction\_base (gross, basic), divisor (30, month\_days, working\_days), unpaid\_leave\_as\_absent |
+
+**Device**
+
+| Table | Purpose | Key fields |
+| --- | --- | --- |
+| devices | Serial whitelist and health | serial\_no (unique), name, last\_seen\_at, active |
+| raw\_punches | Every punch as received | device\_sn, emp\_code, punched\_at, status\_code, verify\_code, raw\_line, received\_at; unique (device\_sn, emp\_code, punched\_at) |
+| device\_commands | Queue for commands to the device | device\_sn, command, status (pending, sent, done, failed), result |
+
+**Attendance and leave**
+
+| Table | Purpose | Key fields |
+| --- | --- | --- |
+| attendance\_days | One computed row per employee per day | employee\_id, date, first\_in, last\_out, status (present, late, absent, leave\_paid, leave\_unpaid, weekly\_off, holiday), late\_minutes, early\_minutes, flags (missing\_out, worked\_on\_off\_day), is\_manual |
+| attendance\_adjustments | Manual fixes on top of computed data | employee\_id, date, field, new\_value, reason, created\_by |
+| leave\_types | Leave categories | name, yearly\_quota, is\_paid |
+| leave\_requests | Leave entries | employee\_id, leave\_type\_id, from\_date, to\_date, days, status (pending, approved, rejected), approved\_by |
+
+**Payroll and audit**
+
+| Table | Purpose | Key fields |
+| --- | --- | --- |
+| payroll\_runs | One per month | month, status (draft, finalized), rule\_set\_snapshot (json), finalized\_by, finalized\_at |
+| payroll\_items | One per employee per run | run\_id, employee\_id, payable\_days, absent\_days, late\_count, unpaid\_leave\_days, gross, deductions, additions, net, breakdown (json) |
+| payroll\_adjustments | Bonus, advance, other | employee\_id, month, type, amount, note |
+| audit\_log | Who changed what | actor\_id, action, entity, entity\_id, before (json), after (json), created\_at |
+
+Store money as numeric(12,2) and round net pay to whole taka at the end.
+
+## Device integration
+
+The device calls our server over plain HTTP using ZKTeco's ADMS (Push) protocol; we never call the device.
+
+| Method and path | Device sends | We reply |
+| --- | --- | --- |
+| GET `/iclock/cdata?SN=...&options=all` | Handshake on boot and reconnect | Config: send punches in real time, last stamp we hold |
+| POST `/iclock/cdata?SN=...&table=ATTLOG` | Punch lines, tab-separated: PIN, time, status, verify | `OK` after saving |
+| POST `/iclock/cdata?SN=...&table=OPERLOG` | User and admin events on the device | `OK` (logged, not used in MVP) |
+| GET `/iclock/getrequest?SN=...` | Polls every few seconds | `OK`, or the next pending command |
+| POST `/iclock/devicecmd?SN=...` | Result of a command | `OK`, marks the command done |
+
+**Receiver rules**
+
+- Unknown or inactive serial number: reject and log. Known: update `last_seen_at`.
+- Every ATTLOG line goes through an adapter that returns one standard punch: device\_sn, emp\_code, punched\_at, verify method, raw\_line. A future Hikvision adapter returns the same shape.
+- Insert with the unique key and ignore conflicts, so resent logs after an outage never create duplicates.
+- Device times are read as Asia/Dhaka. Unknown emp\_code is still saved, then shown as an "unmatched punch" for HR.
+- A late batch of punches marks those dates for recalculation.
+
+**Pushing employees to the device:** adding an employee in the app queues a user-update command, so the device PIN always equals `emp_code`. Face and fingerprint enrollment still happens at the device.
+
+Check exact field order and the handshake reply against the real firmware during the LAN test; firmware versions differ.
+
+## Attendance engine
+
+One pure function, `computeDay(employee, date)`, rebuilds an `attendance_days` row from raw punches, shift, calendar, leave and adjustments. Because it only reads inputs, any day can be recalculated safely.
+
+**When it runs**
+
+- Nightly for the previous day
+- On demand for a date range: late punch batch, leave approved or cancelled, manual adjustment, shift or rule change
+- Never for a month whose payroll is finalized
+
+**Steps for one employee on one date**
+
+1. Skip dates before join\_date or after exit\_date.
+2. Day type: holiday, then weekly off, else working day.
+3. Collect that date's punches. First punch is in, last punch is out. One punch only sets the `missing_out` flag.
+4. Working day with no punch: absent. Punches on an off day or holiday: keep the day type and set `worked_on_off_day`.
+5. Late if first\_in is after shift start plus grace; store late\_minutes. Early if last\_out is before shift end; store early\_minutes.
+6. Approved leave covering the date turns absent into leave\_paid or leave\_unpaid.
+7. Apply manual adjustments last and set `is_manual`.
+
+**Status priority:** holiday and weekly off, then leave, then present or late, then absent.
+
+Times before shift start count from shift start. Night shifts that cross midnight are out of scope, so a day's punches are its calendar date.
+
+## Leave module
+
+HR enters and approves leave on the employee's behalf; there is no employee login in the MVP.
+
+- Leave types carry a yearly quota and a paid or unpaid flag (casual, sick, annual, unpaid).
+- A request covers a date range. Its day count skips weekly offs and holidays. Full days only.
+- Balance per type = yearly quota minus approved days in the calendar year.
+- Approving beyond the balance is blocked, unless HR records the extra days as unpaid.
+- Approving, cancelling or editing a request recalculates the attendance days it covers.
+- A request inside a finalized payroll month cannot change until the month is unlocked.
+
+Open question: calendar year (Jan to Dec) or each employee's joining anniversary for quotas. Calendar year is the simpler default.
+
+## Payroll engine
+
+A payroll run reads one month of attendance days and the rule set in effect for that month, then writes one item per employee. Finalizing it locks the month.
+
+**Formula per employee**
+
+```latex
+\text{rate} = \frac{\text{base}}{\text{divisor}}
+```
+
+```latex
+\text{net} = \text{gross} \times \frac{\text{days employed}}{\text{days in month}} - \text{rate} \times (\text{absent} + \text{unpaid leave}) - \text{late deduction} - \text{advances} + \text{additions}
+```
+
+- base = gross or basic, and divisor = 30, days in month or working days, both from the rule set.
+- Late deduction: every N lates cost one day at the rate, or a fixed amount per late, or nothing.
+- days employed covers joining and leaving mid-month; it equals days in month for everyone else.
+- The breakdown json keeps every input and step, so the payslip can show how net pay was reached.
+
+**Run lifecycle**
+
+1. Create a draft run for the month. Any open recalculation finishes first.
+2. The engine computes all items. HR reviews the sheet and fixes attendance or adds bonuses and advances; the draft recomputes.
+3. Owner finalizes: the rule set is copied into the run, the month's attendance and leave are locked.
+4. Payslip PDFs and the salary sheet (Excel, for bank or bKash) are generated from the finalized items.
+5. Unlocking is Owner only, needs a reason, and is written to the audit log. Re-finalizing creates a new version of the items.
+
+## Screens and roles
+
+Eight screens cover the MVP. HR runs the daily work; only the Owner changes rules, finalizes payroll and unlocks months.
+
+| Screen | What it shows or does | HR | Owner |
+| --- | --- | --- | --- |
+| Today | Who is in, late, absent or on leave; device online or offline; unmatched punches | Yes | Yes |
+| Employees | List, profile, shift, salary structure, push to device | Yes | Yes |
+| Attendance | Monthly calendar grid per employee, day detail with raw punches, manual adjustment with reason, Excel export | Yes | Yes |
+| Leave | Requests, approve or reject, balances per employee | Yes | Yes |
+| Payroll | Runs by month, draft review, bonuses and advances, payslips, salary sheet | Draft only | Finalize, unlock |
+| Settings | Company, holidays, shifts, leave types, devices | Yes | Yes |
+| Rules | Late policy and deduction rule sets with effective month | View | Edit |
+| Audit log | Every manual change, approval, rule change, finalize and unlock | View | View |
+
+## Jobs, security, audit
+
+One scheduled job, a closed device path, and an audit row for every human change.
+
+**Jobs**
+
+- Nightly recalculation of the previous day. Vercel Hobby allows one daily cron, which is enough for testing; production uses system cron on the VPS.
+- Recalculation queue: dates marked dirty by late punches, leave or adjustments are recomputed right away in the same request, or by the nightly job if many.
+- Device online status is computed on read from `last_seen_at` (offline after 15 minutes), so it needs no job.
+- Production only: daily `pg_dump` backup kept off the server.
+
+**Security**
+
+- `/iclock` routes accept only whitelisted serial numbers, are rate limited, and can only insert punches or read the command queue.
+- Admin routes need a session; role checks run on the server for every action.
+- Admin traffic is HTTPS. The device path stays plain HTTP only where the firmware requires it.
+- Passwords hashed with argon2 or bcrypt.
+
+**Audit**
+
+Write an `audit_log` row for: manual attendance adjustment, leave approve or reject or cancel, salary structure change, rule set change, payroll finalize, payroll unlock. Raw punches are never edited, so they serve as their own audit trail.
+
+## Testing plan and build order
+
+Build in six steps, each usable on its own and each closed by a test before the next starts.
+
+| Step | Build | Done when |
+| --- | --- | --- |
+| 1 | Setup: auth, employees, shifts, holidays, settings | HR can add staff and assign shifts |
+| 2 | ADMS receiver + device simulator script | Simulator punches land once each, resent batches create no duplicates |
+| 3 | Attendance engine + Today and Attendance screens | Seeded month matches a hand-made expected grid |
+| 4 | Leave module | Approved leave turns absent into leave; balances correct |
+| 5 | Payroll engine, payslips, salary sheet | Every seeded employee's net pay matches the spreadsheet to the taka |
+| 6 | Real device on office LAN, then one parallel month at Sand'Sun | New system and current method agree for the full month |
+
+**Device simulator:** a Node script that sends the handshake, ATTLOG batches, and a delayed burst that imitates an offline device catching up.
+
+**Seed data:** 6 to 8 fake employees, each covering one case: always on time, frequent late, absent with and without leave, forgotten punch-out, double tap, joined mid-month.
+
+**Payroll tests:** calculate each seed employee's expected pay by hand in a spreadsheet, then write those as Vitest cases. Any mismatch is a bug or an undefined rule.
+
+**LAN device test:** laptop runs the app, the device points to the laptop's IP and port. Try enrolling, punching, Wi-Fi off and back on, server restart, and pushing a user from the app.

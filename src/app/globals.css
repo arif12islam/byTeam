@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  byTeam palette
+  paper   #F6F7F8  page background
+  surface #FFFFFF  panels
+  ink     #15191E  text
+  slate   #5E6672  secondary text
+  rule    #E2E5E9  borders
+  ledger  #1E6B52  accent, the green of an attendance register
+*/
+
+:root {
+  --radius: 0.5rem;
+
+  --background: #f6f7f8;
+  --foreground: #15191e;
+  --card: #ffffff;
+  --card-foreground: #15191e;
+  --popover: #ffffff;
+  --popover-foreground: #15191e;
+  --primary: #1e6b52;
+  --primary-foreground: #ffffff;
+  --secondary: #eceff1;
+  --secondary-foreground: #15191e;
+  --muted: #eceff1;
+  --muted-foreground: #5e6672;
+  --accent: #e3f0ea;
+  --accent-foreground: #134a38;
+  --destructive: #b42318;
+  --border: #e2e5e9;
+  --input: #d5d9de;
+  --ring: #1e6b52;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #15191e;
+  --sidebar-border: #e2e5e9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #12161a;
+    --foreground: #e8ebee;
+    --card: #181d22;
+    --card-foreground: #e8ebee;
+    --popover: #181d22;
+    --popover-foreground: #e8ebee;
+    --primary: #5fbf99;
+    --primary-foreground: #0d2a20;
+    --secondary: #222930;
+    --secondary-foreground: #e8ebee;
+    --muted: #222930;
+    --muted-foreground: #98a1ac;
+    --accent: #1b3329;
+    --accent-foreground: #b9e4d1;
+    --destructive: #f97066;
+    --border: #2a3138;
+    --input: #343c44;
+    --ring: #5fbf99;
+
+    --sidebar: #161b20;
+    --sidebar-foreground: #e8ebee;
+    --sidebar-border: #2a3138;
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
