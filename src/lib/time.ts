@@ -104,6 +104,12 @@ export function formatOfficeDateTime(instant: Date): string {
   return `${parts.day} ${parts.month} ${parts.year}, ${parts.hour}:${parts.minute}`;
 }
 
+/** An instant's time of day on the office clock, like "09:15". */
+export function formatOfficeTime(instant: Date): string {
+  const minute = officeMinuteOfDay(instant);
+  return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+}
+
 const wallClockFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: APP_TIMEZONE,
   year: "numeric",
