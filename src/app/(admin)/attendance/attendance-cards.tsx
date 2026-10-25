@@ -20,8 +20,9 @@ function describeCell(date: string, cell: GridCell): string {
 }
 
 /**
- * The month for phones: one card per person with a small calendar, each day
- * colored by what happened. Tap a day to see the punches behind it.
+ * One card per person with a small calendar, each day colored by what
+ * happened. Tap a day to see the punches behind it. One column on phones,
+ * two or three side by side on wider screens.
  */
 export function AttendanceCards({ grid }: { grid: MonthGrid }) {
   // One small calendar per month the period touches. A single month shows no month heading.
@@ -52,6 +53,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
         ))}
       </ul>
 
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {grid.rows.map((row) => (
         <section key={row.employee.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
           <div className="flex items-center gap-3">
@@ -133,6 +135,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
           ))}
         </section>
       ))}
+      </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
         An outlined day has no leaving punch. A dot means corrected by hand. A dashed day has no record.
       </p>

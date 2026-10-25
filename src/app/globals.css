@@ -16,6 +16,7 @@
 */
 
 :root {
+  color-scheme: light;
   --radius: 0.5rem;
 
   --background: #fafafa;
@@ -57,6 +58,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --background: #09090b;
     --foreground: #fafafa;
     --card: #111113;
@@ -153,5 +155,24 @@
 
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  /*
+    iOS Safari draws date and time inputs as centered pills that ignore the
+    width they are given and can spill out of their box. Make them plain boxes
+    that fill their column with the value on the left, like every other input.
+  */
+  input[type="date"],
+  input[type="time"],
+  input[type="month"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input::-webkit-date-and-time-value {
+    margin: 0;
+    text-align: left;
   }
 }

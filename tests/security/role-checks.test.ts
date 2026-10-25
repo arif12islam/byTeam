@@ -8,7 +8,7 @@ import { ForbiddenError } from "@/lib/roles";
 // The real session and role code runs. Only the outside world is replaced: who is signed in, the
 // database (which must never be touched by a refused request), and Next's own helpers.
 vi.mock("server-only", () => ({}));
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers(), cookies: async () => ({ set: () => undefined }) }));
 vi.mock("next/cache", () => ({ revalidatePath: () => undefined }));
 vi.mock("next/navigation", () => ({
   redirect: (to: string) => {
@@ -54,11 +54,11 @@ type Action = (...args: unknown[]) => Promise<unknown>;
 
 // Vite finds every actions file, so a new one is covered without being listed here.
 const actionModules = import.meta.glob<Record<string, unknown>>("../../src/app/**/actions.ts");
-const salaryActionModules = import.meta.glob<Record<string, unknown>>("../../src/app/**/salary-actions.ts");
+const namedActionModules = import.meta.glob<Record<string, unknown>>("../../src/app/**/*-actions.ts");
 
 async function loadActions() {
   const loaded: { name: string; file: string; run: (formData: FormData) => Promise<unknown> }[] = [];
-  const all = { ...actionModules, ...salaryActionModules };
+  const all = { ...actionModules, ...namedActionModules };
   for (const file of actionFiles.filter((f) => !OPEN_ACTION_FILES.includes(f))) {
     const key = Object.keys(all).find((k) => path.resolve(__dirname, k) === file);
     if (!key) throw new Error(`Test cannot find ${file}`);
@@ -96,7 +96,7 @@ describe("every server action checks the role on the server", () => {
     const actions = await loadActions();
     const names = actions.map((a) => a.name);
     // Adding an action changes this number on purpose: whoever adds one has to check its role and the lists below.
-    expect(names).toHaveLength(26);
+    expect(names).toHaveLength(27);
     expect(names).toEqual(expect.arrayContaining(OWNER_ONLY));
     expect(new Set(names).size).toBe(names.length);
   });

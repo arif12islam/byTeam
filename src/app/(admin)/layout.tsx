@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: LayoutProps<"/">) {
       </Suspense>
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopBar />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 md:px-10 md:pb-12 md:pt-10">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 md:px-10 md:pb-12 md:pt-10">
           <Suspense fallback={null}>
             <SignedIn>{children}</SignedIn>
           </Suspense>
