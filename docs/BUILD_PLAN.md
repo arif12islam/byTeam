@@ -239,12 +239,14 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 ### M7: Real device and pilot
 
 - [x] Write `docs/DEVICE_SETUP.md`: network, ADMS server address, poll interval 30 to 60 s, real-time upload on
-- [ ] LAN test: app on laptop, device pointed at laptop IP and port
+- [ ] Connection test: device pointed at the live site on Vercel (replaces the LAN test while byTeam runs on Vercel; steps in `docs/PILOT.md`)
 - [ ] Compare real ATTLOG lines with the simulator, fix parser if needed
 - [ ] Test enroll, punch, Wi-Fi off and on, server restart, user push from app
 - [ ] Put device and router on a mini DC UPS
 - [ ] Run one full month in parallel with the current attendance method
-- [ ] Write the VPS migration checklist (Nginx, plain HTTP for `/iclock`, HTTPS for admin, system cron, daily `pg_dump`)
+- [x] Write the VPS migration checklist (Nginx, plain HTTP for `/iclock`, HTTPS for admin, system cron, daily `pg_dump`): `docs/VPS_MIGRATION.md`
+
+The pilot runs on Vercel Hobby and Neon Free for now. `docs/PILOT.md` has the order of steps and the tests; quiet device polling keeps Neon inside its free compute allowance.
 
 **Done when:** one real month of attendance and payroll matches the current method with no manual fixes beyond genuine ones.
 

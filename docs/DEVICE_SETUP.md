@@ -1,6 +1,6 @@
 # Device setup
 
-How to connect the ZKTeco face and fingerprint device to byTeam while byTeam runs on Vercel at `byteam.bykorp.com`.
+How to connect the ZKTeco face and fingerprint device to byTeam while byTeam runs on Vercel at `byteam.bykorp.com`. For the order of the whole pilot and the tests to run, see `docs/PILOT.md`.
 
 The steps in this guide were written from the push (ADMS) protocol and the way byTeam answers it, and tested with the simulator. They have **not** been tried on the real device yet. Menu names differ between models and firmware, so where this guide names a menu, check it against your device and fix the guide. Section 7 lists what to confirm.
 

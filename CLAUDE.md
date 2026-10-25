@@ -13,7 +13,7 @@ Read these before starting any milestone:
 
 - M0 to M6 done: scaffold, auth and setup, device receiver, attendance engine, leave, payroll, and hardening (office outages, device clock check, rate limits, audit log screen, role checks, empty and error states).
 - Vercel and Neon are connected, migrations run on every Vercel build, and the owner can log in.
-- Next: M7 real device and pilot. It needs the real ZKTeco device and the office network, so ask the owner before starting.
+- M7 (real device and pilot) is under way, hosted on Vercel Hobby and Neon Free for now. The remaining items need the real ZKTeco device and the office; `docs/PILOT.md` has the steps and `docs/VPS_MIGRATION.md` the later move.
 - When an item is finished, tick it in `docs/BUILD_PLAN.md` in the same change.
 
 ## Stack
