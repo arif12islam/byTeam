@@ -1,8 +1,17 @@
 # Device setup
 
-How to connect the ZKTeco face and fingerprint device to byTeam while byTeam runs on Vercel at `byteam.bykorp.com`. For the order of the whole pilot and the tests to run, see `docs/PILOT.md`.
+How to connect the office's **ZKTeco K40H** (fingerprint and card, no face) to byTeam while byTeam runs on Vercel at `byteam.bykorp.com`. For the order of the whole pilot and the tests to run, see `docs/PILOT.md`.
 
 The steps in this guide were written from the push (ADMS) protocol and the way byTeam answers it, and tested with the simulator. They have **not** been tried on the real device yet. Menu names differ between models and firmware, so where this guide names a menu, check it against your device and fix the guide. Section 7 lists what to confirm.
+
+## 0. The K40H in short
+
+The K40H is a fingerprint and card terminal. Expect this, and confirm it on the device:
+
+- **Menu:** Menu, then **Comm.**, then **Cloud Server Setting** (on some firmware **ADMS** or **WebServer**). Fields: server mode (pick ADMS), enable domain name, server address, server port, proxy server.
+- **No HTTPS option** is likely on this model. If there is none, use **Path B3** (section 6): a free relay on Cloudflare, where `bykorp.com` already has its DNS. No office computer needed.
+- **Leading zeros:** some ZKTeco firmware stores user IDs as numbers, so `0001` may become `1` on the device. byTeam matches codes exactly, and employee codes cannot be changed later. Check this first, with one test person (section 4, step 4), before adding everyone.
+- **Verification codes:** punches will show fingerprint or card as the verify method. Nothing in byTeam depends on it.
 
 ## 1. The one thing that decides everything: HTTPS
 
@@ -64,7 +73,7 @@ Then restart the device or switch the cloud server setting off and on. It sends 
 1. **Devices screen.** Within about a minute the device should show **Online** with a "Last seen" time that keeps updating.
 2. **Clock.** Under the device name the notice should say "Clock looks right" after the first punch. If it says the clock is off by some minutes, set the time on the device. If the gap is whole hours, the device time zone is wrong.
 3. **Punch test.** Have an enrolled person punch. They should appear on **Today** within seconds, and on **Attendance** for the day. A punch at a wrong time means a clock problem.
-4. **Employee push.** Add a test employee in byTeam. The device should get the new user within about 20 minutes, usually much sooner. The device asks every 30 seconds, but to let the free database sleep, most of those asks are answered without looking at the database (quiet polling, `ADMS_QUIET_MINUTES`).
+4. **Employee push and leading zeros.** Add a test employee in byTeam with a code that starts with a zero, for example `0999`. The device gets the new user within about 20 minutes, usually much sooner (it asks every 30 seconds, but most asks are answered without the database so the free database can sleep, see `ADMS_QUIET_MINUTES`). Check what user ID the device shows, enroll a finger, punch, and open **Last lines received**: the first field must be `0999`. If it is `999`, the device drops leading zeros. Then use codes without leading zeros for everyone (for example `1001`), and let me know about any existing employees whose codes start with a zero.
 5. **Unknown code.** Punch with a PIN that has no employee. It appears under "Punches from unknown employee codes" on Devices, and counts automatically once you add an employee with that code.
 
 ## 5. When something is wrong
@@ -105,7 +114,17 @@ The device settings become: server address = the forwarder's local IP address (g
 
 **B2. Move byTeam to a VPS earlier than planned.** On a VPS the device route can stay plain HTTP while the admin screens use HTTPS (Nginx serves both). That is the plan for production anyway. It is a bigger step than B1.
 
-I recommend B1 for the pilot if the device turns out to be HTTP only.
+**B3. A relay on Cloudflare (recommended for the K40H).** `bykorp.com` has its DNS on Cloudflare, so a tiny Cloudflare Worker can accept plain HTTP from the device on a separate name and pass it on to byTeam over HTTPS. Nothing runs in the office. The free Workers plan allows 100,000 requests a day; the device sends about 3,000.
+
+1. In the Cloudflare dashboard, open **Workers & Pages**, create a Worker named `byteam-adms`, and replace its code with `scripts/adms-relay-worker.js` from this repository. Deploy.
+2. In the Worker's **Settings**, **Domains & Routes**, add the custom domain `adms.bykorp.com`.
+3. Make sure plain HTTP is not redirected for that name. In the `bykorp.com` zone, under **SSL/TLS**, **Edge Certificates**, check **Always Use HTTPS**. If it is on, either turn it off, or add a **Configuration Rule** for hostname `adms.bykorp.com` that turns it off. Also check that **HSTS** is not on with "include subdomains".
+4. Test from any computer: `curl -i http://adms.bykorp.com/iclock/ping` should answer `200` and `OK`, not a redirect. `http://adms.bykorp.com/` (no `/iclock`) answers 404 on purpose: the relay only carries device traffic.
+5. On the device: server address `adms.bykorp.com`, port `80`, enable domain name on, HTTPS off (if the option exists), proxy off.
+
+Everything else (registration, the Devices screen, the checks in section 4) works the same. When byTeam moves to the VPS, point the device straight at the VPS and delete the Worker.
+
+I recommend B3 for the K40H, and B1 only if the Cloudflare route is not possible.
 
 ## 7. Confirm on the real device (not verified yet)
 

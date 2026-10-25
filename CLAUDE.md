@@ -1,6 +1,6 @@
 # byTeam
 
-HR system for a small office: a ZKTeco face and fingerprint device pushes punches over ADMS, and the app turns them into attendance, leave and a monthly salary sheet. Built by Bykorp, first used at the Sand'Sun Holidays office in Dhaka.
+HR system for a small office: a ZKTeco K40H fingerprint device pushes punches over ADMS, and the app turns them into attendance, leave and a monthly salary sheet. Built by Bykorp, first used at the Sand'Sun Holidays office in Dhaka.
 
 Read these before starting any milestone:
 
