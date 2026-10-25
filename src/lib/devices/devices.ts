@@ -3,20 +3,24 @@ import { z } from "zod";
 
 import type { getDb } from "@/db";
 import { devices } from "@/db/schema";
+import { offlineAfterMinutes, pollMemo } from "@/lib/adms/quiet-poll";
 import { audit } from "@/lib/audit";
 
 type Db = ReturnType<typeof getDb>;
 
-/** A device that has not been heard from for longer than this counts as offline. */
-export const OFFLINE_AFTER_MINUTES = 15;
+/**
+ * A device that has not been heard from for longer than this counts as
+ * offline: 45 minutes with the default quiet polling, 15 without it.
+ */
+export const OFFLINE_AFTER_MINUTES = offlineAfterMinutes();
 
 export type DeviceStatus = "online" | "offline" | "never";
 
-/** Online up to and including 15 minutes after the last contact. */
-export function deviceStatus(lastSeenAt: Date | null, now: Date): DeviceStatus {
+/** Online up to and including `offlineAfter` minutes after the last contact. */
+export function deviceStatus(lastSeenAt: Date | null, now: Date, offlineAfter: number = OFFLINE_AFTER_MINUTES): DeviceStatus {
   if (lastSeenAt === null) return "never";
   const minutes = (now.getTime() - lastSeenAt.getTime()) / 60_000;
-  return minutes <= OFFLINE_AFTER_MINUTES ? "online" : "offline";
+  return minutes <= offlineAfter ? "online" : "offline";
 }
 
 /** "Just now", "5 min ago", "3 h ago", "2 days ago". Null when it has never connected. */
@@ -99,7 +103,7 @@ export async function renameDevice(db: Db, id: string, name: string, actorId: st
 
 /** An inactive device is rejected on the /iclock routes. Nothing it sent before is removed. */
 export async function setDeviceActive(db: Db, id: string, active: boolean, actorId: string) {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [before] = await tx.select().from(devices).where(eq(devices.id, id));
     if (!before) return null;
     if (before.active === active) return { changed: false };
@@ -115,4 +119,7 @@ export async function setDeviceActive(db: Db, id: string, active: boolean, actor
     });
     return { changed: true };
   });
+  // Polls answered from memory on this server would otherwise keep the old answer for a while.
+  if (result?.changed) pollMemo.forget();
+  return result;
 }
