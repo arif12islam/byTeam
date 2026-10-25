@@ -1,7 +1,8 @@
-import { and, count, desc, eq, gte, isNull, lt, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lt, type SQL } from "drizzle-orm";
 
 import type { getDb } from "@/db";
-import { auditLog, users } from "@/db/schema";
+import { auditLog, employees, leaveTypes, payrollRuns, shifts, users } from "@/db/schema";
+import { NO_REFS, referencedIds, type AuditRefs } from "@/lib/audit-format";
 import { isValidOfficeDate, nextDate, officeDateTimeToInstant } from "@/lib/time";
 
 type Db = ReturnType<typeof getDb>;
@@ -152,6 +153,41 @@ export async function listAuditEntries(db: Reader, filters: AuditFilters, page =
     .offset((current - 1) * AUDIT_PAGE_SIZE);
 
   return { entries, total, page: current, pages };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Names for every id the given entries point at (employees, users, shifts,
+ * leave types, payroll runs), in one query per kind. A record that no longer
+ * exists is simply missing, and is shown as removed.
+ */
+export async function loadAuditRefs(db: Reader, entries: readonly AuditEntry[]): Promise<AuditRefs> {
+  if (entries.length === 0) return NO_REFS;
+  const ids = referencedIds(entries);
+  const uuids = (list: string[]) => list.filter((id) => UUID.test(id));
+  const employeeIds = uuids(ids.employees);
+  const shiftIds = uuids(ids.shifts);
+  const leaveTypeIds = uuids(ids.leaveTypes);
+  const runIds = uuids(ids.payrollRuns);
+
+  const [people, accounts, shiftRows, typeRows, runRows] = await Promise.all([
+    employeeIds.length
+      ? db.select({ id: employees.id, name: employees.name, empCode: employees.empCode }).from(employees).where(inArray(employees.id, employeeIds))
+      : [],
+    ids.users.length ? db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, ids.users)) : [],
+    shiftIds.length ? db.select({ id: shifts.id, name: shifts.name }).from(shifts).where(inArray(shifts.id, shiftIds)) : [],
+    leaveTypeIds.length ? db.select({ id: leaveTypes.id, name: leaveTypes.name }).from(leaveTypes).where(inArray(leaveTypes.id, leaveTypeIds)) : [],
+    runIds.length ? db.select({ id: payrollRuns.id, month: payrollRuns.month }).from(payrollRuns).where(inArray(payrollRuns.id, runIds)) : [],
+  ]);
+
+  return {
+    employees: new Map(people.map((p) => [p.id, { name: p.name, empCode: p.empCode }])),
+    users: new Map(accounts.map((u) => [u.id, u.name])),
+    shifts: new Map(shiftRows.map((s) => [s.id, s.name])),
+    leaveTypes: new Map(typeRows.map((t) => [t.id, t.name])),
+    payrollRuns: new Map(runRows.map((r) => [r.id, r.month])),
+  };
 }
 
 export type AuditFilterOptions = {

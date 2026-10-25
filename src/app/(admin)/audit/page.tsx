@@ -8,12 +8,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { getDb } from "@/db";
+import { describeAuditRecord, entityLabel, readableChanges, type AuditRefs } from "@/lib/audit-format";
 import {
   AUDIT_PAGE_SIZE,
-  changedFields,
   describeAuditAction,
   listAuditEntries,
   loadAuditFilterOptions,
+  loadAuditRefs,
   type AuditEntry,
   type AuditFilters,
 } from "@/lib/audit-log";
@@ -47,24 +48,48 @@ function query(filters: AuditFilters, page: number): string {
   return text ? `?${text}` : "";
 }
 
-function Changes({ entry }: { entry: AuditEntry }) {
-  const changes = changedFields(entry.before, entry.after);
-  if (changes.length === 0) return <p className="mt-2 text-sm text-muted-foreground">No field values were recorded for this entry.</p>;
+function Changes({ entry, refs }: { entry: AuditEntry; refs: AuditRefs }) {
+  const changes = readableChanges(entry.before, entry.after, refs);
+  if (changes.length === 0) return <p className="mt-2 text-sm text-muted-foreground">No details were recorded for this entry.</p>;
 
   return (
     <dl className="mt-2 divide-y divide-border rounded-md border border-border text-sm">
       {changes.map((change) => (
-        <div key={change.field} className="grid gap-1 px-3 py-2 sm:grid-cols-[10rem_1fr]">
-          <dt className="break-words font-medium">{change.field}</dt>
-          <dd className="min-w-0 break-words text-muted-foreground">
-            {change.before !== null ? <span className="line-through">{truncate(change.before)}</span> : null}
-            {change.before !== null && change.after !== null ? " to " : null}
-            {change.after !== null ? <span className="text-foreground">{truncate(change.after)}</span> : null}
-            {change.before === null && change.after === null ? "empty" : null}
+        <div key={change.field} className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-3 px-3 py-2 sm:grid-cols-[12rem_minmax(0,1fr)]">
+          <dt className="text-muted-foreground">{change.label}</dt>
+          <dd className="min-w-0 break-words">
+            {change.before !== null && change.after !== null ? (
+              <>
+                <span className="text-muted-foreground line-through">{truncate(change.before)}</span>
+                <span aria-hidden className="px-1.5 text-muted-foreground">
+                  →
+                </span>
+                <span className="sr-only"> changed to </span>
+                <span>{truncate(change.after)}</span>
+              </>
+            ) : change.after !== null ? (
+              truncate(change.after)
+            ) : change.before !== null ? (
+              <span className="text-muted-foreground line-through">{truncate(change.before)}</span>
+            ) : (
+              <span className="text-muted-foreground">Empty</span>
+            )}
           </dd>
         </div>
       ))}
     </dl>
+  );
+}
+
+/** The entry exactly as stored, for the rare case someone needs to investigate. Closed by default. */
+function TechnicalDetails({ entry }: { entry: AuditEntry }) {
+  return (
+    <details className="mt-2">
+      <summary className="cursor-pointer text-xs text-muted-foreground">Technical details</summary>
+      <pre className="mt-2 max-h-72 overflow-auto rounded-md bg-secondary p-3 font-mono text-xs leading-relaxed">
+        {JSON.stringify({ action: entry.action, record: entry.entity, recordId: entry.entityId, before: entry.before, after: entry.after }, null, 2)}
+      </pre>
+    </details>
   );
 }
 
@@ -88,12 +113,15 @@ async function AuditContent({ searchParams }: { searchParams: PageProps<"/audit"
 
   const db = getDb();
   const [options, result] = await Promise.all([loadAuditFilterOptions(db), listAuditEntries(db, filters, requestedPage)]);
+  const refs = await loadAuditRefs(db, result.entries);
+  // When one record's history is shown, name it from its newest entry.
+  const recordName = filters.record && result.entries[0] ? describeAuditRecord(result.entries[0], refs) : null;
   const filtered = Object.values(filters).some(Boolean);
   const first = result.total === 0 ? 0 : (result.page - 1) * AUDIT_PAGE_SIZE + 1;
   const last = Math.min(result.total, result.page * AUDIT_PAGE_SIZE);
 
   return (
-    <div className="mt-6 grid max-w-4xl gap-6">
+    <div className="mt-6 grid max-w-4xl grid-cols-1 gap-6">
       <form method="get" className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Filter</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -123,13 +151,10 @@ async function AuditContent({ searchParams }: { searchParams: PageProps<"/audit"
               <option value="">Any</option>
               {options.entities.map((e) => (
                 <option key={e} value={e}>
-                  {e.replace(/_/g, " ")}
+                  {entityLabel(e)}
                 </option>
               ))}
             </Select>
-          </Field>
-          <Field label="One record" htmlFor="audit-record" hint="Paste a record id to see everything that happened to it.">
-            <Input id="audit-record" name="record" defaultValue={filters.record ?? ""} maxLength={100} />
           </Field>
           <Field label="From" htmlFor="audit-from">
             <Input id="audit-from" name="from" type="date" defaultValue={filters.from ?? ""} />
@@ -138,6 +163,7 @@ async function AuditContent({ searchParams }: { searchParams: PageProps<"/audit"
             <Input id="audit-to" name="to" type="date" defaultValue={filters.to ?? ""} />
           </Field>
         </div>
+        {filters.record ? <input type="hidden" name="record" value={filters.record} /> : null}
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button type="submit">Show entries</Button>
           {filtered ? (
@@ -147,6 +173,17 @@ async function AuditContent({ searchParams }: { searchParams: PageProps<"/audit"
           ) : null}
         </div>
       </form>
+
+      {filters.record ? (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border bg-card px-3 py-2 text-sm">
+          <span>
+            History of <span className="font-medium">{recordName ?? "one record"}</span>
+          </span>
+          <Link href={`/audit${query({ ...filters, record: undefined }, 1)}`} className="text-primary underline-offset-4 hover:underline">
+            Show all records
+          </Link>
+        </p>
+      ) : null}
 
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {result.total === 0 ? "No entries" : `Showing ${first} to ${last} of ${result.total} ${result.total === 1 ? "entry" : "entries"}`}
@@ -160,26 +197,29 @@ async function AuditContent({ searchParams }: { searchParams: PageProps<"/audit"
             : "Nothing has been recorded yet. Changes made in byTeam appear here as they happen."}
         </p>
       ) : (
-        <ul className="grid gap-3">
+        <ul className="grid grid-cols-1 gap-3">
           {result.entries.map((entry) => (
-            <li key={entry.id} className="rounded-lg border border-border bg-card p-4">
+            <li key={entry.id} className="min-w-0 rounded-lg border border-border bg-card p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <p className="text-sm font-semibold">{describeAuditAction(entry.action)}</p>
                 <p className="text-xs text-muted-foreground">{formatOfficeDateTime(entry.createdAt)}</p>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                By {entry.actorName ?? (entry.actorId ? "a removed user" : "the system")}. {entry.entity.replace(/_/g, " ")}{" "}
-                <span className="font-mono text-xs" title={entry.entityId}>
-                  {entry.entityId.length > 12 ? `${entry.entityId.slice(0, 8)}...` : entry.entityId}
-                </span>
-                {" "}
-                <Link href={`/audit${query({ record: entry.entityId }, 1)}`} className="text-primary underline-offset-4 hover:underline">
-                  See its history
-                </Link>
+              <p className="mt-1 text-sm">{describeAuditRecord(entry, refs)}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                By {entry.actorName ?? (entry.actorId ? "a removed user" : "the system")}
+                {filters.record ? null : (
+                  <>
+                    {" · "}
+                    <Link href={`/audit${query({ record: entry.entityId }, 1)}`} className="text-foreground underline underline-offset-2">
+                      See its history
+                    </Link>
+                  </>
+                )}
               </p>
               <details className="mt-3">
                 <summary className="cursor-pointer text-sm font-medium">What changed</summary>
-                <Changes entry={entry} />
+                <Changes entry={entry} refs={refs} />
+                <TechnicalDetails entry={entry} />
               </details>
             </li>
           ))}
