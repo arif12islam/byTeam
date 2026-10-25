@@ -1,5 +1,6 @@
 import { Download, Info } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -19,6 +20,8 @@ import { formatMonth, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { AttendanceCards } from "./attendance-cards";
+import { parseView, VIEW_COOKIE } from "./view";
+import { ViewToggle } from "./view-toggle";
 
 export const metadata: Metadata = { title: "Attendance" };
 
@@ -60,6 +63,8 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
   const { period, notice } = resolvePeriod(await searchParams, today);
   const label = periodLabel(period);
 
+  const view = parseView((await cookies()).get(VIEW_COOKIE)?.value);
+
   const grid = await loadPeriodGrid(getDb(), period, today);
   // Dates grouped by month, for the heading row over a long period.
   const monthSpans: { month: string; days: number }[] = [];
@@ -73,6 +78,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
   return (
     <div className="mt-6 grid gap-5">
       <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/attendance" nav={describePeriodNav("/attendance", period, today)}>
+        <ViewToggle view={view} />
         <a href={`/attendance/export?${periodQuery(period)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           <Download aria-hidden />
           Download Excel
@@ -94,10 +100,10 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
         </Card>
       ) : (
         <>
-          <div className="md:hidden">
+          <div className={cn(view === "table" && "md:hidden")}>
             <AttendanceCards grid={grid} />
           </div>
-          <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card md:block">
+          <div className={cn("hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card", view === "table" && "md:block")}>
             <table className="w-full border-collapse text-sm">
               <thead>
                 {monthSpans.length > 1 ? (
@@ -111,16 +117,16 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                   </tr>
                 ) : null}
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th scope="col" className="sticky left-0 z-10 min-w-36 bg-card px-3 py-2 font-medium">
+                  <th scope="col" className="sticky left-0 z-10 min-w-32 bg-card px-3 py-2 font-medium">
                     Employee
                   </th>
                   {["Present", "Late", "Absent", "Leave"].map((name, i) => (
-                    <th key={name} scope="col" className={cn("px-2 py-2 text-right font-medium", i === 3 && "border-r border-border")}>
+                    <th key={name} scope="col" className={cn("px-1.5 py-2 text-right text-xs font-medium", i === 3 && "border-r border-border pr-2")}>
                       {name}
                     </th>
                   ))}
                   {grid.dates.map((date) => (
-                    <th key={date} scope="col" className="min-w-8 px-0.5 py-2 text-center font-medium tabular-nums">
+                    <th key={date} scope="col" className="min-w-6 px-0 py-2 text-center text-xs font-medium tabular-nums">
                       {Number(date.slice(8))}
                     </th>
                   ))}
@@ -133,10 +139,10 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                       {row.employee.name}
                       <span className="block text-xs font-normal text-muted-foreground">Code {row.employee.empCode}</span>
                     </th>
-                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.present}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.late}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{row.totals.absent}</td>
-                    <td className="border-r border-border px-2 py-2 text-right tabular-nums">{row.totals.leave}</td>
+                    <td className="px-1.5 py-2 text-right tabular-nums">{row.totals.present}</td>
+                    <td className="px-1.5 py-2 text-right tabular-nums">{row.totals.late}</td>
+                    <td className="px-1.5 py-2 text-right tabular-nums">{row.totals.absent}</td>
+                    <td className="border-r border-border py-2 pl-1.5 pr-2 text-right tabular-nums">{row.totals.leave}</td>
                     {grid.dates.map((date) => {
                       const cell = row.cells.get(date);
                       if (!cell) return <td key={date} className="px-0.5 py-2 text-center text-muted-foreground/40">-</td>;
@@ -146,7 +152,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                             href={`/attendance/${row.employee.id}/${date}`}
                             aria-label={describeCell(date, cell)}
                             title={describeCell(date, cell)}
-                            className={cn("block rounded px-1 py-1.5 text-xs hover:ring-1 hover:ring-primary", cellStyle(cell.status))}
+                            className={cn("block rounded px-0.5 py-1.5 text-[11px] hover:ring-1 hover:ring-primary", cellStyle(cell.status))}
                           >
                             {cellText(cell)}
                           </Link>
@@ -161,7 +167,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
         </>
       )}
 
-      <p className="hidden text-xs leading-relaxed text-muted-foreground md:block">
+      <p className={cn("hidden text-xs leading-relaxed text-muted-foreground", view === "table" && "md:block")}>
         P present, L late, A absent, PL paid leave, UL unpaid leave, W weekly off day, H holiday. An exclamation mark
         means no leaving punch, an asterisk means corrected by hand, a dash means no record for that day. Present counts
         late days too.

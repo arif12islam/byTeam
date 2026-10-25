@@ -55,7 +55,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div ref={root} className="relative flex items-center gap-1 rounded-xl border border-border bg-card p-1 shadow-card">
+      <div ref={root} className="relative flex items-center gap-1 rounded-lg border border-border bg-card p-1 shadow-card">
         <Link href={nav.prevHref} aria-label="Earlier" className={arrow}>
           <ChevronLeft aria-hidden />
         </Link>
@@ -64,7 +64,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-haspopup="dialog"
-          className="flex h-9 w-52 items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold hover:bg-secondary sm:w-60"
+          className="flex h-9 w-52 items-center gap-2 rounded-md px-2.5 text-left text-sm font-semibold hover:bg-secondary sm:w-60"
         >
           <CalendarRange className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <span className="min-w-0 flex-1 truncate tabular-nums">{nav.label}</span>
@@ -78,7 +78,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
           <div
             role="dialog"
             aria-label="Choose dates"
-            className="absolute left-0 top-full z-30 mt-2 w-[min(23rem,calc(100vw-2rem))] rounded-xl border border-border bg-card p-3 shadow-[0_12px_40px_rgb(12_59_44/0.18)]"
+            className="absolute left-0 top-full z-30 mt-2 w-[min(23rem,calc(100vw-2rem))] rounded-lg border border-border bg-popover p-3 shadow-lg"
           >
             <p className="px-1 pb-1.5 text-xs font-medium text-muted-foreground">Quick choices</p>
             <ul className="grid grid-cols-2 gap-1.5">
@@ -89,7 +89,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
                     onClick={() => setOpen(false)}
                     aria-current={preset.active ? "true" : undefined}
                     className={cn(
-                      "flex h-full items-start gap-1.5 rounded-xl border px-2.5 py-2 text-sm transition-colors",
+                      "flex h-full items-start gap-1.5 rounded-md border px-2.5 py-2 text-sm transition-colors",
                       preset.active ? "border-primary bg-accent text-accent-foreground" : "border-border hover:bg-secondary",
                     )}
                   >
@@ -106,17 +106,17 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
             <form onSubmit={apply} className="mt-3 border-t border-border pt-3">
               <p className="px-1 pb-1.5 text-xs font-medium text-muted-foreground">Custom dates</p>
               <div className="grid grid-cols-2 gap-2">
-                <label className="text-xs text-muted-foreground">
+                <label className="min-w-0 text-xs text-muted-foreground">
                   From
                   <input
                     type="date"
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
                     required
-                    className="mt-1 block h-10 w-full rounded-xl border border-input bg-card px-2.5 text-base text-foreground sm:text-sm"
+                    className="mt-1 block h-10 w-full min-w-0 rounded-md border border-input bg-card px-2.5 text-left text-base text-foreground sm:h-9 sm:text-sm"
                   />
                 </label>
-                <label className="text-xs text-muted-foreground">
+                <label className="min-w-0 text-xs text-muted-foreground">
                   To
                   <input
                     type="date"
@@ -124,7 +124,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
                     min={from || undefined}
                     onChange={(e) => setTo(e.target.value)}
                     required
-                    className="mt-1 block h-10 w-full rounded-xl border border-input bg-card px-2.5 text-base text-foreground sm:text-sm"
+                    className="mt-1 block h-10 w-full min-w-0 rounded-md border border-input bg-card px-2.5 text-left text-base text-foreground sm:h-9 sm:text-sm"
                   />
                 </label>
               </div>
