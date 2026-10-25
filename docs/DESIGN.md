@@ -239,7 +239,8 @@ One scheduled job, a closed device path, and an audit row for every human change
 
 - Nightly recalculation of the previous day. Vercel Hobby allows one daily cron, which is enough for testing; production uses system cron on the VPS.
 - Recalculation queue: dates marked dirty by late punches, leave or adjustments are recomputed right away in the same request, or by the nightly job if many.
-- Device online status is computed on read from `last_seen_at` (offline after 15 minutes), so it needs no job.
+- Device online status is computed on read from `last_seen_at`, so it needs no job. Offline means nothing heard for two quiet windows plus 5 minutes (45 minutes by default), or 15 minutes with quiet polling off.
+- Quiet polling (`src/lib/adms/quiet-poll.ts`): a command poll is answered from the server's memory for `ADMS_QUIET_MINUTES` (default 20) after the database was last asked, when the device is known and had nothing waiting. Without it the 30 second poll keeps Neon awake all month, about 180 compute hours against the free plan's 100. Uploads always reach the database. A command queued on another server instance reaches the device within one window; on the same instance, on the next poll.
 - Production only: daily `pg_dump` backup kept off the server.
 
 **Security**

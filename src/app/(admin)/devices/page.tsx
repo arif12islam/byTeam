@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { clockState, describeClock } from "@/lib/devices/clock";
+import { quietMinutes } from "@/lib/adms/quiet-poll";
 import { describeAge, deviceStatus, listDevices, OFFLINE_AFTER_MINUTES, type DeviceStatus } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
@@ -18,6 +19,8 @@ import { cn } from "@/lib/utils";
 
 import { AddDeviceForm } from "./add-device-form";
 import { DeviceControls } from "./device-card";
+
+const QUIET_MINUTES = quietMinutes();
 
 export const metadata: Metadata = { title: "Devices" };
 
@@ -93,6 +96,9 @@ async function DevicesContent() {
                     Last seen {age}, {formatOfficeDateTime(device.lastSeenAt)}.
                     {device.active && status === "offline"
                       ? ` Offline means nothing heard for more than ${OFFLINE_AFTER_MINUTES} minutes.`
+                      : ""}
+                    {device.active && status === "online" && QUIET_MINUTES > 0
+                      ? ` While the device is idle this updates about every ${QUIET_MINUTES} minutes. Punches still arrive as they happen.`
                       : ""}
                   </>
                 ) : (

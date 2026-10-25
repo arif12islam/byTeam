@@ -10,16 +10,21 @@ describe("deviceStatus", () => {
     expect(deviceStatus(null, now)).toBe("never");
   });
 
-  it("is online up to and including 15 minutes", () => {
-    expect(OFFLINE_AFTER_MINUTES).toBe(15);
+  it("is online up to and including 45 minutes with the default quiet polling", () => {
+    expect(OFFLINE_AFTER_MINUTES).toBe(45);
     expect(deviceStatus(minutesAgo(0), now)).toBe("online");
-    expect(deviceStatus(minutesAgo(14.9), now)).toBe("online");
-    expect(deviceStatus(minutesAgo(15), now)).toBe("online");
+    expect(deviceStatus(minutesAgo(44.9), now)).toBe("online");
+    expect(deviceStatus(minutesAgo(45), now)).toBe("online");
   });
 
-  it("is offline after 15 minutes", () => {
-    expect(deviceStatus(minutesAgo(15.1), now)).toBe("offline");
+  it("is offline after 45 minutes", () => {
+    expect(deviceStatus(minutesAgo(45.1), now)).toBe("offline");
     expect(deviceStatus(minutesAgo(600), now)).toBe("offline");
+  });
+
+  it("uses 15 minutes when quiet polling is off", () => {
+    expect(deviceStatus(minutesAgo(15), now, 15)).toBe("online");
+    expect(deviceStatus(minutesAgo(15.1), now, 15)).toBe("offline");
   });
 
   it("treats a last-seen time slightly ahead of now as online", () => {
