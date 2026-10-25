@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { clockState, describeClock } from "@/lib/devices/clock";
 import { describeAge, deviceStatus, listDevices, OFFLINE_AFTER_MINUTES, type DeviceStatus } from "@/lib/devices/devices";
+import { listRecentLines, type ReceivedLine } from "@/lib/punches/recent";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
 import { formatOfficeDateTime } from "@/lib/time";
@@ -52,12 +53,43 @@ function StatusBadge({ status, active }: { status: DeviceStatus; active: boolean
   );
 }
 
+/**
+ * The last punch lines exactly as the device sent them, tabs kept, so they can
+ * be copied and compared with what the simulator sends.
+ */
+function RecentLines({ lines }: { lines: ReceivedLine[] }) {
+  return (
+    <details className="group mt-4 rounded-lg border border-border">
+      <summary className="flex min-h-10 cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        Last lines received
+        <span className="text-xs font-normal text-muted-foreground">
+          {lines.length === 0 ? "None yet" : lines.length === 1 ? "1 line" : `${lines.length} lines`}
+        </span>
+      </summary>
+      <div className="border-t border-border px-3 py-3">
+        {lines.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No punches received from this device yet. Punch on the device, then reload this page.</p>
+        ) : (
+          <>
+            <pre className="overflow-x-auto rounded-md bg-secondary p-3 font-mono text-xs leading-relaxed [tab-size:4]">
+              {lines.map((line) => line.rawLine).join("\n")}
+            </pre>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Newest first, exactly as the device sent them. The last one arrived {formatOfficeDateTime(lines[0].receivedAt)}.
+            </p>
+          </>
+        )}
+      </div>
+    </details>
+  );
+}
+
 /** Reads the current time, so it renders after the session check, inside Suspense. */
 async function DevicesContent() {
   await requireRole("owner", "hr");
 
   const db = getDb();
-  const [list, unmatched] = await Promise.all([listDevices(db), listUnmatchedCodes(db)]);
+  const [list, unmatched, recentLines] = await Promise.all([listDevices(db), listUnmatchedCodes(db), listRecentLines(db)]);
   const now = new Date();
 
   return (
@@ -112,6 +144,7 @@ async function DevicesContent() {
                   </p>
                 )
               ) : null}
+              <RecentLines lines={recentLines.get(device.serialNo) ?? []} />
               <div className="mt-5 border-t border-border pt-5">
                 <DeviceControls device={device} />
               </div>

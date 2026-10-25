@@ -4,6 +4,7 @@ import { authenticateDevice } from "@/lib/adms/request";
 import { splitLines } from "@/lib/adms/parse";
 import { recalcForNewPunches } from "@/lib/attendance/triggers";
 import { savePunches } from "@/lib/adms/store";
+import { safeTable } from "@/lib/adms/unknown";
 import { adaptAttlogBody } from "@/lib/adms/zkteco-adapter";
 import { recordClockCheck } from "@/lib/devices/clock";
 
@@ -47,7 +48,8 @@ export async function POST(request: Request) {
   const db = getDb();
   const table = url.searchParams.get("table");
   if (table !== "ATTLOG" && table !== "OPERLOG") {
-    // Photos, user lists and the like are not used. Say OK so the device moves on.
+    // Photos, user lists and the like are not used. Say OK so the device moves on, and log the table name only.
+    console.info(`[iclock] ${device.serialNo} ${safeTable(table) ?? "upload with no table"}: not used, answered OK`);
     return new Response("OK", { status: 200, headers: textHeaders });
   }
 

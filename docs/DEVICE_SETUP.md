@@ -113,7 +113,8 @@ These are the things I could not check without the device. Please check each and
 
 - [ ] The real menu names for the cloud server settings, and whether an HTTPS option exists.
 - [ ] That the device accepts a domain name and port 443.
-- [ ] The real ATTLOG lines. Compare a few with what the simulator sends (`scripts/simulator-lib.ts`). If a field order differs, the parser in `src/lib/adms/` needs adjusting. Raw lines are kept, so nothing is lost meanwhile.
+- [ ] The real ATTLOG lines. On **Devices**, open **Last lines received** under the device: it shows the last few punch lines exactly as the device sent them, tabs kept, ready to copy. Compare them with what the simulator sends (`scripts/simulator-lib.ts`). If a field order differs, the parser in `src/lib/adms/` needs adjusting. Raw lines are kept, so nothing is lost meanwhile.
+- [ ] Which other addresses the firmware calls. Any `/iclock` address the app does not use (for example `/iclock/ping` or `/iclock/registry`), and any upload table other than ATTLOG and OPERLOG (for example ATTPHOTO), is answered `OK` and written to the server log as `[iclock] <serial> ... not used, answered OK`. Read them in the Vercel dashboard under Logs, filtered by `[iclock]`.
 - [ ] That the handshake reply (`src/lib/adms/handshake.ts`) is understood: real time on, a poll every 30 seconds, no encryption.
 - [ ] Enroll, punch, Wi-Fi off and on, server unreachable and back, and a user push from byTeam.
 - [ ] What the device shows when the server answers with an error.
