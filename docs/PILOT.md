@@ -41,7 +41,7 @@ Do each one, then check the result where the table says.
 | Enroll | Enroll a test person's face or finger on the device under an employee code that exists in byTeam | Their punches count for that employee | Today |
 | Punch | Punch normally | Appears within seconds | Today |
 | Unknown code | Punch with a code that is not an employee | Listed under "Punches from unknown employee codes" | Devices |
-| Wi-Fi off and on | Unplug the router's internet for 10 minutes, punch twice, plug it back | Both punches arrive after reconnecting, once each | Today, Attendance |
+| Network off and on | Unplug the device's network cable for 10 minutes, punch twice, plug it back. Then do the same with the router's internet line | Both punches arrive after reconnecting, once each | Today, Attendance |
 | Server unreachable | Switch the device off on the Devices screen ("Stop accepting"), punch, switch it back on | The punch arrives once the device is accepted again | Today |
 | User push | Add a test employee in byTeam | The person appears on the device within about 20 minutes | Device user list |
 | Restart | Power the device off and on | Online again, no duplicate punches | Devices, Attendance |
@@ -51,7 +51,7 @@ Write down anything unexpected, with the time it happened, and check `DEVICE_SET
 
 ## 5. Power
 
-- [ ] Put the device and the router (and the forwarder, if there is one) on a small DC UPS. Test it by switching the mains off for a minute while someone punches.
+- [ ] Put the router (and the Wi-Fi bridge or forwarder, if there is one) on a small DC UPS. The K40H itself may have a backup battery; check, and if it does not, put it on the UPS too. Test it by switching the mains off for a minute while someone punches.
 
 ## 6. One month in parallel
 

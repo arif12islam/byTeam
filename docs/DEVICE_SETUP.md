@@ -11,6 +11,11 @@ The K40H is a fingerprint and card terminal. Expect this, and confirm it on the 
 - **Menu:** Menu, then **Comm.**, then **Cloud Server Setting** (on some firmware **ADMS** or **WebServer**). Fields: server mode (pick ADMS), enable domain name, server address, server port, proxy server.
 - **No HTTPS option** is likely on this model. If there is none, use **Path B3** (section 6): a free relay on Cloudflare, where `bykorp.com` already has its DNS. No office computer needed.
 - **Leading zeros:** some ZKTeco firmware stores user IDs as numbers, so `0001` may become `1` on the device. byTeam matches codes exactly, and employee codes cannot be changed later. Check this first, with one test person (section 4, step 4), before adding everyone.
+- **Network cable only, no Wi-Fi.** The device needs an Ethernet cable to the office router (or a switch on it). If the router is too far away, use one of these, in order of preference:
+  1. A cable run to where the device will hang. Plain Cat6, up to 100 m.
+  2. A small Wi-Fi to Ethernet bridge next to the device: a travel router in "client" or "WISP" mode, joined to the office Wi-Fi, with a short cable to the device. It needs power too, so put it on the UPS.
+  3. Powerline adapters, if the router and the device are on the same electrical circuit.
+- **Network settings on the device:** Menu, Comm., Ethernet. Turn DHCP on so the router gives it an address, gateway and DNS. If DHCP is off, enter the address, mask, gateway and a DNS server (for example `1.1.1.1`) by hand: without a gateway and DNS it cannot reach the internet, and shows as never connected.
 - **Verification codes:** punches will show fingerprint or card as the verify method. Nothing in byTeam depends on it.
 
 ## 1. The one thing that decides everything: HTTPS
@@ -83,7 +88,7 @@ Then restart the device or switch the cloud server setting off and on. It sends 
 | Device says **Never connected** | It never reached us. Check the device has internet, the address and port, and that HTTPS is on. Check the serial number on Devices matches the label exactly. |
 | Device shows **Not accepted** | The device is switched off on the Devices screen. Use "Start accepting this device". |
 | The device shows a network or server error and byTeam never sees it | The device is probably sending plain HTTP and getting the redirect. Use Path B. |
-| Device went **Offline** | Nothing heard for 45 minutes (15 with quiet polling off). While idle, "Last seen" only moves about every 20 minutes, so up to 20 minutes is normal. Power, Wi-Fi or internet. Punches made meanwhile are kept on the device and arrive when it reconnects, and the days are recomputed. |
+| Device went **Offline** | Nothing heard for 45 minutes (15 with quiet polling off). While idle, "Last seen" only moves about every 20 minutes, so up to 20 minutes is normal. Power, the network cable or the internet. Punches made meanwhile are kept on the device and arrive when it reconnects, and the days are recomputed. |
 | People are late or absent when they were not | Check **Clock** on Devices first. Then check the employee's shift and the weekly off days. If the office had a power cut, record it under Settings, Office outages. |
 | Punches arrive in bursts | Normal after an outage: the device sends its backlog. They are stored once each. |
 | Everything was fine and now the device gets errors | Look at **Audit log** and the Devices screen. The Vercel dashboard shows runtime errors for the project. A brief database connection timeout makes the server answer with an error, and the device retries on its own, so no punch is lost. |
@@ -135,7 +140,7 @@ These are the things I could not check without the device. Please check each and
 - [ ] The real ATTLOG lines. On **Devices**, open **Last lines received** under the device: it shows the last few punch lines exactly as the device sent them, tabs kept, ready to copy. Compare them with what the simulator sends (`scripts/simulator-lib.ts`). If a field order differs, the parser in `src/lib/adms/` needs adjusting. Raw lines are kept, so nothing is lost meanwhile.
 - [ ] Which other addresses the firmware calls. Any `/iclock` address the app does not use (for example `/iclock/ping` or `/iclock/registry`), and any upload table other than ATTLOG and OPERLOG (for example ATTPHOTO), is answered `OK` and written to the server log as `[iclock] <serial> ... not used, answered OK`. Read them in the Vercel dashboard under Logs, filtered by `[iclock]`.
 - [ ] That the handshake reply (`src/lib/adms/handshake.ts`) is understood: real time on, a poll every 30 seconds, no encryption.
-- [ ] Enroll, punch, Wi-Fi off and on, server unreachable and back, and a user push from byTeam.
+- [ ] Enroll, punch, network cable out and back in, internet off and on, server unreachable and back, and a user push from byTeam.
 - [ ] What the device shows when the server answers with an error.
 - [ ] Whether the device clock stays right on its own, or drifts (the Clock notice will tell you).
 
