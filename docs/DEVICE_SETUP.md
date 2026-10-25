@@ -64,7 +64,7 @@ Then restart the device or switch the cloud server setting off and on. It sends 
 1. **Devices screen.** Within about a minute the device should show **Online** with a "Last seen" time that keeps updating.
 2. **Clock.** Under the device name the notice should say "Clock looks right" after the first punch. If it says the clock is off by some minutes, set the time on the device. If the gap is whole hours, the device time zone is wrong.
 3. **Punch test.** Have an enrolled person punch. They should appear on **Today** within seconds, and on **Attendance** for the day. A punch at a wrong time means a clock problem.
-4. **Employee push.** Add a test employee in byTeam. The device should get the new user within a minute or two (the device polls every 30 seconds).
+4. **Employee push.** Add a test employee in byTeam. The device should get the new user within about 20 minutes, usually much sooner. The device asks every 30 seconds, but to let the free database sleep, most of those asks are answered without looking at the database (quiet polling, `ADMS_QUIET_MINUTES`).
 5. **Unknown code.** Punch with a PIN that has no employee. It appears under "Punches from unknown employee codes" on Devices, and counts automatically once you add an employee with that code.
 
 ## 5. When something is wrong
@@ -74,7 +74,7 @@ Then restart the device or switch the cloud server setting off and on. It sends 
 | Device says **Never connected** | It never reached us. Check the device has internet, the address and port, and that HTTPS is on. Check the serial number on Devices matches the label exactly. |
 | Device shows **Not accepted** | The device is switched off on the Devices screen. Use "Start accepting this device". |
 | The device shows a network or server error and byTeam never sees it | The device is probably sending plain HTTP and getting the redirect. Use Path B. |
-| Device went **Offline** | Nothing heard for 15 minutes. Power, Wi-Fi or internet. Punches made meanwhile are kept on the device and arrive when it reconnects, and the days are recomputed. |
+| Device went **Offline** | Nothing heard for 45 minutes (15 with quiet polling off). While idle, "Last seen" only moves about every 20 minutes, so up to 20 minutes is normal. Power, Wi-Fi or internet. Punches made meanwhile are kept on the device and arrive when it reconnects, and the days are recomputed. |
 | People are late or absent when they were not | Check **Clock** on Devices first. Then check the employee's shift and the weekly off days. If the office had a power cut, record it under Settings, Office outages. |
 | Punches arrive in bursts | Normal after an outage: the device sends its backlog. They are stored once each. |
 | Everything was fine and now the device gets errors | Look at **Audit log** and the Devices screen. The Vercel dashboard shows runtime errors for the project. A brief database connection timeout makes the server answer with an error, and the device retries on its own, so no punch is lost. |

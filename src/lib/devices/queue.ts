@@ -8,6 +8,7 @@ import {
   RESEND_AFTER_SECONDS,
   type CommandResult,
 } from "@/lib/adms/commands";
+import { pollMemo } from "@/lib/adms/quiet-poll";
 import { audit } from "@/lib/audit";
 
 type Db = ReturnType<typeof getDb>;
@@ -106,6 +107,9 @@ async function queueForDevices(writer: Writer, serials: string[], commands: stri
   );
   if (rows.length === 0) return 0;
   await writer.insert(deviceCommands).values(rows);
+  // A device polling this server picks the commands up on its next poll. One polling another server instance
+  // gets them once that instance's quiet window ends (see quiet-poll.ts).
+  for (const serial of serials) pollMemo.forget(serial);
   return rows.length;
 }
 

@@ -19,8 +19,9 @@ export function getDb(): Db {
     throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
   }
 
-  // prepare: false keeps this compatible with Neon's pooled connection string.
-  const client = postgres(url, { prepare: false, max: 5 });
+  // prepare: false keeps this compatible with Neon's pooled connection string. Idle connections close after a
+  // minute, so an idle server never holds the database awake (Neon sleeps after 5 minutes without activity).
+  const client = postgres(url, { prepare: false, max: 5, idle_timeout: 60 });
   const db = drizzle(client, { schema });
   globalForDb.db = db;
   return db;
