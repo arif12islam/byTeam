@@ -48,7 +48,7 @@ const actionFiles = find(path.join(SRC, "app"), (f) => /actions\.ts$/.test(f) &&
 const OPEN_ACTION_FILES = [path.join(SRC, "app", "(admin)", "actions.ts"), path.join(SRC, "app", "(auth)", "login", "actions.ts")];
 
 /** What only the owner may do. Everything else in the actions is for owner and HR. */
-const OWNER_ONLY = ["finalizeRunAction", "unlockRunAction", "saveRuleSetAction"];
+const OWNER_ONLY = ["finalizeRunAction", "unlockRunAction", "saveRuleSetAction", "loadSampleDataAction", "switchOffSampleAction"];
 
 type Action = (...args: unknown[]) => Promise<unknown>;
 
@@ -96,7 +96,7 @@ describe("every server action checks the role on the server", () => {
     const actions = await loadActions();
     const names = actions.map((a) => a.name);
     // Adding an action changes this number on purpose: whoever adds one has to check its role and the lists below.
-    expect(names).toHaveLength(27);
+    expect(names).toHaveLength(29);
     expect(names).toEqual(expect.arrayContaining(OWNER_ONLY));
     expect(new Set(names).size).toBe(names.length);
   });
@@ -140,10 +140,10 @@ describe("every server action checks the role on the server", () => {
     }
   });
 
-  it("the three things HR must not do are finalizing, unlocking and editing rules", async () => {
+  it("what HR must not do: finalize, unlock, edit rules, and load or switch off sample data", async () => {
     signedIn = { role: "hr" };
     const actions = await loadActions();
-    for (const name of ["finalizeRunAction", "unlockRunAction", "saveRuleSetAction"]) {
+    for (const name of OWNER_ONLY) {
       const action = actions.find((a) => a.name === name)!;
       await expect(action.run(new FormData()), name).rejects.toBeInstanceOf(ForbiddenError);
     }

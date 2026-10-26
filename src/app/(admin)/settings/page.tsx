@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
+import { countActiveSamplePeople } from "@/lib/demo/sample";
 import { listRecentOutages } from "@/lib/attendance/outages";
 import { getCompanySettings } from "@/lib/settings/company";
 import { groupByYear, listHolidays } from "@/lib/settings/holidays";
@@ -12,6 +13,7 @@ import { formatOfficeDate } from "@/lib/time";
 
 import { removeHolidayAction } from "./actions";
 import { OutageForm, RemoveOutageForm } from "./outage-forms";
+import { SampleDataForm } from "./sample-data-form";
 import { CompanyForm } from "./company-form";
 import { HolidayForm } from "./holiday-form";
 
@@ -42,10 +44,15 @@ function Section({ title, description, children }: { title: string; description:
 }
 
 async function SettingsContent() {
-  await requireRole("owner", "hr");
+  const user = await requireRole("owner", "hr");
 
   const db = getDb();
-  const [company, holidays, outages] = await Promise.all([getCompanySettings(db), listHolidays(db), listRecentOutages(db)]);
+  const [company, holidays, outages, activeSamples] = await Promise.all([
+    getCompanySettings(db),
+    listHolidays(db),
+    listRecentOutages(db),
+    countActiveSamplePeople(db),
+  ]);
   const groups = groupByYear(holidays);
 
   return (
@@ -117,6 +124,15 @@ async function SettingsContent() {
           </ul>
         )}
       </Section>
+
+      {user.role === "owner" ? (
+        <Section
+          title="Sample data"
+          description="To try every screen before the device is connected: eight made-up people named Sample ..., with last month's punches, late days, absences, leave, a bonus and an advance. Punches can never be deleted, so the sample stays in the history. Switch the sample people off before the real pilot and they drop out of Today, Attendance and new payroll runs."
+        >
+          <SampleDataForm activeSamples={activeSamples} />
+        </Section>
+      ) : null}
     </div>
   );
 }

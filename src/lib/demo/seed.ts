@@ -40,6 +40,10 @@ export async function applyDemoPlan(
     today?: string;
     /** Names of the shared setup rows. Tests give their own so files running together never meet. */
     names?: { shift?: string; paidLeave?: string; unpaidLeave?: string };
+    /** Add the plan's made-up public holiday. Off for sample data in a real database, where it would change real people's days. */
+    holiday?: boolean;
+    /** Name of the switched-off device that owns the punches. */
+    deviceName?: string;
   },
 ): Promise<DemoSummary> {
   const { actorId } = options;
@@ -68,11 +72,13 @@ export async function applyDemoPlan(
   const unpaidType = await typeNamed(unpaidName, false);
   if (!paidType.isPaid || unpaidType.isPaid) throw new Error(`"${paidName}" must be a paid leave type and "${unpaidName}" an unpaid one.`);
 
-  const [holiday] = await db.select().from(holidays).where(eq(holidays.date, plan.holiday.date));
-  if (!holiday) await addHoliday(db, plan.holiday, actorId);
+  if (options.holiday ?? true) {
+    const [holiday] = await db.select().from(holidays).where(eq(holidays.date, plan.holiday.date));
+    if (!holiday) await addHoliday(db, plan.holiday, actorId);
+  }
 
   let [device] = await db.select().from(devices).where(eq(devices.serialNo, options.deviceSerial));
-  if (!device) [device] = await db.insert(devices).values({ serialNo: options.deviceSerial, name: DEMO_DEVICE.name, active: false }).returning();
+  if (!device) [device] = await db.insert(devices).values({ serialNo: options.deviceSerial, name: options.deviceName ?? DEMO_DEVICE.name, active: false }).returning();
 
   const ids: string[] = [];
   for (const person of plan.employees) {
