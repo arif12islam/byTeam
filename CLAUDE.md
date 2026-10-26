@@ -13,7 +13,7 @@ Read these before starting any milestone:
 
 - M0 to M6 done: scaffold, auth and setup, device receiver, attendance engine, leave, payroll, and hardening (office outages, device clock check, rate limits, audit log screen, role checks, empty and error states).
 - Vercel and Neon are connected, migrations run on every Vercel build, and the owner can log in.
-- M7 (real device and pilot) is under way, hosted on Vercel Hobby and Neon Free for now. The remaining items need the real ZKTeco device and the office; `docs/PILOT.md` has the steps and `docs/VPS_MIGRATION.md` the later move.
+- M7 (real device and pilot) is under way, hosted on Vercel Hobby and Neon Free for now. The office's K40H cannot push, so it connects through the office agent (`docs/OFFICE_AGENT.md`). The remaining items need the real device and the office; `docs/PILOT.md` has the steps and `docs/VPS_MIGRATION.md` the later move.
 - When an item is finished, tick it in `docs/BUILD_PLAN.md` in the same change.
 
 ## Stack
@@ -30,6 +30,7 @@ npm test             # vitest run; tests/db also needs DATABASE_URL_TEST (see RE
 npm run build
 npm run db:generate  # migration from schema changes
 npm run db:migrate   # apply to DATABASE_URL in .env.local
+npm run agent:build  # office agent bundle into public/downloads (build runs it too)
 ```
 
 Run lint, typecheck, test and build before every commit. CI runs the same four.
@@ -38,6 +39,7 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 
 - `src/app/(admin)/<screen>/page.tsx`: admin screens
 - `src/app/iclock/...`: ADMS device routes (M2)
+- `agent/src/`: office agent for devices that cannot push (plain Node, no app imports), tests in `tests/agent`
 - `src/app/api/cron/recalc/route.ts`: nightly job, checks `CRON_SECRET`
 - `src/db/schema/<group>.ts`: tables, re-exported from `src/db/schema/index.ts`
 - `src/db/index.ts`: `getDb()`, server only

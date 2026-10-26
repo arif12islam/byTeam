@@ -16,8 +16,7 @@ How to run the M7 pilot with byTeam on Vercel Hobby and Neon Free, from switchin
 
 The plan had a LAN test with the app on a laptop. On Vercel the device talks to the live site over the internet instead, so the first test is that connection.
 
-- [ ] Open the K40H's cloud server menu (Menu, Comm., Cloud Server Setting) and find out whether it has an HTTPS option (`DEVICE_SETUP.md` sections 0 and 1).
-- [ ] **HTTPS option:** follow Path A. **No HTTPS option:** set up the Cloudflare relay in Path B3.
+- [ ] The K40H cannot push (no Cloud Server Setting), so it connects through the office agent: follow `docs/OFFICE_AGENT.md`. Its test run prints the serial number, the users and the last punches.
 - [ ] Before adding everyone, run the leading zeros check (`DEVICE_SETUP.md` section 4, step 4).
 - [ ] Within a minute the device shows **Online** on the Devices screen.
 - [ ] Punch once. On Devices, open **Last lines received** under the device and copy the lines. Send them over so they can be compared with the simulator's format (next section).

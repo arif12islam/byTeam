@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { Download, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
+import { AGENT_FOLDER } from "@/lib/devices/agent-installer";
 import { clockState, describeClock } from "@/lib/devices/clock";
 import { quietMinutes } from "@/lib/adms/quiet-poll";
 import { describeAge, deviceStatus, listDevices, OFFLINE_AFTER_MINUTES, type DeviceStatus } from "@/lib/devices/devices";
@@ -87,6 +88,40 @@ function RecentLines({ lines }: { lines: ReceivedLine[] }) {
   );
 }
 
+/**
+ * Setup for a device without a cloud server setting (like the ZKTeco K40H): a
+ * small program on an always-on office computer reads it over the office
+ * network and forwards to byTeam. Once it runs, the device is listed above
+ * like any other, under its own serial number.
+ */
+function OfficeAgent() {
+  return (
+    <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+      <h2 className="text-base font-semibold">Office agent, for devices that cannot connect by themselves</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Some devices, like the ZKTeco K40H, have no Cloud Server Setting under Comm. They can still be used: a small program
+        on an always-on Windows computer in the office reads the device every minute and sends its punches here. It also
+        puts new employees on the device and keeps its clock right.
+      </p>
+      <ol className="mt-4 grid list-decimal gap-2 pl-5 text-sm">
+        <li>Connect the device to the office network or straight to the computer with a network cable, and note its IP address (Menu, Comm., Ethernet).</li>
+        <li>On that computer, install Node.js LTS from nodejs.org.</li>
+        <li>Download the installer below, open PowerShell as administrator, and run it. It asks for the IP address, tests the device and byTeam, and sets the agent to start with the computer.</li>
+        <li>If the test says byTeam does not accept the serial number, add it above exactly as the test shows it, then run the installer again.</li>
+      </ol>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <a href="/devices/agent-installer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Download aria-hidden />
+          Download the installer
+        </a>
+        <span className="text-xs text-muted-foreground">
+          Run it with: powershell -ExecutionPolicy Bypass -File install-byteam-agent.ps1. Its log is in {AGENT_FOLDER}.
+        </span>
+      </div>
+    </section>
+  );
+}
+
 /** Reads the current time, so it renders after the session check, inside Suspense. */
 async function DevicesContent() {
   await requireRole("owner", "hr");
@@ -158,6 +193,8 @@ async function DevicesContent() {
           );
         })
       )}
+
+      <OfficeAgent />
 
       <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h2 className="text-base font-semibold">Punches from unknown employee codes</h2>

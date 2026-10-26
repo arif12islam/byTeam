@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CLOCK_DRIFT_LIMIT_MINUTES, clockState, describeClock, estimateClockOffset, LIVE_BATCH_MAX } from "@/lib/devices/clock";
+import { CLOCK_DRIFT_LIMIT_MINUTES, clockState, describeClock, estimateClockOffset, isOfficeAgent, LIVE_BATCH_MAX, parseReportedOffset } from "@/lib/devices/clock";
 
 const received = new Date("2026-10-26T04:00:00Z");
 const minutes = (n: number) => new Date(received.getTime() + n * 60_000);
@@ -81,5 +81,24 @@ describe("describeClock", () => {
   it("is calm when it is fine or not checked", () => {
     expect(describeClock({ kind: "ok", seconds: 30 })).toBe("Clock looks right.");
     expect(describeClock({ kind: "unchecked" })).toContain("not checked yet");
+  });
+});
+
+describe("office agent clock reports", () => {
+  it("knows the office agent by its user agent", () => {
+    const from = (ua: string | null) => new Request("http://x/iclock/cdata", ua ? { headers: { "user-agent": ua } } : {});
+    expect(isOfficeAgent(from("byTeam-agent/1.0.0"))).toBe(true);
+    expect(isOfficeAgent(from("iClock Proxy/1.09"))).toBe(false);
+    expect(isOfficeAgent(from(null))).toBe(false);
+  });
+
+  it("accepts a whole number of seconds up to a year either way", () => {
+    expect(parseReportedOffset("0")).toBe(0);
+    expect(parseReportedOffset("-4")).toBe(-4);
+    expect(parseReportedOffset("15373")).toBe(15373);
+    expect(parseReportedOffset(null)).toBeNull();
+    expect(parseReportedOffset("1.5")).toBeNull();
+    expect(parseReportedOffset("abc")).toBeNull();
+    expect(parseReportedOffset(String(400 * 86400))).toBeNull();
   });
 });
