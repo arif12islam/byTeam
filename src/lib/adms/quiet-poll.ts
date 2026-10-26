@@ -82,5 +82,7 @@ export function createPollMemo(windowMs: number): PollMemo {
   };
 }
 
-/** One per server instance, like the rate limiter. */
-export const pollMemo = createPollMemo(quietMinutes() * 60_000);
+// One per server process. Kept on globalThis because Next.js can load this module more than once (route handlers
+// and server actions are bundled apart), and a command queued by an action must clear what the poll route remembers.
+const globalForMemo = globalThis as unknown as { byteamPollMemo?: PollMemo };
+export const pollMemo = (globalForMemo.byteamPollMemo ??= createPollMemo(quietMinutes() * 60_000));

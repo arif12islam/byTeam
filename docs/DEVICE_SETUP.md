@@ -1,22 +1,21 @@
 # Device setup
 
-How to connect the office's **ZKTeco K40H** (fingerprint and card, no face) to byTeam while byTeam runs on Vercel at `byteam.bykorp.com`. For the order of the whole pilot and the tests to run, see `docs/PILOT.md`.
+How to connect a ZKTeco device to byTeam while byTeam runs on Vercel at `byteam.bykorp.com`. For the order of the whole pilot and the tests to run, see `docs/PILOT.md`.
 
 The steps in this guide were written from the push (ADMS) protocol and the way byTeam answers it, and tested with the simulator. They have **not** been tried on the real device yet. Menu names differ between models and firmware, so where this guide names a menu, check it against your device and fix the guide. Section 7 lists what to confirm.
 
 ## 0. The K40H in short
 
-The K40H is a fingerprint and card terminal. Expect this, and confirm it on the device:
+Checked on the office's unit (Device Info: K40-H, platform ZLM60_TFT, firmware Ver 8.0.4.2-20210223, serial number 5275220900056):
 
-- **Menu:** Menu, then **Comm.**, then **Cloud Server Setting** (on some firmware **ADMS** or **WebServer**). Fields: server mode (pick ADMS), enable domain name, server address, server port, proxy server.
-- **No HTTPS option** is likely on this model. If there is none, use **Path B3** (section 6): a free relay on Cloudflare, where `bykorp.com` already has its DNS. No office computer needed.
+- **It cannot push.** Its Comm. menu has only **Ethernet** and **PC Connection**, with no Cloud Server Setting (ADMS). Its firmware is the "standalone" kind: software on the office network has to connect to it on port 4370 and read its punches.
+- **So it connects through the office agent:** a small program on an always-on office computer that reads the K40H every minute and forwards to byTeam. Follow `docs/OFFICE_AGENT.md`. Sections 1 to 3 and 6 of this guide (HTTPS, cloud server settings, the relay) do not apply to it; sections 4 and 5 still do.
+- **Push firmware** may exist for its board (ZLM60 runs push firmware on other ZKTeco models), but ZKTeco does not list it for the K40. Only ZKTeco or an authorised dealer should install firmware. If they do, the Comm. menu shows a Cloud Server Setting and the device can push without the agent.
 - **Leading zeros:** some ZKTeco firmware stores user IDs as numbers, so `0001` may become `1` on the device. byTeam matches codes exactly, and employee codes cannot be changed later. Check this first, with one test person (section 4, step 4), before adding everyone.
-- **Network cable only, no Wi-Fi.** The device needs an Ethernet cable to the office router (or a switch on it). If the router is too far away, use one of these, in order of preference:
-  1. A cable run to where the device will hang. Plain Cat6, up to 100 m.
-  2. A small Wi-Fi to Ethernet bridge next to the device: a travel router in "client" or "WISP" mode, joined to the office Wi-Fi, with a short cable to the device. It needs power too, so put it on the UPS.
-  3. Powerline adapters, if the router and the device are on the same electrical circuit.
-- **Network settings on the device:** Menu, Comm., Ethernet. Turn DHCP on so the router gives it an address, gateway and DNS. If DHCP is off, enter the address, mask, gateway and a DNS server (for example `1.1.1.1`) by hand: without a gateway and DNS it cannot reach the internet, and shows as never connected.
-- **Verification codes:** punches will show fingerprint or card as the verify method. Nothing in byTeam depends on it.
+- **Network cable only, no Wi-Fi.** It connects to the office router or a switch, or straight to the agent's computer. `docs/OFFICE_AGENT.md` has the network settings for both. If the router is too far away: a cable run (Cat6, up to 100 m), a Wi-Fi to Ethernet bridge next to the device, or powerline adapters.
+- **Verification codes:** punches show fingerprint or card as the verify method. Nothing in byTeam depends on it.
+
+A device that can push (it has Comm., Cloud Server Setting, like the SenseFace 4A) needs no agent: follow the rest of this guide.
 
 ## 1. The one thing that decides everything: HTTPS
 

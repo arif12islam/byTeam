@@ -239,7 +239,8 @@ Each milestone is a GitHub milestone. Each checkbox is one issue and one PR. A m
 ### M7: Real device and pilot
 
 - [x] Write `docs/DEVICE_SETUP.md`: network, ADMS server address, poll interval 30 to 60 s, real-time upload on
-- [ ] Connection test: device pointed at the live site on Vercel (replaces the LAN test while byTeam runs on Vercel; steps in `docs/PILOT.md`)
+- [x] Office agent for devices that cannot push, like the K40H: reads the device over the office network and forwards to byTeam as a push device would (`agent/`, `docs/OFFICE_AGENT.md`)
+- [ ] Connection test: the K40H connected through the office agent, or a push device pointed at the live site (replaces the LAN test while byTeam runs on Vercel; steps in `docs/PILOT.md`)
 - [ ] Compare real ATTLOG lines with the simulator, fix parser if needed
 - [ ] Test enroll, punch, Wi-Fi off and on, server restart, user push from app
 - [ ] Put device and router on a mini DC UPS

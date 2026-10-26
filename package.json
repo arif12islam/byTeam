@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run agent:build && next build",
+    "agent:build": "esbuild agent/src/main.ts --bundle --platform=node --target=node18 --format=cjs --legal-comments=none --outfile=public/downloads/byteam-agent.js",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
@@ -39,6 +40,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",

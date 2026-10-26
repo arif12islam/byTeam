@@ -6,7 +6,7 @@ import { recalcForNewPunches } from "@/lib/attendance/triggers";
 import { savePunches } from "@/lib/adms/store";
 import { safeTable } from "@/lib/adms/unknown";
 import { adaptAttlogBody } from "@/lib/adms/zkteco-adapter";
-import { recordClockCheck } from "@/lib/devices/clock";
+import { isOfficeAgent, parseReportedOffset, recordClockCheck, recordMeasuredClock } from "@/lib/devices/clock";
 
 const textHeaders = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
 
@@ -17,10 +17,16 @@ const MAX_BODY_BYTES = 5_000_000;
  * Handshake. The device calls this when it starts and whenever it reconnects:
  * GET /iclock/cdata?SN=<serial>&options=all. No login: the serial number must
  * be registered and active on the Devices screen.
+ *
+ * The office agent also uses it to report the device clock it measured:
+ * &clockOffset=<seconds, positive when the device is ahead>.
  */
 export async function GET(request: Request) {
   const auth = await authenticateDevice(request, "handshake");
   if ("refused" in auth) return auth.refused;
+
+  const offset = parseReportedOffset(new URL(request.url).searchParams.get("clockOffset"));
+  if (offset !== null && isOfficeAgent(request)) await recordMeasuredClock(getDb(), auth.device.serialNo, offset, new Date());
 
   return new Response(buildHandshakeConfig(auth.device.serialNo), { status: 200, headers: textHeaders });
 }
@@ -66,7 +72,8 @@ export async function POST(request: Request) {
 
   const { punches, skipped } = adaptAttlogBody(device.serialNo, body);
   const { received, inserted, newPunches } = await savePunches(db, punches);
-  await recordClockCheck(db, device.serialNo, punches.map((p) => p.punchedAt), receivedAt);
+  // The office agent forwards punches late and reports the clock itself, so only a pushing device's punches are judged.
+  if (!isOfficeAgent(request)) await recordClockCheck(db, device.serialNo, punches.map((p) => p.punchedAt), receivedAt);
   // Punches are saved. Bringing attendance up to date must never make the device resend them.
   await recalcForNewPunches(db, newPunches);
   console.info(

@@ -20,6 +20,9 @@
 # production
 /build
 
+# office agent bundle, built by npm run agent:build
+/public/downloads/byteam-agent.js
+
 # misc
 .DS_Store
 *.pem

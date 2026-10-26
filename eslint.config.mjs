@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The office agent bundle, built by npm run agent:build.
+    "public/downloads/**",
   ]),
 ]);
 

@@ -73,3 +73,29 @@ export async function recordClockCheck(db: Db, serialNo: string, punchTimes: rea
     console.error(`[iclock] ${serialNo}: clock check not saved`, error);
   }
 }
+
+/**
+ * Requests from byTeam's office agent (see agent/), which reads devices that
+ * cannot push. The agent forwards punches some time after they happened, so
+ * the age of a punch says nothing about the device clock. Instead the agent
+ * reads the device clock itself, sets it right, and reports what it measured.
+ */
+export function isOfficeAgent(request: Request): boolean {
+  return /^byTeam-agent\//.test(request.headers.get("user-agent") ?? "");
+}
+
+/** The clock offset in whole seconds the agent reported, or null when there is none or it makes no sense. */
+export function parseReportedOffset(value: string | null): number | null {
+  if (value === null || !/^-?\d{1,9}$/.test(value)) return null;
+  const seconds = Number(value);
+  return Math.abs(seconds) <= 366 * 86400 ? seconds : null;
+}
+
+/** Saves a clock offset the agent measured on the device. Never throws, like recordClockCheck. */
+export async function recordMeasuredClock(db: Db, serialNo: string, offsetSeconds: number, at: Date): Promise<void> {
+  try {
+    await db.update(devices).set({ clockOffsetSeconds: offsetSeconds, clockCheckedAt: at }).where(eq(devices.serialNo, serialNo));
+  } catch (error) {
+    console.error(`[iclock] ${serialNo}: clock check not saved`, error);
+  }
+}
