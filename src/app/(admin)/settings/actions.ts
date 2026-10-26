@@ -7,6 +7,7 @@ import type { FormState } from "@/components/field";
 import { formError } from "@/lib/form";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { createOutage, removeOutage } from "@/lib/attendance/outages";
+import { loadSampleData, switchOffSamplePeople } from "@/lib/demo/sample";
 import { companySettingsSchema, saveCompanySettings } from "@/lib/settings/company";
 import { addHoliday, holidaySchema, removeHoliday } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
@@ -83,4 +84,25 @@ export async function removeOutageAction(_previous: FormState, formData: FormDat
   revalidatePath("/settings");
   revalidatePath("/attendance");
   return { message: "Outage removed." };
+}
+
+/** Owner only: adds the sample month, so the screens can be tried before the device is connected. */
+export async function loadSampleDataAction(): Promise<FormState> {
+  const user = await requireRole("owner");
+
+  const result = await loadSampleData(getDb(), user.id);
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/", "layout");
+  return {
+    message: `Added ${result.summary.employees} sample people (codes ${result.codes[0]} to ${result.codes.at(-1)}) with ${result.summary.punches} punches for ${result.month}.`,
+  };
+}
+
+/** Owner only: switches every sample person off, so they drop out of Today, Attendance and new payroll runs. */
+export async function switchOffSampleAction(): Promise<FormState> {
+  const user = await requireRole("owner");
+
+  const count = await switchOffSamplePeople(getDb(), user.id);
+  revalidatePath("/", "layout");
+  return { message: count === 0 ? "There were no sample people to switch off." : `Switched off ${count} sample people.` };
 }
