@@ -77,7 +77,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                           ? `, finalized ${formatOfficeDate(toOfficeDate(sheet.run.finalizedAt))}${sheet.run.finalizedByName ? ` by ${sheet.run.finalizedByName}` : ""}`
                           : ""
                       }`
-                    : "Not final until the owner finalizes it."}
+                    : "Not final until the admin finalizes it."}
                 </p>
               </div>
               {locked ? null : <RecomputeForm runId={sheet.run.id} />}
@@ -263,7 +263,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                   <UnlockForm runId={sheet.run.id} label={formatMonth(month)} />
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-muted-foreground">Only the owner can unlock a month.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Only the admin can unlock a month.</p>
               )}
             </section>
           ) : sheet.rows.length > 0 ? (
@@ -279,7 +279,7 @@ async function PayrollContent({ searchParams }: { searchParams: PageProps<"/payr
                   </div>
                 </>
               ) : (
-                <p className="mt-1 text-sm text-muted-foreground">Only the owner can finalize a month. Ask them to review this sheet.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Only the admin can finalize a month. Ask them to review this sheet.</p>
               )}
             </section>
           ) : null}

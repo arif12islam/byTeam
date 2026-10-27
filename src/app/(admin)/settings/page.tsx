@@ -126,8 +126,8 @@ async function SettingsContent() {
         )}
       </Section>
 
-      <Section title="Your login" description="Change the email and password you sign in with.">
-        <LoginForm email={user.email} />
+      <Section title="Your login" description="Change your name, and the email and password you sign in with.">
+        <LoginForm name={user.name} email={user.email} />
       </Section>
 
       {user.role === "owner" ? (

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-const roleLabel = { owner: "Owner", hr: "HR" } as const;
+const roleLabel = { owner: "Admin", hr: "HR" } as const;
 
 /**
  * Signed-in name, role and a sign out button. Reads the session, so render it

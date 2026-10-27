@@ -37,7 +37,7 @@ describe.skipIf(!testDatabaseUrl)("changeLogin", () => {
 
   it("refuses a wrong current password and changes nothing", async () => {
     const { user, email, here } = await person();
-    const result = await changeLogin(db, user.id, { currentPassword: "nope", email: "x@example.com", newPassword: "new-password", confirmPassword: "new-password" }, here);
+    const result = await changeLogin(db, user.id, { currentPassword: "nope", name: "Login test", email: "x@example.com", newPassword: "new-password", confirmPassword: "new-password" }, here);
     expect(result).toEqual({ ok: false, error: "Your current password is not right." });
     expect(await verifyPassword({ hash: await hashOf(user.id), password: "old-password" })).toBe(true);
     expect((await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, user.id) }))?.email).toBe(email);
@@ -46,10 +46,13 @@ describe.skipIf(!testDatabaseUrl)("changeLogin", () => {
   it("changes email and password, signs out other sessions and audits without the password", async () => {
     const { user, here, elsewhere } = await person();
     const newEmail = `New-${randomUUID()}@Example.com`;
-    const result = await changeLogin(db, user.id, { currentPassword: "old-password", email: newEmail, newPassword: "new-password", confirmPassword: "new-password" }, here);
-    expect(result).toEqual({ ok: true, emailChanged: true, passwordChanged: true });
+    const result = await changeLogin(db, user.id, { currentPassword: "old-password", name: "Mother Love Air Travels", email: newEmail, newPassword: "new-password", confirmPassword: "new-password" }, here);
+    expect(result).toEqual({ ok: true, nameChanged: true, emailChanged: true, passwordChanged: true });
 
-    expect((await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, user.id) }))?.email).toBe(newEmail.toLowerCase());
+    expect(await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, user.id) })).toMatchObject({
+      name: "Mother Love Air Travels",
+      email: newEmail.toLowerCase(),
+    });
     expect(await verifyPassword({ hash: await hashOf(user.id), password: "new-password" })).toBe(true);
     const left = (await db.select().from(sessions).where(eq(sessions.userId, user.id))).map((s) => s.id);
     expect(left).toEqual([here]);
@@ -62,20 +65,31 @@ describe.skipIf(!testDatabaseUrl)("changeLogin", () => {
 
   it("keeps the password when the new one is left empty", async () => {
     const { user, here, elsewhere } = await person();
-    const result = await changeLogin(db, user.id, { currentPassword: "old-password", email: `e-${randomUUID()}@example.com`, newPassword: "", confirmPassword: "" }, here);
-    expect(result).toMatchObject({ ok: true, emailChanged: true, passwordChanged: false });
+    const result = await changeLogin(db, user.id, { currentPassword: "old-password", name: "Login test", email: `e-${randomUUID()}@example.com`, newPassword: "", confirmPassword: "" }, here);
+    expect(result).toMatchObject({ ok: true, nameChanged: false, emailChanged: true, passwordChanged: false });
     expect(await verifyPassword({ hash: await hashOf(user.id), password: "old-password" })).toBe(true);
     expect((await db.select().from(sessions).where(eq(sessions.userId, user.id))).map((s) => s.id).sort()).toEqual([here, elsewhere].sort());
+  });
+
+  it("changes only the name", async () => {
+    const { user, email, here } = await person();
+    expect(await changeLogin(db, user.id, { currentPassword: "old-password", name: " New name ", email, newPassword: "", confirmPassword: "" }, here)).toEqual({
+      ok: true,
+      nameChanged: true,
+      emailChanged: false,
+      passwordChanged: false,
+    });
+    expect((await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, user.id) }))?.name).toBe("New name");
   });
 
   it("refuses an email another login uses, and passwords that do not match", async () => {
     const a = await person();
     const b = await person();
-    expect(await changeLogin(db, a.user.id, { currentPassword: "old-password", email: b.email, newPassword: "", confirmPassword: "" }, a.here)).toEqual({
+    expect(await changeLogin(db, a.user.id, { currentPassword: "old-password", name: "Login test", email: b.email, newPassword: "", confirmPassword: "" }, a.here)).toEqual({
       ok: false,
       error: "Another login already uses that email.",
     });
-    expect(await changeLogin(db, a.user.id, { currentPassword: "old-password", email: a.email, newPassword: "new-password", confirmPassword: "other-pass" }, a.here)).toEqual({
+    expect(await changeLogin(db, a.user.id, { currentPassword: "old-password", name: "Login test", email: a.email, newPassword: "new-password", confirmPassword: "other-pass" }, a.here)).toEqual({
       ok: false,
       error: "The new passwords do not match.",
     });

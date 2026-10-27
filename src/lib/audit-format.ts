@@ -177,7 +177,7 @@ const ENUM_LABELS: Record<string, string> = {
   // Settings and users
   calendar: "1 January each year",
   anniversary: "Each person's joining date",
-  owner: "Owner",
+  owner: "Admin",
   hr: "HR",
   // Attendance corrections
   first_in: "Arrival time",

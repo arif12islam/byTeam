@@ -15,7 +15,7 @@ export default function LoginPage() {
         </div>
         <div className="mt-8 rounded-xl border border-border bg-card p-6 shadow-card">
           <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Use the account the office owner set up for you.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Use the account the office admin set up for you.</p>
           <LoginForm />
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">Attendance, leave and payroll for the office.</p>
