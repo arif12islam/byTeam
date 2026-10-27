@@ -96,7 +96,7 @@ describe("every server action checks the role on the server", () => {
     const actions = await loadActions();
     const names = actions.map((a) => a.name);
     // Adding an action changes this number on purpose: whoever adds one has to check its role and the lists below.
-    expect(names).toHaveLength(29);
+    expect(names).toHaveLength(30);
     expect(names).toEqual(expect.arrayContaining(OWNER_ONLY));
     expect(new Set(names).size).toBe(names.length);
   });

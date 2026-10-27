@@ -1,10 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { getDb } from "@/db";
 import type { FormState } from "@/components/field";
 import { formError } from "@/lib/form";
+import { changeLogin } from "@/lib/account";
+import { getAuth } from "@/lib/auth";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { createOutage, removeOutage } from "@/lib/attendance/outages";
 import { loadSampleData, switchOffSamplePeople } from "@/lib/demo/sample";
@@ -105,4 +108,34 @@ export async function switchOffSampleAction(): Promise<FormState> {
   const count = await switchOffSamplePeople(getDb(), user.id);
   revalidatePath("/", "layout");
   return { message: count === 0 ? "There were no sample people to switch off." : `Switched off ${count} sample people.` };
+}
+
+export async function changeLoginAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+  const session = await getAuth().api.getSession({ headers: await headers() });
+  if (!session) return { error: "Sign in again and try once more." };
+
+  const email = String(formData.get("email") ?? "");
+  const result = await changeLogin(
+    getDb(),
+    user.id,
+    {
+      currentPassword: String(formData.get("currentPassword") ?? ""),
+      email,
+      newPassword: String(formData.get("newPassword") ?? ""),
+      confirmPassword: String(formData.get("confirmPassword") ?? ""),
+    },
+    session.session.id,
+  );
+  // Only the email goes back to the form. Passwords are never echoed.
+  if (!result.ok) return { error: result.error, values: { email } };
+
+  revalidatePath("/", "layout");
+  if (!result.emailChanged && !result.passwordChanged) return { message: "Nothing changed." };
+  const what = [result.emailChanged ? "email" : null, result.passwordChanged ? "password" : null].filter(Boolean).join(" and ");
+  return {
+    message: result.passwordChanged
+      ? `Your ${what} changed. Other devices are signed out and need the new password.`
+      : `Your ${what} changed. Use it the next time you sign in.`,
+  };
 }
