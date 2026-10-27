@@ -9,11 +9,15 @@ import { fieldValue } from "@/lib/form";
 
 import { changeLoginAction } from "./actions";
 
-export function LoginForm({ email }: { email: string }) {
+export function LoginForm({ name, email }: { name: string; email: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(changeLoginAction, {});
 
   return (
     <form action={action} className="space-y-5">
+      <Field label="Name" htmlFor="login-name" hint="Shown in the menu and the audit log.">
+        <Input id="login-name" name="name" defaultValue={fieldValue(state, "name", name)} required maxLength={80} autoComplete="name" />
+      </Field>
+
       <Field label="Email" htmlFor="login-email" hint="The email you sign in with.">
         <Input id="login-email" name="email" type="email" defaultValue={fieldValue(state, "email", email)} required autoComplete="username" />
       </Field>

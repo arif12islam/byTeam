@@ -39,7 +39,7 @@ async function RulesContent() {
         <p className="rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
           {canEdit
             ? "No pay rules yet. Add the rules below before creating a payroll run. The form starts with the rules the office chose."
-            : "No pay rules yet. The owner needs to add them before a payroll run can be created."}
+            : "No pay rules yet. The admin needs to add them before a payroll run can be created."}
         </p>
       ) : null}
 

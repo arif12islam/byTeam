@@ -115,27 +115,25 @@ export async function changeLoginAction(_previous: FormState, formData: FormData
   const session = await getAuth().api.getSession({ headers: await headers() });
   if (!session) return { error: "Sign in again and try once more." };
 
+  const name = String(formData.get("name") ?? "");
   const email = String(formData.get("email") ?? "");
   const result = await changeLogin(
     getDb(),
     user.id,
     {
       currentPassword: String(formData.get("currentPassword") ?? ""),
+      name,
       email,
       newPassword: String(formData.get("newPassword") ?? ""),
       confirmPassword: String(formData.get("confirmPassword") ?? ""),
     },
     session.session.id,
   );
-  // Only the email goes back to the form. Passwords are never echoed.
-  if (!result.ok) return { error: result.error, values: { email } };
+  // Only name and email go back to the form. Passwords are never echoed.
+  if (!result.ok) return { error: result.error, values: { name, email } };
 
   revalidatePath("/", "layout");
-  if (!result.emailChanged && !result.passwordChanged) return { message: "Nothing changed." };
-  const what = [result.emailChanged ? "email" : null, result.passwordChanged ? "password" : null].filter(Boolean).join(" and ");
-  return {
-    message: result.passwordChanged
-      ? `Your ${what} changed. Other devices are signed out and need the new password.`
-      : `Your ${what} changed. Use it the next time you sign in.`,
-  };
+  if (!result.nameChanged && !result.emailChanged && !result.passwordChanged) return { message: "Nothing changed." };
+  if (result.passwordChanged) return { message: "Saved. Other devices are signed out and need the new password." };
+  return { message: result.emailChanged ? "Saved. Use the new email the next time you sign in." : "Saved." };
 }

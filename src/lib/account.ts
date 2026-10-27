@@ -11,6 +11,7 @@ type Db = ReturnType<typeof getDb>;
 export const changeLoginSchema = z
   .object({
     currentPassword: z.string().min(1, "Enter your current password."),
+    name: z.string().trim().min(1, "Enter your name.").max(80, "Use 80 characters or fewer."),
     email: z
       .string()
       .trim()
@@ -25,11 +26,11 @@ export const changeLoginSchema = z
 export type ChangeLoginInput = z.input<typeof changeLoginSchema>;
 
 export type ChangeLoginResult =
-  | { ok: true; emailChanged: boolean; passwordChanged: boolean }
+  | { ok: true; nameChanged: boolean; emailChanged: boolean; passwordChanged: boolean }
   | { ok: false; error: string };
 
 /**
- * Changes the signed-in person's own email and, if given, password, after
+ * Changes the signed-in person's own name, email and, if given, password, after
  * checking their current password. A new password signs out every other
  * session (keepSessionId stays signed in). Each change writes an audit row;
  * the password itself never reaches the log.
@@ -49,9 +50,10 @@ export async function changeLogin(db: Db, userId: string, input: ChangeLoginInpu
     return { ok: false, error: "Your current password is not right." };
   }
 
+  const nameChanged = data.name !== user.name;
   const emailChanged = data.email !== user.email;
   const passwordChanged = data.newPassword !== "";
-  if (!emailChanged && !passwordChanged) return { ok: true, emailChanged, passwordChanged };
+  if (!nameChanged && !emailChanged && !passwordChanged) return { ok: true, nameChanged, emailChanged, passwordChanged };
 
   if (emailChanged) {
     const [taken] = await db.select({ id: users.id }).from(users).where(eq(users.email, data.email));
@@ -60,8 +62,8 @@ export async function changeLogin(db: Db, userId: string, input: ChangeLoginInpu
   const newHash = passwordChanged ? await hashPassword(data.newPassword) : null;
 
   await db.transaction(async (tx) => {
-    if (emailChanged) {
-      const [after] = await tx.update(users).set({ email: data.email, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    if (nameChanged || emailChanged) {
+      const [after] = await tx.update(users).set({ name: data.name, email: data.email, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
       await audit(tx, { actorId: userId, action: "user.update", entity: "user", entityId: userId, before: user, after });
     }
     if (newHash) {
@@ -76,5 +78,5 @@ export async function changeLogin(db: Db, userId: string, input: ChangeLoginInpu
       });
     }
   });
-  return { ok: true, emailChanged, passwordChanged };
+  return { ok: true, nameChanged, emailChanged, passwordChanged };
 }
