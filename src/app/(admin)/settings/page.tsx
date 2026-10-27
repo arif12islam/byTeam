@@ -16,6 +16,7 @@ import { OutageForm, RemoveOutageForm } from "./outage-forms";
 import { SampleDataForm } from "./sample-data-form";
 import { CompanyForm } from "./company-form";
 import { HolidayForm } from "./holiday-form";
+import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -24,7 +25,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Company details, weekly off days, public holidays and office outages."
+        description="Company details, weekly off days, public holidays, office outages and your login."
       />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading settings</p>}>
         <SettingsContent />
@@ -123,6 +124,10 @@ async function SettingsContent() {
             ))}
           </ul>
         )}
+      </Section>
+
+      <Section title="Your login" description="Change the email and password you sign in with.">
+        <LoginForm email={user.email} />
       </Section>
 
       {user.role === "owner" ? (
