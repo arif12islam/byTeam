@@ -15,8 +15,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Leave out the login page, Better Auth's own routes, the device routes
-  // (they authenticate by serial number), the cron route (it checks
+  // (they authenticate by serial number), the browser icons (the tab asks for them
+  // before anyone signs in), the cron route (it checks
   // CRON_SECRET) and /downloads, which holds only the office agent program: its
   // installer fetches it without signing in, and it contains no secrets.
-  matcher: ["/((?!login|api/auth|api/cron|iclock|downloads/|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|api/auth|api/cron|iclock|downloads/|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png).*)"],
 };
