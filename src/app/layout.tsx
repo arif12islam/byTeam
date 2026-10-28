@@ -12,6 +12,12 @@ const instrument = localFont({
 export const metadata: Metadata = {
   title: { default: "byTeam", template: "%s | byTeam" },
   description: "Attendance, leave and payroll for the office.",
+  // Lets "Add to Home Screen" on an iPhone open byTeam full screen, without Safari's bars. The status bar stays
+  // light or dark with the page ("default"), so the clock and battery never sit on top of content.
+  appleWebApp: { capable: true, title: "byTeam", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+  // Next writes the newer mobile-web-app-capable tag; older iOS versions only read the Apple one.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {
@@ -19,8 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0c3b2c" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a2c21" },
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
   ],
 };
 
