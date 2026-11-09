@@ -140,6 +140,8 @@ export const employees = pgTable(
       .notNull()
       .references(() => shifts.id, { onDelete: "restrict" }),
     active: boolean("active").notNull().default(true),
+    /** True for people Insights should not mention or count, such as management. Attendance, leave and pay are unaffected. */
+    excludeFromInsights: boolean("exclude_from_insights").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

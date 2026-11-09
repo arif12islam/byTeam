@@ -28,6 +28,7 @@ function detailsFrom(formData: FormData) {
     joinDate: formData.get("joinDate"),
     exitDate: formData.get("exitDate"),
     shiftId: formData.get("shiftId"),
+    excludeFromInsights: formData.get("excludeFromInsights") === "on",
   };
 }
 
@@ -84,6 +85,9 @@ export async function updateEmployeeAction(_previous: FormState, formData: FormD
 
   revalidatePath("/employees");
   revalidatePath(`/employees/${id.data}`);
+  // Who Insights leaves out changed, so its facts and the card on Today change too.
+  revalidatePath("/insights");
+  revalidatePath("/today");
   return { message: result.changed ? "Employee saved." : "Nothing changed." };
 }
 

@@ -90,9 +90,10 @@ async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employ
                     {row.designation ? `, ${row.designation}` : ""}
                     {row.department ? `, ${row.department}` : ""}
                   </p>
-                  <Badge tone="off" className="mt-1.5">
-                    {row.shiftName}
-                  </Badge>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <Badge tone="off">{row.shiftName}</Badge>
+                    {row.excludeFromInsights ? <Badge tone="off">Not in Insights</Badge> : null}
+                  </div>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               </Link>

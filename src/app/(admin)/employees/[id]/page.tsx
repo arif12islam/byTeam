@@ -43,7 +43,7 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
       <PageHeader
         avatar={employee.name}
         title={employee.name}
-        description={`Code ${employee.empCode}${employee.active ? "" : " · Inactive"}`}
+        description={`Code ${employee.empCode}${employee.active ? "" : " · Inactive"}${employee.excludeFromInsights ? " · Left out of Insights" : ""}`}
       />
 
       <div className="mt-6 grid max-w-3xl gap-6">

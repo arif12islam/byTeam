@@ -25,6 +25,7 @@ import {
   rankFacts,
   topFacts,
   unmatchedCodes,
+  withoutPeople,
   worstWeekday,
   type Fact,
   type InsightsInput,
@@ -492,5 +493,31 @@ describe("buildInsights with the new rules", () => {
     expect(facts.every((x) => !x.text.includes("\u2014"))).toBe(true);
     for (const x of facts.filter((y) => y.subject)) expect(x.href).toMatch(/^\/attendance\/(a|b)(\/|\?)/);
     expect(facts.filter((x) => x.subject === "a").length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("withoutPeople", () => {
+  it("takes people out of both months and their balances, and keeps pay totals", () => {
+    const base = input({
+      current: [person("a", "Rahim", "2026-11", lates(6), 12), person("b", "Karim", "2026-11", lates(6), 12)],
+      previous: [person("a", "Rahim", "2026-10", lates(1), 31), person("b", "Karim", "2026-10", lates(1), 31)],
+      balances: [
+        { employeeId: "a", quota: 10, remaining: 0, employeeName: "Rahim", leaveTypeName: "Casual" },
+        { employeeId: "b", quota: 10, remaining: 0, employeeName: "Karim", leaveTypeName: "Casual" },
+      ],
+      payroll: [{ month: "2026-10", net: 100, people: 2 }],
+    });
+    const left = withoutPeople(base, new Set(["a"]));
+    expect(left.current.rows.map((r) => r.employee.id)).toEqual(["b"]);
+    expect(left.previous.rows.map((r) => r.employee.id)).toEqual(["b"]);
+    expect(left.balances.map((b) => b.employeeId)).toEqual(["b"]);
+    expect(left.payroll).toEqual(base.payroll);
+    expect(buildInsights(left).facts.some((f) => f.subject === "a")).toBe(false);
+    expect(buildInsights(base).facts.some((f) => f.subject === "a")).toBe(true);
+  });
+
+  it("returns the same input when nobody is left out", () => {
+    const base = input();
+    expect(withoutPeople(base, new Set())).toBe(base);
   });
 });

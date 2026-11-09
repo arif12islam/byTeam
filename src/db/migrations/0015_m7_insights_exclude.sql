@@ -1,0 +1,1 @@
+ALTER TABLE "employees" ADD COLUMN "exclude_from_insights" boolean DEFAULT false NOT NULL;

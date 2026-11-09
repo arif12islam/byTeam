@@ -1,4 +1,7 @@
+import { and, asc, eq } from "drizzle-orm";
+
 import type { getDb } from "@/db";
+import { employees } from "@/db/schema";
 import { loadPeriodGrid } from "@/lib/attendance/month";
 import { listDevices } from "@/lib/devices/devices";
 import { loadBalances } from "@/lib/leave/balances";
@@ -12,12 +15,28 @@ import { getCompanySettings } from "@/lib/settings/company";
 import { listShifts } from "@/lib/shifts/shifts";
 import { shiftMonth, toOfficeDate } from "@/lib/time";
 
-import { buildInsights, type Insights, type InsightsInput } from "./facts";
+import { buildInsights, withoutPeople, type Insights, type InsightsInput } from "./facts";
 
 type Db = ReturnType<typeof getDb>;
 
-/** Loads everything the rules read: this month and last month's attendance, leave, devices, payroll. */
-export async function loadInsightsInput(db: Db, now: Date): Promise<InsightsInput> {
+export type LeftOut = { id: string; name: string };
+
+/** People switched on as "Leave out of Insights" (management and the like), by name. Switched-off people do not matter. */
+export async function listLeftOut(db: Db): Promise<LeftOut[]> {
+  return db
+    .select({ id: employees.id, name: employees.name })
+    .from(employees)
+    .where(and(eq(employees.excludeFromInsights, true), eq(employees.active, true)))
+    .orderBy(asc(employees.name));
+}
+
+/**
+ * Loads everything the rules read: this month and last month's attendance,
+ * leave, devices, payroll. People left out of Insights are taken out last, so
+ * "is the office open today" and the pay totals still see everyone.
+ */
+export async function loadInsightsInput(db: Db, now: Date, leftOut?: readonly LeftOut[]): Promise<InsightsInput> {
+  const left = new Set((leftOut ?? (await listLeftOut(db))).map((p) => p.id));
   const today = toOfficeDate(now);
   const month = today.slice(0, 7);
   const lastMonth = shiftMonth(month, -1);
@@ -49,7 +68,7 @@ export async function loadInsightsInput(db: Db, now: Date): Promise<InsightsInpu
     sheet ? [{ month: i === 0 ? lastMonth : monthBefore, net: Number(sheet.totals.net), people: sheet.rows.length }] : [],
   );
 
-  return {
+  return withoutPeople({
     today,
     now,
     current,
@@ -63,15 +82,15 @@ export async function loadInsightsInput(db: Db, now: Date): Promise<InsightsInpu
     officeOpen: workingToday && withinWindow(now, officeWindow(shifts)),
     unmatched,
     payroll,
-  };
+  }, left);
 }
 
-export type InsightsResult = { insights: Insights; madeAt: Date };
+export type InsightsResult = { insights: Insights; madeAt: Date; leftOut: LeftOut[] };
 
 /** How long a result is reused. The Today screen refreshes itself often, and these figures do not move that fast. */
 export const INSIGHTS_TTL_MS = 5 * 60 * 1000;
 
-const globalForInsights = globalThis as unknown as { byteamInsights?: { today: string; result: InsightsResult } };
+const globalForInsights = globalThis as unknown as { byteamInsights?: { key: string; result: InsightsResult } };
 
 /**
  * The facts for now, reused for a few minutes so the Today screen's
@@ -80,10 +99,13 @@ const globalForInsights = globalThis as unknown as { byteamInsights?: { today: s
  */
 export async function getInsights(db: Db, now: Date = new Date()): Promise<InsightsResult> {
   const today = toOfficeDate(now);
+  // Who is left out is part of the key, so changing it shows at once on every server instance, not after the five minutes.
+  const leftOut = await listLeftOut(db);
+  const key = `${today}|${leftOut.map((p) => p.id).join(",")}`;
   const cached = globalForInsights.byteamInsights;
-  if (cached && cached.today === today && now.getTime() - cached.result.madeAt.getTime() < INSIGHTS_TTL_MS) return cached.result;
+  if (cached && cached.key === key && now.getTime() - cached.result.madeAt.getTime() < INSIGHTS_TTL_MS) return cached.result;
 
-  const result: InsightsResult = { insights: buildInsights(await loadInsightsInput(db, now)), madeAt: now };
-  globalForInsights.byteamInsights = { today, result };
+  const result: InsightsResult = { insights: buildInsights(await loadInsightsInput(db, now, leftOut)), madeAt: now, leftOut };
+  globalForInsights.byteamInsights = { key, result };
   return result;
 }

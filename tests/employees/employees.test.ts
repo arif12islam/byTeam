@@ -42,6 +42,11 @@ describe("employeeDetailsSchema", () => {
     expect(employeeDetailsSchema.parse(rest)).toMatchObject({ department: null, designation: null, exitDate: null });
   });
 
+  it("does not leave anyone out of Insights unless asked", () => {
+    expect(employeeDetailsSchema.parse(valid).excludeFromInsights).toBe(false);
+    expect(employeeDetailsSchema.parse({ ...valid, excludeFromInsights: true }).excludeFromInsights).toBe(true);
+  });
+
   it("trims text", () => {
     expect(employeeDetailsSchema.parse({ ...valid, name: "  Rahim ", department: " Sales " })).toMatchObject({
       name: "Rahim",

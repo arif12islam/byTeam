@@ -56,6 +56,7 @@ export const employeeDetailsSchema = z
     joinDate: z.string().refine(isValidOfficeDate, "Enter the join date."),
     exitDate: optionalDate,
     shiftId: z.uuid("Choose a shift."),
+    excludeFromInsights: z.boolean().default(false),
   })
   .refine((e) => e.exitDate === null || e.exitDate >= e.joinDate, {
     path: ["exitDate"],
@@ -79,6 +80,7 @@ export type EmployeeRow = {
   shiftId: string;
   shiftName: string;
   active: boolean;
+  excludeFromInsights: boolean;
 };
 
 const columns = {
@@ -92,6 +94,7 @@ const columns = {
   shiftId: employees.shiftId,
   shiftName: shifts.name,
   active: employees.active,
+  excludeFromInsights: employees.excludeFromInsights,
 };
 
 /** Employee codes are digits, so sort by length first and then by text: 2 before 10. */
@@ -138,7 +141,7 @@ export async function createEmployee(db: Db, input: NewEmployee, actorId: string
   });
 }
 
-const EDITABLE = ["name", "department", "designation", "joinDate", "exitDate", "shiftId"] as const;
+const EDITABLE = ["name", "department", "designation", "joinDate", "exitDate", "shiftId", "excludeFromInsights"] as const;
 
 /** Returns null when the employee is gone. Saving unchanged values writes nothing. */
 export async function updateEmployee(db: Db, id: string, input: EmployeeDetailsInput, actorId: string) {
