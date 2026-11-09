@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FactList } from "@/components/insights/fact-list";
 import { Card, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
-import { topFacts } from "@/lib/insights/facts";
+import { factsForToday } from "@/lib/insights/facts";
 import { getInsights } from "@/lib/insights/load";
 
 /**
@@ -16,7 +16,7 @@ import { getInsights } from "@/lib/insights/load";
 export async function InsightsCard() {
   let facts;
   try {
-    facts = topFacts((await getInsights(getDb())).insights);
+    facts = factsForToday((await getInsights(getDb())).insights);
   } catch (error) {
     console.error("[insights] could not work out the facts", error);
     return null;

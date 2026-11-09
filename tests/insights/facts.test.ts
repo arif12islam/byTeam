@@ -6,6 +6,7 @@ import type { DeviceRow } from "@/lib/devices/devices";
 import {
   buildInsights,
   deviceFacts,
+  factsForToday,
   forgotToPunchOut,
   latesTrend,
   latesUp,
@@ -143,6 +144,14 @@ describe("perfectAttendance", () => {
     expect(facts[0].text).toBe("Nasrin, Tania, Umar and 1 more were on time every working day for two months.");
   });
 
+  it("is not spoilt by today, when someone has not punched in yet", () => {
+    const [n1, o1] = clean("Nasrin", "a");
+    const today = person("a", "Nasrin", "2026-11", { 12: absent }, 12);
+    expect(perfectAttendance(input({ current: [today], previous: [o1] }))).toHaveLength(1);
+    expect(perfectAttendance(input({ current: [person("a", "Nasrin", "2026-11", { 11: absent }, 12)], previous: [o1] }))).toEqual([]);
+    expect(n1).toBeDefined();
+  });
+
   it("says was for one person, and needs a clean record in both months and enough days", () => {
     const [n1, o1] = clean("Nasrin", "a");
     expect(perfectAttendance(input({ current: [n1], previous: [o1] }))[0].text).toBe("Nasrin was on time every working day for two months.");
@@ -161,6 +170,12 @@ describe("worstWeekday", () => {
     const facts = worstWeekday(input({ current }));
     expect(facts).toHaveLength(1);
     expect(facts[0].text).toBe("Sundays have the most absences this month: 4 of 5.");
+  });
+
+  it("does not count today, which is not over: nobody is absent before their shift ends", () => {
+    // 9 Nov is today here, a Monday; four people have not punched in yet.
+    const notInYet = (id: string) => person(id, id, "2026-11", { 9: absent }, 9);
+    expect(worstWeekday(input({ today: "2026-11-09", now: officeDateTimeToInstant("2026-11-09", "10:00")!, current: ["a", "b", "c", "d"].map(notInYet) }))).toEqual([]);
   });
 
   it("says nothing with few absences or when they are spread out", () => {
@@ -274,6 +289,11 @@ describe("ranking and the whole set", () => {
     const onlyGood = { facts: [fact("good", "success", 1)], byCategory: [] };
     expect(ids(topFacts(onlyGood))).toEqual(["good"]);
     expect(topFacts({ facts: [], byCategory: [] })).toEqual([]);
+  });
+
+  it("leaves out of the Today card what Today already shows in its own banners", () => {
+    const facts = [fact("device-offline:SN1", "danger", 100, "office"), fact("unmatched:23", "warning", 5, "office"), fact("lates-up:a", "warning", 3), fact("device-clock:SN1", "warning", 4, "office")];
+    expect(ids(factsForToday({ facts, byCategory: [] }))).toEqual(["lates-up:a", "device-clock:SN1"]);
   });
 
   it("limits what Today shows", () => {

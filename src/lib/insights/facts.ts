@@ -92,6 +92,13 @@ function latesUpTo(row: GridRow, throughDay: number): number {
   return lates;
 }
 
+/** Days marked absent before today. Today is left out: someone who has not punched in yet is not absent until the shift is over. */
+function absentBeforeToday(row: GridRow, today: string): number {
+  let days = 0;
+  for (const [date, cell] of row.cells) if (cell.status === "absent" && date < today) days += 1;
+  return days;
+}
+
 /** Someone's lates this month against the same days last month. */
 export function latesUp(input: InsightsInput): Fact[] {
   const day = dayOfMonth(input.today);
@@ -155,7 +162,7 @@ export function perfectAttendance(input: InsightsInput): Fact[] {
         before !== undefined &&
         row.totals.present >= THRESHOLDS.perfectThisMonth &&
         before.present >= THRESHOLDS.perfectLastMonth &&
-        row.totals.absent === 0 &&
+        absentBeforeToday(row, input.today) === 0 &&
         row.totals.late === 0 &&
         before.absent === 0 &&
         before.late === 0
@@ -185,7 +192,7 @@ export function worstWeekday(input: InsightsInput): Fact[] {
   let total = 0;
   for (const row of input.current.rows) {
     for (const [date, cell] of row.cells) {
-      if (cell.status === "absent") {
+      if (cell.status === "absent" && date < input.today) {
         byDay[weekdayOf(date)] += 1;
         total += 1;
       }
@@ -321,8 +328,16 @@ export function buildInsights(input: InsightsInput): Insights {
   };
 }
 
+/** Facts that Today already shows as banners of their own, so the card would only repeat them. */
+const SHOWN_ON_TODAY = ["device-offline:", "unmatched:"];
+
 /** The few facts for the Today screen: what needs a look first, good news only when nothing else does. */
 export function topFacts(insights: Insights, limit = 3): Fact[] {
   const worry = insights.facts.filter((f) => f.tone !== "success");
   return (worry.length > 0 ? worry : insights.facts).slice(0, limit);
+}
+
+/** The facts for the card on Today: the top few, leaving out what Today already says in its own banners. */
+export function factsForToday(insights: Insights, limit = 3): Fact[] {
+  return topFacts({ ...insights, facts: insights.facts.filter((f) => !SHOWN_ON_TODAY.some((prefix) => f.id.startsWith(prefix))) }, limit);
 }
