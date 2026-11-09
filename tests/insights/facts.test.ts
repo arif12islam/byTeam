@@ -52,7 +52,7 @@ const late = { status: "late" as const, lateMinutes: 20 };
 const absent = { status: "absent" as const, punchCount: 0 };
 const lates = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i + 1, late]));
 
-function input(over: Partial<InsightsInput> & { now?: Date; current?: GridInput[]; previous?: GridInput[] } = {}): InsightsInput {
+function input(over: Omit<Partial<InsightsInput>, "current" | "previous"> & { current?: GridInput[]; previous?: GridInput[] } = {}): InsightsInput {
   const { current = [], previous = [], ...rest } = over;
   return {
     today: TODAY,
