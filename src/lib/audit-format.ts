@@ -188,6 +188,7 @@ const ENUM_LABELS: Record<string, string> = {
 export const ENTITY_LABELS: Record<string, string> = {
   attendance_day: "Attendance day",
   company_settings: "Company settings",
+  department: "Department",
   device: "Device",
   employee: "Employee",
   holiday: "Holiday",

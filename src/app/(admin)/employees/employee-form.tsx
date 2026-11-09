@@ -15,6 +15,8 @@ type ShiftOption = { id: string; name: string; startTime: string; endTime: strin
 
 type Props = {
   shifts: ShiftOption[];
+  /** The department names to choose from, from Settings. */
+  departments: string[];
   /** A code to start with when adding, for example one that punched with no employee. */
   initialCode?: string;
   /** Set when editing a saved employee. Leave out to add a new one. */
@@ -30,7 +32,7 @@ type Props = {
   };
 };
 
-export function EmployeeForm({ shifts, employee, initialCode }: Props) {
+export function EmployeeForm({ shifts, departments, employee, initialCode }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     employee ? updateEmployeeAction : createEmployeeAction,
     {},
@@ -66,8 +68,46 @@ export function EmployeeForm({ shifts, employee, initialCode }: Props) {
         <Field label="Full name" htmlFor="name">
           <Input id="name" name="name" defaultValue={fieldValue(state, "name", employee?.name)} required maxLength={120} autoComplete="off" />
         </Field>
-        <Field label="Department" htmlFor="department">
-          <Input id="department" name="department" defaultValue={fieldValue(state, "department", employee?.department)} maxLength={80} />
+        <Field
+          label="Department"
+          htmlFor="department"
+          hint={
+            departments.length === 0 ? (
+              <>
+                No departments yet.{" "}
+                <Link href="/settings#departments" className="text-primary underline underline-offset-4">
+                  Add one in Settings
+                </Link>
+                .
+              </>
+            ) : (
+              <>
+                Missing one?{" "}
+                <Link href="/settings#departments" className="text-primary underline underline-offset-4">
+                  Manage departments
+                </Link>
+                .
+              </>
+            )
+          }
+        >
+          <Select
+            key={`${state.values?.department ?? "saved"}-${employee?.department ?? "new"}`}
+            id="department"
+            name="department"
+            defaultValue={fieldValue(state, "department", employee?.department)}
+          >
+            <option value="">No department</option>
+            {/* A name from before the list existed stays selectable, so saving other changes does not drop it. */}
+            {employee?.department && !departments.includes(employee.department) ? (
+              <option value={employee.department}>{employee.department} (not in the list)</option>
+            ) : null}
+            {departments.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Designation" htmlFor="designation">
           <Input id="designation" name="designation" defaultValue={fieldValue(state, "designation", employee?.designation)} maxLength={80} />

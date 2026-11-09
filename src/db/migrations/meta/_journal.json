@@ -71,6 +71,13 @@
       "when": 1792858940342,
       "tag": "0009_m6_device_clock_check",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794210047227,
+      "tag": "0010_m7_departments",
+      "breakpoints": true
     }
   ]
 }

@@ -8,9 +8,11 @@ import { getDb } from "@/db";
 import type { FormState } from "@/components/field";
 import { formError } from "@/lib/form";
 import { isForeignKeyViolation, isUniqueViolation } from "@/lib/db-errors";
+import { departmentExists } from "@/lib/employees/departments";
 import {
   createEmployee,
   employeeDetailsSchema,
+  getEmployee,
   newEmployeeSchema,
   setEmployeeActive,
   updateEmployee,
@@ -34,6 +36,11 @@ export async function createEmployeeAction(_previous: FormState, formData: FormD
   const parsed = newEmployeeSchema.safeParse({ empCode: formData.get("empCode"), ...detailsFrom(formData) });
   if (!parsed.success) return formError(formData, parsed.error.issues[0].message);
 
+  const department = parsed.data.department;
+  if (department !== null && !(await departmentExists(getDb(), department))) {
+    return formError(formData, "Choose a department from the list. Add new ones under Settings.");
+  }
+
   let id: string;
   try {
     id = (await createEmployee(getDb(), parsed.data, user.id)).id;
@@ -55,6 +62,15 @@ export async function updateEmployeeAction(_previous: FormState, formData: FormD
 
   const parsed = employeeDetailsSchema.safeParse(detailsFrom(formData));
   if (!parsed.success) return formError(formData, parsed.error.issues[0].message);
+
+  // Only a department from the list can be chosen. One that is already on the employee may stay, whatever its history.
+  const department = parsed.data.department;
+  if (department !== null && !(await departmentExists(getDb(), department))) {
+    const current = await getEmployee(getDb(), id.data);
+    if (current?.department !== department) {
+      return formError(formData, "Choose a department from the list. Add new ones under Settings.");
+    }
+  }
 
   let result;
   try {

@@ -3,7 +3,7 @@ import type { FormState } from "@/lib/form";
 type FieldProps = {
   label: string;
   htmlFor: string;
-  hint?: string;
+  hint?: React.ReactNode;
   children: React.ReactNode;
 };
 
