@@ -92,6 +92,11 @@ export const INSIGHTS_TTL_MS = 5 * 60 * 1000;
 
 const globalForInsights = globalThis as unknown as { byteamInsights?: { key: string; result: InsightsResult } };
 
+/** Forgets the saved facts, for when a change would leave one pointing at something that is gone. */
+export function forgetInsights(): void {
+  globalForInsights.byteamInsights = undefined;
+}
+
 /**
  * The facts for now, reused for a few minutes so the Today screen's
  * refreshing does not recompute two months of attendance each time. Kept in

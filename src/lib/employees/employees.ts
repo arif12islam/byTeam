@@ -1,14 +1,16 @@
-import { asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { getDb } from "@/db";
 import {
   attendanceAdjustments,
   attendanceDays,
+  deviceCommands,
   employees,
   leaveRequests,
   payrollAdjustments,
   payrollItems,
+  payrollRuns,
   rawPunches,
   salaryStructures,
   shifts,
@@ -16,7 +18,7 @@ import {
 import { audit } from "@/lib/audit";
 import { recalcAfterEmployeeChange } from "@/lib/attendance/triggers";
 import { queueUserUpdate } from "@/lib/devices/queue";
-import { isValidOfficeDate } from "@/lib/time";
+import { formatMonth, isValidOfficeDate } from "@/lib/time";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -223,5 +225,82 @@ export async function deleteEmployee(db: Db, id: string, actorId: string): Promi
     await tx.delete(employees).where(eq(employees.id, id));
     await audit(tx, { actorId, action: "employee.delete", entity: "employee", entityId: id, before });
     return { ok: true };
+  });
+}
+
+/** True when the typed name is the person's name: spaces trimmed and collapsed, capital letters as written. */
+export function nameConfirmed(typed: string, name: string): boolean {
+  const clean = (text: string) => text.trim().replace(/\s+/g, " ");
+  return clean(typed) !== "" && clean(typed) === clean(name);
+}
+
+/** The refusal for a person whose pay is in a finalized month, naming the months. */
+export function finalizedPayrollMessage(name: string, months: ReadonlySet<string>): string {
+  const names = [...months].sort().map(formatMonth);
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return `Payroll for ${list} is finalized and includes ${name}, so they cannot be deleted. Unlock ${names.length === 1 ? "that month" : "those months"} first.`;
+}
+
+export type DeleteWithHistoryResult =
+  | { ok: true; empCode: string; name: string; removed: Record<string, number> }
+  | { ok: false; error: string };
+
+/**
+ * Deletes an employee together with their history: attendance days and hand
+ * corrections, leave, salary, payroll lines and bonuses and advances, and any
+ * user update still waiting for the device. The raw punches stay, because they
+ * are never deleted; they become an unlinked code. Refused when the person is
+ * in a finalized payroll month. One audit row keeps what was removed, as counts.
+ */
+export async function deleteEmployeeWithHistory(db: Db, id: string, confirmName: string, actorId: string): Promise<DeleteWithHistoryResult> {
+  return db.transaction(async (tx): Promise<DeleteWithHistoryResult> => {
+    const [before] = await tx.select().from(employees).where(eq(employees.id, id)).for("update");
+    if (!before) return { ok: false, error: "That employee no longer exists." };
+    if (!nameConfirmed(confirmName, before.name)) return { ok: false, error: "Type the name exactly as shown to confirm." };
+
+    // Shared locks, so a month being finalized right now waits until this is saved.
+    const finalized = new Set<string>();
+    const lines = await tx
+      .select({ month: payrollRuns.month })
+      .from(payrollItems)
+      .innerJoin(payrollRuns, eq(payrollRuns.id, payrollItems.runId))
+      .where(and(eq(payrollItems.employeeId, id), eq(payrollRuns.status, "finalized")))
+      .for("share", { of: payrollRuns });
+    for (const line of lines) finalized.add(line.month.slice(0, 7));
+    const bonusMonths = await tx
+      .select({ month: payrollAdjustments.month })
+      .from(payrollAdjustments)
+      .innerJoin(payrollRuns, eq(payrollRuns.month, payrollAdjustments.month))
+      .where(and(eq(payrollAdjustments.employeeId, id), eq(payrollRuns.status, "finalized")))
+      .for("share", { of: payrollRuns });
+    for (const row of bonusMonths) finalized.add(row.month.slice(0, 7));
+    if (finalized.size > 0) return { ok: false, error: finalizedPayrollMessage(before.name, finalized) };
+
+    const removed: Record<string, number> = {};
+    removed.payrollItems = (await tx.delete(payrollItems).where(eq(payrollItems.employeeId, id)).returning({ id: payrollItems.id })).length;
+    removed.payrollAdjustments = (await tx.delete(payrollAdjustments).where(eq(payrollAdjustments.employeeId, id)).returning({ id: payrollAdjustments.id })).length;
+    removed.attendanceAdjustments = (await tx.delete(attendanceAdjustments).where(eq(attendanceAdjustments.employeeId, id)).returning({ id: attendanceAdjustments.id })).length;
+    removed.attendanceDays = (await tx.delete(attendanceDays).where(eq(attendanceDays.employeeId, id)).returning({ id: attendanceDays.id })).length;
+    removed.leaveRequests = (await tx.delete(leaveRequests).where(eq(leaveRequests.employeeId, id)).returning({ id: leaveRequests.id })).length;
+    removed.salaryStructures = (await tx.delete(salaryStructures).where(eq(salaryStructures.employeeId, id)).returning({ id: salaryStructures.id })).length;
+    // A user update still waiting for the device would put the person back on it. Matched by prefix, not LIKE: codes can hold _ or %.
+    const prefix = `DATA UPDATE USERINFO PIN=${before.empCode}\t`;
+    removed.deviceCommands = (
+      await tx
+        .delete(deviceCommands)
+        .where(and(eq(deviceCommands.status, "pending"), sql`left(${deviceCommands.command}, ${prefix.length}) = ${prefix}`))
+        .returning({ id: deviceCommands.id })
+    ).length;
+    await tx.delete(employees).where(eq(employees.id, id));
+
+    const [punches] = await tx.select({ n: count() }).from(rawPunches).where(eq(rawPunches.empCode, before.empCode));
+    await audit(tx, {
+      actorId,
+      action: "employee.delete_with_history",
+      entity: "employee",
+      entityId: id,
+      before: { employee: before, removed, punchesKept: punches.n },
+    });
+    return { ok: true, empCode: before.empCode, name: before.name, removed };
   });
 }
