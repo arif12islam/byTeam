@@ -99,6 +99,13 @@
       "when": 1794212842494,
       "tag": "0013_m7_whats_new_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794223459135,
+      "tag": "0014_m7_push_notifications",
+      "breakpoints": true
     }
   ]
 }

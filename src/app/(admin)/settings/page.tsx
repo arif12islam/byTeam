@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listRecentOutages } from "@/lib/attendance/outages";
 import { listDepartments } from "@/lib/employees/departments";
+import { listMySubscriptions } from "@/lib/notifications/subscriptions";
 import { getCompanySettings } from "@/lib/settings/company";
 import { groupByYear, listHolidays } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
@@ -18,6 +19,7 @@ import { EditHolidayForm, HolidayForm } from "./holiday-form";
 import { HolidayImport } from "./holiday-import";
 import { AddDepartmentForm, DepartmentRowForms } from "./department-forms";
 import { LoginForm } from "./login-form";
+import { NotificationSettings } from "./notification-settings";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -49,11 +51,12 @@ async function SettingsContent() {
   const user = await requireRole("owner", "hr");
 
   const db = getDb();
-  const [company, holidays, outages, departments] = await Promise.all([
+  const [company, holidays, outages, departments, mySubscriptions] = await Promise.all([
     getCompanySettings(db),
     listHolidays(db),
     listRecentOutages(db),
     listDepartments(db),
+    listMySubscriptions(db, user.id),
   ]);
   const groups = groupByYear(holidays);
   const thisYear = Number(toOfficeDate(new Date()).slice(0, 4));
@@ -152,6 +155,13 @@ async function SettingsContent() {
             ))}
           </ul>
         )}
+      </Section>
+
+      <Section
+        title="Notifications"
+        description="Alerts on this phone or computer, even when byTeam is closed. They are checked about once an hour during office hours. Each device chooses its own."
+      >
+        <NotificationSettings subscriptions={mySubscriptions} />
       </Section>
 
       <Section title="Your login" description="Change your name, and the email and password you sign in with.">
