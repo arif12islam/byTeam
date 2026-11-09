@@ -1,0 +1,1 @@
+ALTER TABLE "company_settings" ADD COLUMN "track_leaving_punch" boolean DEFAULT true NOT NULL;

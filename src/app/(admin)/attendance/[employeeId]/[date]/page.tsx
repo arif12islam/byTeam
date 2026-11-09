@@ -9,6 +9,7 @@ import { listDayAdjustments, type DayAdjustment } from "@/lib/attendance/adjustm
 import { statusLabel } from "@/lib/attendance/labels";
 import { loadDayDetail } from "@/lib/attendance/month";
 import { requireRole } from "@/lib/session";
+import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatOfficeDate, formatOfficeDateTime, formatOfficeTime, isValidOfficeDate, toOfficeDate } from "@/lib/time";
 
 import { AdjustForm } from "./adjust-form";
@@ -50,7 +51,7 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
 
   const today = toOfficeDate(new Date());
   const db = getDb();
-  const [detail, adjustments] = await Promise.all([loadDayDetail(db, employeeId, date), listDayAdjustments(db, employeeId, date)]);
+  const [detail, adjustments, company] = await Promise.all([loadDayDetail(db, employeeId, date), listDayAdjustments(db, employeeId, date), getCompanySettings(db)]);
   if (!detail) notFound();
 
   const { employee, result, punches } = detail;
@@ -78,9 +79,13 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
             <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
               <Fact label="Status" value={statusLabel[result.status] + (result.isManual ? " (corrected by hand)" : "")} />
               <Fact label="Came in" value={result.firstIn ? formatOfficeTime(result.firstIn) : "No punch"} />
-              <Fact label="Left" value={result.lastOut ? formatOfficeTime(result.lastOut) : result.firstIn ? "No leaving punch" : "No punch"} />
+              {company.trackLeavingPunch ? (
+                <Fact label="Left" value={result.lastOut ? formatOfficeTime(result.lastOut) : result.firstIn ? "No leaving punch" : "No punch"} />
+              ) : null}
               <Fact label="Late" value={result.lateMinutes > 0 ? formatDuration(result.lateMinutes) : "No"} />
-              <Fact label="Left early" value={result.earlyMinutes > 0 ? formatDuration(result.earlyMinutes) : "No"} />
+              {company.trackLeavingPunch ? (
+                <Fact label="Left early" value={result.earlyMinutes > 0 ? formatDuration(result.earlyMinutes) : "No"} />
+              ) : null}
               <Fact label="Shift" value={`${employee.shiftName}, ${employee.shiftStart} to ${employee.shiftEnd}, ${employee.graceMinutes} min grace`} />
               {result.workedOnOffDay ? <Fact label="Day off" value="Came in on a day off" /> : null}
             </dl>

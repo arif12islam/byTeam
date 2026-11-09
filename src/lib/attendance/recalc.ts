@@ -124,6 +124,7 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
 
   const [settings] = await reader.select().from(companySettings).where(eq(companySettings.id, 1));
   const weeklyOffDays = settings?.weeklyOffDays ?? [];
+  const trackLeavingPunch = settings?.trackLeavingPunch ?? true;
 
   const holidayRows = await reader.select({ date: holidays.date }).from(holidays).where(between(holidays.date, scope.from, scope.to));
   const holidayDates = new Set(holidayRows.map((h) => h.date));
@@ -182,6 +183,7 @@ export async function computeDays(reader: Reader, scope: RecalcScope): Promise<C
         employee: { joinDate: person.joinDate, exitDate: person.exitDate },
         shift: { startTime: shift.startTime, endTime: shift.endTime, graceMinutes: shift.graceMinutes },
         weeklyOffDays,
+        trackLeavingPunch,
         isHoliday: holidayDates.has(date),
         outages: outagesByDate.get(date),
         punches,

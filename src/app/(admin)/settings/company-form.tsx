@@ -15,9 +15,10 @@ type Props = {
   weeklyOffDays: number[];
   timezone: string;
   currency: string;
+  trackLeavingPunch: boolean;
 };
 
-export function CompanyForm({ name, weeklyOffDays, timezone, currency }: Props) {
+export function CompanyForm({ name, weeklyOffDays, timezone, currency, trackLeavingPunch }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveCompanyAction, {});
 
   return (
@@ -51,6 +52,17 @@ export function CompanyForm({ name, weeklyOffDays, timezone, currency }: Props) 
             : "Punches on these days are marked as worked on an off day."}
         </p>
       </fieldset>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-md border border-input bg-card p-3 text-sm">
+        <input type="checkbox" name="trackLeavingPunch" defaultChecked={trackLeavingPunch} className="mt-0.5 size-4 accent-primary" />
+        <span>
+          <span className="font-medium">Use the leaving punch</span>
+          <span className="mt-0.5 block text-muted-foreground">
+            On: the last punch of the day is the leaving time, and a day with only one punch is flagged. Off: only the first punch counts, so there are no
+            missing leaving punches and no early leaving. Applies from today; earlier days stay as they were.
+          </span>
+        </span>
+      </label>
 
       <p className="text-xs text-muted-foreground">
         Time zone {timezone}, currency {currency}.

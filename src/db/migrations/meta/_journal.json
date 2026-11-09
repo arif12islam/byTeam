@@ -78,6 +78,13 @@
       "when": 1794210047227,
       "tag": "0010_m7_departments",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794210364574,
+      "tag": "0011_m7_leaving_punch_setting",
+      "breakpoints": true
     }
   ]
 }

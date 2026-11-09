@@ -24,7 +24,7 @@ function describeCell(date: string, cell: GridCell): string {
  * happened. Tap a day to see the punches behind it. One column on phones,
  * two or three side by side on wider screens.
  */
-export function AttendanceCards({ grid }: { grid: MonthGrid }) {
+export function AttendanceCards({ grid, trackLeavingPunch = true }: { grid: MonthGrid; trackLeavingPunch?: boolean }) {
   // One small calendar per month the period touches. A single month shows no month heading.
   const months: { month: string; dates: string[] }[] = [];
   for (const date of grid.dates) {
@@ -137,7 +137,7 @@ export function AttendanceCards({ grid }: { grid: MonthGrid }) {
       ))}
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        An outlined day has no leaving punch. A dot means corrected by hand. A dashed day has no record.
+        {trackLeavingPunch ? "An outlined day has no leaving punch. " : ""}A dot means corrected by hand. A dashed day has no record.
       </p>
     </div>
   );

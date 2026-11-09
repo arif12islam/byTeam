@@ -7,7 +7,8 @@ import { cellText } from "./labels";
 import type { MonthGrid } from "./month";
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const TOTAL_HEADINGS = ["Present", "Late", "Absent", "Leave", "Late minutes", "Late (h:mm)", "No leaving punch", "Worked on days off"];
+const ALL_TOTAL_HEADINGS = ["Present", "Late", "Absent", "Leave", "Late minutes", "Late (h:mm)", "No leaving punch", "Worked on days off"];
+const NO_LEAVING_PUNCH = "No leaving punch";
 
 /** Letters for the first column numbers: 1 is A, 27 is AA. */
 function columnLetter(n: number): string {
@@ -21,7 +22,10 @@ function columnLetter(n: number): string {
  * with the same codes as the screen, then the totals. Names go in as plain
  * text, never as formulas.
  */
-export async function buildGridWorkbook(grid: MonthGrid): Promise<Buffer> {
+export async function buildGridWorkbook(grid: MonthGrid, options: { trackLeavingPunch?: boolean } = {}): Promise<Buffer> {
+  // An office that does not use the leaving punch has no such column and no ! in the legend.
+  const trackLeaving = options.trackLeavingPunch !== false;
+  const TOTAL_HEADINGS = ALL_TOTAL_HEADINGS.filter((h) => trackLeaving || h !== NO_LEAVING_PUNCH);
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "byTeam";
   const sheet = workbook.addWorksheet(periodLabel({ from: grid.from, to: grid.to }), { views: [{ state: "frozen", xSplit: 3, ySplit: 1 }] });
@@ -48,7 +52,7 @@ export async function buildGridWorkbook(grid: MonthGrid): Promise<Buffer> {
       totals.leave,
       totals.lateMinutes,
       formatHoursMinutes(totals.lateMinutes),
-      totals.missingOut,
+      ...(trackLeaving ? [totals.missingOut] : []),
       totals.workedOffDays,
     ]);
   }
@@ -69,7 +73,7 @@ export async function buildGridWorkbook(grid: MonthGrid): Promise<Buffer> {
 
   sheet.addRow([]);
   const notes = sheet.addRow([
-    "P present, L late, A absent, PL paid leave, UL unpaid leave, W weekly off day, H holiday. ! no leaving punch, * corrected by hand. Present counts late days too.",
+    `P present, L late, A absent, PL paid leave, UL unpaid leave, W weekly off day, H holiday. ${trackLeaving ? "! no leaving punch, " : ""}* corrected by hand. Present counts late days too.`,
   ]);
   notes.getCell(1).font = { italic: true };
   sheet.mergeCells(`A${notes.number}:${columnLetter(3 + grid.dates.length + TOTAL_HEADINGS.length)}${notes.number}`);

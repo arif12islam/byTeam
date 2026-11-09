@@ -40,6 +40,12 @@ export type DayInput = {
   /** Office outages on this date (power or device down), as "HH:MM" times. */
   outages?: readonly DayOutage[];
   overrides?: DayOverrides;
+  /**
+   * False for an office that only uses the arrival punch: the day then has no
+   * leaving time, is never missing one and never counts as left early. Left
+   * out means true.
+   */
+  trackLeavingPunch?: boolean;
 };
 
 export type DayResult = {
@@ -92,7 +98,8 @@ export function onTimeLimit(startMinutes: number, graceMinutes: number, windows:
  * 4. Late when the first punch, by the office clock to the minute, is after the
  *    shift start plus grace (moved to the end of an office outage that covers
  *    that moment, see `onTimeLimit`). lateMinutes counts from the shift start.
- *    Early when the last punch is before the shift end. Earlier than the start
+ *    Early when the last punch is before the shift end. With the leaving punch
+ *    turned off in settings there is no last punch at all. Earlier than the start
  *    is not late. A working day with no punch is not absent when an outage
  *    covers the whole shift: nobody could punch, so it counts as present.
  * 5. Approved leave on a working day makes it leave_paid or leave_unpaid. Status
@@ -114,8 +121,9 @@ export function computeDay(input: DayInput): DayResult | null {
     .sort((a, b) => a - b);
 
   let firstIn: Date | null = own.length > 0 ? new Date(own[0]) : null;
+  const trackLeaving = input.trackLeavingPunch !== false;
   let lastOut: Date | null = null;
-  if (own.length > 1) {
+  if (trackLeaving && own.length > 1) {
     const span = (own[own.length - 1] - own[0]) / 60_000;
     if (span >= MIN_PUNCH_SPAN_MINUTES) lastOut = new Date(own[own.length - 1]);
   }
@@ -125,7 +133,7 @@ export function computeDay(input: DayInput): DayResult | null {
     firstIn = overrides.firstIn;
     isManual = true;
   }
-  if (overrides?.lastOut) {
+  if (trackLeaving && overrides?.lastOut) {
     lastOut = overrides.lastOut;
     isManual = true;
   }
@@ -178,7 +186,7 @@ export function computeDay(input: DayInput): DayResult | null {
     lastOut,
     lateMinutes,
     earlyMinutes,
-    missingOut: hasActivity && lastOut === null,
+    missingOut: trackLeaving && hasActivity && lastOut === null,
     workedOnOffDay: dayType !== "working" && hasActivity,
     punchCount: own.length,
     isManual,

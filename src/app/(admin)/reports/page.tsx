@@ -37,6 +37,7 @@ import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
 import { buildAttendanceReport, formatRate, type PersonFigure } from "@/lib/reports/attendance-report";
 import { combineSheets, formatCompact, formatTaka, payrollByDepartment, payrollTrend, payrollTrendFor } from "@/lib/reports/payroll-report";
 import { requireRole } from "@/lib/session";
+import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatMonth, toOfficeDate } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Reports" };
@@ -121,10 +122,11 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
   const single = months.length === 1;
 
   const db = getDb();
-  const [grid, runs, sheets] = await Promise.all([
+  const [grid, runs, sheets, company] = await Promise.all([
     loadPeriodGrid(db, period, today),
     listPayrollRuns(db),
     Promise.all(payMonths.map((m) => loadPayrollSheet(db, m))),
+    getCompanySettings(db),
   ]);
   const payrollSheets = sheets.filter((s): s is NonNullable<typeof s> => s !== null);
   const combined = combineSheets(payrollSheets);
@@ -168,7 +170,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
   const departmentCosts = payrollByDepartment(combined.rows);
   const departmentMax = Math.max(1, ...departmentCosts.map((d) => d.net));
   const checks = [
-    { count: totals.missingOut, text: "with no leaving punch" },
+    ...(company.trackLeavingPunch ? [{ count: totals.missingOut, text: "with no leaving punch" }] : []),
     { count: totals.workedOffDays, text: "worked on a day off" },
     { count: totals.correctedByHand, text: "corrected by hand" },
   ];
