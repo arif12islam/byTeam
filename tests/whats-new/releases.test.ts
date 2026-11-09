@@ -67,17 +67,18 @@ describe("the pictures", () => {
 });
 
 describe("the tour", () => {
-  it("opens on the first step of the release, with a way to skip, step on and try it", () => {
-    const html = renderToStaticMarkup(createElement(WhatsNewDialog, { release: LATEST_RELEASE, markSeen: async () => undefined }));
+  it("opens on the first step of a release, with a way to skip, step on and try it", () => {
+    const release = RELEASES.find((r) => r.items.length > 1)!;
+    const html = renderToStaticMarkup(createElement(WhatsNewDialog, { release, markSeen: async () => undefined }));
     expect(html).toContain('role="dialog"');
     expect(html).toContain('aria-modal="true"');
-    expect(html).toContain(LATEST_RELEASE.items[0].title);
+    expect(html).toContain(release.items[0].title);
     expect(html).toContain("Skip the tour");
     expect(html).toContain(">Next<");
     expect(html).not.toContain(">Back<");
-    expect(html).toContain(LATEST_RELEASE.items[0].steps[0]);
+    expect(html).toContain(release.items[0].steps[0]);
     // One dot per step.
-    expect(html.match(/Go to step \d+/g)).toHaveLength(LATEST_RELEASE.items.length);
+    expect(html.match(/Go to step \d+/g)).toHaveLength(release.items.length);
   });
 
   it("ends on Done when there is a single step", () => {

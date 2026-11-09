@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 
 import type { getDb } from "@/db";
 import { devices, employees, rawPunches } from "@/db/schema";
@@ -109,13 +109,14 @@ export function buildMonthGrid(month: string, inputs: readonly GridInput[]): Per
  * The period for everyone employed during it, worked out from the stored
  * inputs now. Days after today have no cell. Saves nothing.
  */
-export async function loadPeriodGrid(db: Db, period: Period, today: string): Promise<PeriodGrid> {
+export async function loadPeriodGrid(db: Db, period: Period, today: string, options: { employeeIds?: readonly string[] } = {}): Promise<PeriodGrid> {
   const to = period.to < today ? period.to : today;
 
+  const employed = and(lt(employees.joinDate, nextDate(period.to)), or(isNull(employees.exitDate), gte(employees.exitDate, period.from)));
   const staff = await db
     .select({ id: employees.id })
     .from(employees)
-    .where(and(lt(employees.joinDate, nextDate(period.to)), or(isNull(employees.exitDate), gte(employees.exitDate, period.from))));
+    .where(options.employeeIds ? and(employed, inArray(employees.id, [...options.employeeIds])) : employed);
   // A person marked inactive without an exit date has left at an unknown time: keep them out of past periods.
   const ids = staff.map((s) => s.id);
 

@@ -37,6 +37,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    id: "2026-11-c",
+    title: "Smarter, more useful Insights",
+    date: "2026-11-09",
+    summary: "Insights now open the person's attendance calendar, and notice more.",
+    items: [
+      {
+        id: "insights-smarter",
+        title: "Insights that open the right page",
+        body: "A fact about a person now opens their attendance calendar for the month, or the exact day to fix, instead of their profile. Insights also notice more: someone absent for days in a row, late every day lately, late mostly on one weekday, lates getting longer, and good news when someone is back on track.",
+        visual: "insights",
+        steps: ["Open Insights, or look at Worth a look on Today.", "Tap a fact about a person to see their month.", "Tap a day to see the punches and correct it."],
+        href: "/insights",
+        tryLabel: "Open Insights",
+      },
+    ],
+  },
+  {
     id: "2026-11-b",
     title: "Holidays, alerts and insights",
     date: "2026-11-09",

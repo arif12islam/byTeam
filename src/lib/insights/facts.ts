@@ -1,8 +1,9 @@
+import { personDayHref, personMonthHref } from "@/lib/attendance/links";
+import type { GridCell, GridRow, PeriodGrid } from "@/lib/attendance/month";
 import type { Balance } from "@/lib/leave/balances";
-import type { GridRow, PeriodGrid } from "@/lib/attendance/month";
 import { describeAge, deviceStatus, type DeviceRow } from "@/lib/devices/devices";
 import type { UnmatchedCode } from "@/lib/punches/unmatched";
-import { formatDuration, formatMonth, toOfficeDate, weekdayOf } from "@/lib/time";
+import { formatDuration, formatMonth, formatOfficeDate, nextDate, previousDate, toOfficeDate, weekdayOf } from "@/lib/time";
 
 /**
  * Smart facts: short plain sentences worked out from what byTeam already
@@ -38,6 +39,28 @@ export const THRESHOLDS = {
   unmatchedDays: 14,
   /** The most facts one rule gives, so one problem cannot fill the page. */
   perRule: 5,
+  /** Working days absent in a row, ending on the last working day, before it is called out. */
+  absentStreakDays: 2,
+  /** Working days late in a row, ending on the last working day. */
+  lateStreakDays: 4,
+  /** Lates in the last two months, lates on one weekday, and that weekday's share of them, before a weekday pattern is said. */
+  latePatternLates: 4,
+  latePatternOnDay: 3,
+  latePatternShare: 0.5,
+  /** Absences in two months, and the share next to a day off or leave, before that pattern is said. */
+  nextToOffAbsences: 3,
+  nextToOffShare: 0.6,
+  /** Average late minutes this month: at least this many, at least this many times last month's, with this many lates. */
+  longerLatesMinutes: 30,
+  longerLatesRatio: 1.5,
+  longerLatesMin: 3,
+  /** Days this month someone left early before it is mentioned. */
+  leftEarlyDays: 3,
+  /** Lates or absences last month, then working days since with none, before "back on track" is said. */
+  backOnTrackBefore: 4,
+  backOnTrackDays: 10,
+  /** Most facts about one person on the page, so one person cannot fill it. */
+  perPerson: 2,
 } as const;
 
 export type FactTone = "danger" | "warning" | "info" | "success";
@@ -50,6 +73,8 @@ export type Fact = {
   text: string;
   /** Where tapping it goes. */
   href: string | null;
+  /** The person (employee id) a fact is about, so facts about one person can be limited and ordered. */
+  subject?: string;
   /** Orders facts of the same tone: bigger is more worth reading. */
   weight: number;
 };
@@ -112,8 +137,9 @@ export function latesUp(input: InsightsInput): Fact[] {
     id: `lates-up:${row.employee.id}`,
     category: "people",
     tone: "warning",
-    text: `${row.employee.name} was late ${plural(now, "time")} so far this month, up from ${then} at this point last month.`,
-    href: `/employees/${row.employee.id}`,
+    text: `${row.employee.name} was late ${plural(now, "time")} so far this month, ${then === 0 ? "the first lates in a while" : `up from ${then} at this point last month`}.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
     weight: now - then,
   }));
 }
@@ -129,7 +155,8 @@ export function nearLateDeduction(input: InsightsInput): Fact[] {
     category: "people",
     tone: "warning",
     text: `${row.employee.name} has ${plural(row.totals.late, "late")} this month. One more costs a day of pay.`,
-    href: `/employees/${row.employee.id}`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
     weight: row.totals.late,
   }));
 }
@@ -138,16 +165,16 @@ export function nearLateDeduction(input: InsightsInput): Fact[] {
 export function forgotToPunchOut(input: InsightsInput): Fact[] {
   if (!input.trackLeavingPunch) return [];
   const found = input.current.rows.flatMap((row) => {
-    let days = 0;
-    for (const [date, cell] of row.cells) if (cell.missingOut && date !== input.today) days += 1;
-    return days >= THRESHOLDS.missingOutDays ? [{ row, days }] : [];
+    const dates = [...row.cells].filter(([date, cell]) => cell.missingOut && date !== input.today).map(([date]) => date).sort();
+    return dates.length >= THRESHOLDS.missingOutDays ? [{ row, days: dates.length, oldest: dates[0] }] : [];
   });
-  return top(found, (f) => f.days).map(({ row, days }) => ({
+  return top(found, (f) => f.days).map(({ row, days, oldest }) => ({
     id: `forgot-out:${row.employee.id}`,
     category: "people",
     tone: "info",
-    text: `${row.employee.name} has no leaving punch on ${plural(days, "day")} this month.`,
-    href: `/employees/${row.employee.id}`,
+    text: `${row.employee.name} has no leaving punch on ${plural(days, "day")} this month. Open the oldest to add the leaving time.`,
+    href: personDayHref(row.employee.id, oldest),
+    subject: row.employee.id,
     weight: days,
   }));
 }
@@ -155,7 +182,7 @@ export function forgotToPunchOut(input: InsightsInput): Fact[] {
 /** People who were on time on every working day, this month and last. One fact for the group. */
 export function perfectAttendance(input: InsightsInput): Fact[] {
   const lastMonth = new Map(input.previous.rows.map((r) => [r.employee.id, r.totals]));
-  const names = input.current.rows
+  const people = input.current.rows
     .filter((row) => {
       const before = lastMonth.get(row.employee.id);
       return (
@@ -168,7 +195,7 @@ export function perfectAttendance(input: InsightsInput): Fact[] {
         before.late === 0
       );
     })
-    .map((row) => row.employee.name);
+  const names = people.map((row) => row.employee.name);
   if (names.length === 0) return [];
   const shown = names.slice(0, 3).join(", ");
   const more = names.length > 3 ? ` and ${names.length - 3} more` : "";
@@ -178,7 +205,7 @@ export function perfectAttendance(input: InsightsInput): Fact[] {
       category: "people",
       tone: "success",
       text: `${names.length === 1 ? `${shown} was` : `${shown}${more} were`} on time every working day for two months.`,
-      href: "/attendance",
+      href: people.length === 1 ? personMonthHref(people[0].employee.id, input.current.month) : `/attendance?month=${input.current.month}`,
       weight: names.length,
     },
   ];
@@ -207,7 +234,7 @@ export function worstWeekday(input: InsightsInput): Fact[] {
       category: "attendance",
       tone: "info",
       text: `${WEEKDAYS[worst]} have the most absences this month: ${byDay[worst]} of ${total}.`,
-      href: "/attendance",
+      href: `/attendance?month=${input.current.month}`,
       weight: byDay[worst],
     },
   ];
@@ -238,6 +265,7 @@ export function lowLeaveBalance(input: InsightsInput): Fact[] {
     tone: "info",
     text: `${b.employeeName} has ${b.remaining === 0 ? "no days" : "1 day"} of ${b.leaveTypeName} left this year.`,
     href: "/leave",
+    subject: b.employeeId,
     weight: b.quota! - b.remaining!,
   }));
 }
@@ -301,13 +329,246 @@ export function payrollChange(input: InsightsInput): Fact[] {
       category: "payroll",
       tone: "info",
       text: `Net pay for ${formatMonth(latest.month)} was ${Math.round(Math.abs(percent))}% ${percent > 0 ? "higher" : "lower"} than ${formatMonth(before.month)}${peopleNote}.`,
-      href: "/payroll",
+      href: `/payroll?month=${latest.month}`,
       weight: Math.abs(percent),
     },
   ];
 }
 
-const RULES = [latesUp, nearLateDeduction, forgotToPunchOut, perfectAttendance, worstWeekday, latesTrend, lowLeaveBalance, deviceFacts, unmatchedCodes, payrollChange];
+// ---- Rules about one person over the last two months ----
+
+const OFF_STATUSES = new Set<GridCell["status"]>(["weekly_off", "holiday", "leave_paid", "leave_unpaid"]);
+
+type Day = { date: string; cell: GridCell };
+
+/** A person's days before today, last month then this month, oldest first. Today is left out: the day is not over. */
+function timeline(row: GridRow, before: GridRow | undefined, today: string): Day[] {
+  const days: Day[] = [];
+  for (const source of [before, row]) {
+    if (!source) continue;
+    for (const [date, cell] of source.cells) if (date < today) days.push({ date, cell });
+  }
+  return days.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Only the days that were a working day for the person: days off, holidays and leave neither break a streak nor count in it. */
+const workingDaysOf = (days: Day[]) => days.filter((d) => !OFF_STATUSES.has(d.cell.status));
+
+/** True when the person's record runs up to yesterday: someone who has left, or not started, has nothing to say about now. */
+const recordReachesYesterday = (days: Day[], today: string) => days.at(-1)?.date === previousDate(today);
+
+/** How many of the latest working days match, and the first date of that run. */
+function trailingRun(working: Day[], matches: (cell: GridCell) => boolean): { count: number; since: string | null; wholeRecord: boolean } {
+  let count = 0;
+  for (let i = working.length - 1; i >= 0 && matches(working[i].cell); i -= 1) count += 1;
+  return { count, since: count > 0 ? working[working.length - count].date : null, wholeRecord: count === working.length };
+}
+
+const previousRows = (input: InsightsInput) => new Map(input.previous.rows.map((r) => [r.employee.id, r]));
+
+/** Someone absent on each of the latest working days: worth a phone call, not a report. */
+export function absentStreak(input: InsightsInput): Fact[] {
+  const before = previousRows(input);
+  const found = input.current.rows.flatMap((row) => {
+    const days = timeline(row, before.get(row.employee.id), input.today);
+    if (!recordReachesYesterday(days, input.today)) return [];
+    const run = trailingRun(workingDaysOf(days), (cell) => cell.status === "absent");
+    return run.count >= THRESHOLDS.absentStreakDays ? [{ row, ...run }] : [];
+  });
+  return top(found, (f) => f.count).map(({ row, count, since, wholeRecord }) => ({
+    id: `absent-streak:${row.employee.id}`,
+    category: "people",
+    tone: "danger",
+    text: `${row.employee.name} has been absent ${wholeRecord ? "for at least " : ""}${plural(count, "working day")} in a row, since ${formatOfficeDate(since!)}. Worth a call.`,
+    href: personDayHref(row.employee.id, since!),
+    subject: row.employee.id,
+    weight: 50 + count,
+  }));
+}
+
+/** Someone late on each of the latest working days. */
+export function lateStreak(input: InsightsInput): Fact[] {
+  const before = previousRows(input);
+  const found = input.current.rows.flatMap((row) => {
+    const days = timeline(row, before.get(row.employee.id), input.today);
+    if (!recordReachesYesterday(days, input.today)) return [];
+    const run = trailingRun(workingDaysOf(days), (cell) => cell.status === "late");
+    return run.count >= THRESHOLDS.lateStreakDays ? [{ row, count: run.count }] : [];
+  });
+  return top(found, (f) => f.count).map(({ row, count }) => ({
+    id: `late-streak:${row.employee.id}`,
+    category: "people",
+    tone: "warning",
+    text: `${row.employee.name} was late on each of the last ${count} working days.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
+    weight: count,
+  }));
+}
+
+/** Someone who is late mostly on one weekday: often a reason behind it, such as a class or a bus that day. */
+export function latePattern(input: InsightsInput): Fact[] {
+  const before = previousRows(input);
+  const found = input.current.rows.flatMap((row) => {
+    const lates = timeline(row, before.get(row.employee.id), input.today).filter((d) => d.cell.status === "late");
+    if (lates.length < THRESHOLDS.latePatternLates) return [];
+    const byDay = new Array<number>(7).fill(0);
+    for (const d of lates) byDay[weekdayOf(d.date)] += 1;
+    const worst = byDay.indexOf(Math.max(...byDay));
+    const ok = byDay[worst] >= THRESHOLDS.latePatternOnDay && byDay[worst] / lates.length >= THRESHOLDS.latePatternShare;
+    return ok ? [{ row, weekday: worst, onDay: byDay[worst], total: lates.length }] : [];
+  });
+  return top(found, (f) => f.onDay).map(({ row, weekday, onDay, total }) => ({
+    id: `late-pattern:${row.employee.id}`,
+    category: "people",
+    tone: "info",
+    text: `${row.employee.name} is late most ${WEEKDAYS[weekday]}: ${onDay} of ${total} lates in two months.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
+    weight: onDay,
+  }));
+}
+
+/** Someone whose absences keep landing next to a weekend, a holiday or leave. */
+export function absenceNextToOffDays(input: InsightsInput): Fact[] {
+  const before = previousRows(input);
+  const found = input.current.rows.flatMap((row) => {
+    const days = timeline(row, before.get(row.employee.id), input.today);
+    const byDate = new Map(days.map((d) => [d.date, d.cell]));
+    const absences = days.filter((d) => d.cell.status === "absent");
+    if (absences.length < THRESHOLDS.nextToOffAbsences) return [];
+    const next = absences.filter((d) => {
+      const around = [byDate.get(previousDate(d.date)), byDate.get(nextDate(d.date))];
+      return around.some((cell) => cell !== undefined && OFF_STATUSES.has(cell.status));
+    }).length;
+    return next / absences.length >= THRESHOLDS.nextToOffShare ? [{ row, next, total: absences.length }] : [];
+  });
+  return top(found, (f) => f.next).map(({ row, next, total }) => ({
+    id: `absent-next-to-off:${row.employee.id}`,
+    category: "people",
+    tone: "info",
+    text: `${row.employee.name}'s absences fall next to days off: ${next} of ${total} in two months.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
+    weight: next,
+  }));
+}
+
+const averageLate = (row: GridRow) => (row.totals.late > 0 ? row.totals.lateMinutes / row.totals.late : 0);
+
+/** Someone whose lates are not more often but longer than last month. */
+export function lateMinutesUp(input: InsightsInput): Fact[] {
+  const before = previousRows(input);
+  const found = input.current.rows.flatMap((row) => {
+    const last = before.get(row.employee.id);
+    if (!last || last.totals.late === 0 || row.totals.late < THRESHOLDS.longerLatesMin) return [];
+    const now = averageLate(row);
+    const then = averageLate(last);
+    return now >= THRESHOLDS.longerLatesMinutes && now >= then * THRESHOLDS.longerLatesRatio ? [{ row, now, then }] : [];
+  });
+  return top(found, (f) => f.now - f.then).map(({ row, now, then }) => ({
+    id: `late-longer:${row.employee.id}`,
+    category: "people",
+    tone: "warning",
+    text: `${row.employee.name}'s lates are getting longer: ${formatDuration(Math.round(now))} on average, up from ${formatDuration(Math.round(then))}.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
+    weight: Math.round(now - then),
+  }));
+}
+
+/** Someone who keeps leaving before the shift ends. Only when the leaving punch is on. */
+export function leftEarly(input: InsightsInput): Fact[] {
+  if (!input.trackLeavingPunch) return [];
+  const found = input.current.rows.flatMap((row) => {
+    const days = [...row.cells].filter(([date, cell]) => cell.earlyMinutes > 0 && date !== input.today).length;
+    return days >= THRESHOLDS.leftEarlyDays ? [{ row, days }] : [];
+  });
+  return top(found, (f) => f.days).map(({ row, days }) => ({
+    id: `left-early:${row.employee.id}`,
+    category: "people",
+    tone: "info",
+    text: `${row.employee.name} left early on ${plural(days, "day")} this month.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
+    weight: days,
+  }));
+}
+
+/** Good news worth saying: someone who had a rough month and has been on time since. */
+export function backOnTrack(input: InsightsInput): Fact[] {
+  const before = previousRows(input);
+  const found = input.current.rows.flatMap((row) => {
+    const last = before.get(row.employee.id);
+    if (!last || last.totals.late + last.totals.absent < THRESHOLDS.backOnTrackBefore) return [];
+    // Counted from the start of this month, so "after a rough month" stays about the month just gone.
+    const days = timeline(row, undefined, input.today);
+    if (!recordReachesYesterday(days, input.today)) return [];
+    const run = trailingRun(workingDaysOf(days), (cell) => cell.status === "present");
+    return run.count >= THRESHOLDS.backOnTrackDays ? [{ row, count: run.count, rough: last.totals.late + last.totals.absent }] : [];
+  });
+  return top(found, (f) => f.count).map(({ row, count, rough }) => ({
+    id: `back-on-track:${row.employee.id}`,
+    category: "people",
+    tone: "success",
+    text: `${row.employee.name} has been on time for ${plural(count, "working day")}, after ${plural(rough, "late or absence", "lates and absences")} last month.`,
+    href: personMonthHref(row.employee.id, input.current.month),
+    subject: row.employee.id,
+    weight: count,
+  }));
+}
+
+/**
+ * Facts about one person can overlap. A rule that explains more beats one it
+ * contains, then no one gets more than THRESHOLDS.perPerson facts. The one
+ * about pay (one late from a deduction) is always kept.
+ */
+const BEATS: Record<string, string[]> = {
+  "absent-streak": ["absent-next-to-off"],
+  "late-streak": ["lates-up", "late-pattern", "late-longer"],
+  "lates-up": ["late-pattern"],
+};
+const ALWAYS_KEEP = new Set(["near-deduction"]);
+
+export function limitPerPerson(ranked: readonly Fact[]): Fact[] {
+  const kindsBySubject = new Map<string, Set<string>>();
+  for (const fact of ranked) {
+    if (!fact.subject) continue;
+    const kinds = kindsBySubject.get(fact.subject) ?? new Set<string>();
+    kinds.add(fact.id.split(":")[0]);
+    kindsBySubject.set(fact.subject, kinds);
+  }
+  const kept = new Map<string, number>();
+  return ranked.filter((fact) => {
+    if (!fact.subject) return true;
+    const kind = fact.id.split(":")[0];
+    const kinds = kindsBySubject.get(fact.subject)!;
+    if ([...kinds].some((other) => BEATS[other]?.includes(kind))) return false;
+    if (ALWAYS_KEEP.has(kind)) return true;
+    const count = kept.get(fact.subject) ?? 0;
+    if (count >= THRESHOLDS.perPerson) return false;
+    kept.set(fact.subject, count + 1);
+    return true;
+  });
+}
+
+const RULES = [
+  absentStreak,
+  lateStreak,
+  latePattern,
+  absenceNextToOffDays,
+  lateMinutesUp,
+  leftEarly,
+  backOnTrack,
+  latesUp,
+  nearLateDeduction,
+  forgotToPunchOut,
+  perfectAttendance, worstWeekday, latesTrend,
+  lowLeaveBalance,
+  deviceFacts,
+  unmatchedCodes,
+  payrollChange,
+];
 
 const TONE_ORDER: Record<FactTone, number> = { danger: 0, warning: 1, info: 2, success: 3 };
 
@@ -320,7 +581,7 @@ export type Insights = { facts: Fact[]; byCategory: { category: FactCategory; fa
 
 /** Every fact there is to say, ranked, and grouped for the Insights screen. */
 export function buildInsights(input: InsightsInput): Insights {
-  const facts = rankFacts(RULES.flatMap((rule) => rule(input)));
+  const facts = limitPerPerson(rankFacts(RULES.flatMap((rule) => rule(input))));
   const order: FactCategory[] = ["people", "attendance", "payroll", "office"];
   return {
     facts,

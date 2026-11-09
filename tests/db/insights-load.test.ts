@@ -58,8 +58,8 @@ describe.skipIf(!testDatabaseUrl)("insights from the database", () => {
 
     const { insights } = await getInsights(db, NOW);
     const up = insights.facts.find((f) => f.id === `lates-up:${personId}`);
-    expect(up?.text).toContain("was late 3 times so far this month, up from 0 at this point last month.");
-    expect(up?.href).toBe(`/employees/${personId}`);
+    expect(up?.text).toContain("was late 3 times so far this month, the first lates in a while.");
+    expect(up?.href).toBe(`/attendance/${personId}?month=2044-05`);
 
     // The quiet device and its clock, while the office is open.
     expect(insights.facts.find((f) => f.id === `device-offline:${serial}`)?.text).toContain(`Insight door ${serial} was last heard from 3 h ago`);
