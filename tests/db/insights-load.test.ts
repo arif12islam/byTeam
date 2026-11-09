@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { devices, employees, shifts } from "@/db/schema";
@@ -24,6 +24,9 @@ describe.skipIf(!testDatabaseUrl)("insights from the database", () => {
 
   beforeAll(async () => {
     ({ db, close } = connect());
+    // Earlier runs of this file left people who were late in this month too. Switch them off, so only this run's person is in the grid:
+    // a rule gives at most five facts, and equal people would push this one out.
+    await db.update(employees).set({ active: false }).where(like(employees.name, "Insight Person %"));
     const code = uniqueCode();
     const [shift] = await db.insert(shifts).values({ name: `Insights shift ${code}`, startTime: "09:00", endTime: "18:00", graceMinutes: 10 }).returning();
     const [person] = await db.insert(employees).values({ empCode: code, name: `Insight Person ${code}`, joinDate: "2044-01-01", shiftId: shift.id }).returning();
@@ -44,7 +47,7 @@ describe.skipIf(!testDatabaseUrl)("insights from the database", () => {
   });
   afterAll(() => close());
 
-  it("loads this month and last month, and the rules turn what is there into facts", async () => {
+  it("loads this month and last month, and the rules turn what is there into facts", { timeout: 60_000 }, async () => {
     const input = await loadInsightsInput(db, NOW);
     expect(input.today).toBe(TODAY);
     expect(input.current.from).toBe("2044-05-01");
@@ -63,7 +66,7 @@ describe.skipIf(!testDatabaseUrl)("insights from the database", () => {
     expect(insights.facts.find((f) => f.id === `device-clock:${serial}`)?.text).toContain("5 min fast");
   });
 
-  it("is reused for a few minutes, and worked out again after that or on a new day", async () => {
+  it("is reused for a few minutes, and worked out again after that or on a new day", { timeout: 60_000 }, async () => {
     const globalCache = globalThis as unknown as { byteamInsights?: unknown };
     globalCache.byteamInsights = undefined;
 

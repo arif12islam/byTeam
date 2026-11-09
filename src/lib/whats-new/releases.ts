@@ -9,7 +9,7 @@
  * numbered to match the markers in the picture.
  */
 
-export const VISUALS = ["app", "login", "late", "departments", "leavingPunch", "export", "delete"] as const;
+export const VISUALS = ["app", "login", "late", "departments", "leavingPunch", "export", "delete", "holidays", "notifications", "insights"] as const;
 export type VisualKey = (typeof VISUALS)[number];
 
 export type ReleaseItem = {
@@ -37,9 +37,44 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    id: "2026-11-b",
+    title: "Holidays, alerts and insights",
+    date: "2026-11-09",
+    summary: "Load a year of holidays in one go, get alerts on your phone, and see what is worth a look.",
+    items: [
+      {
+        id: "holiday-import",
+        title: "Import public holidays",
+        body: "Load a year of Bangladesh holidays from Google's calendar, or paste your own list. You see every date first and tick only what is a day off for your office.",
+        visual: "holidays",
+        steps: ["Open Settings, Holidays, Import public holidays.", "Choose Google's calendar or paste a list, then tap Show the list.", "Untick any date that is not a day off, then tap Add."],
+        href: "/settings",
+        tryLabel: "Open Settings",
+      },
+      {
+        id: "notifications",
+        title: "Alerts on your phone",
+        body: "Get a notification when the fingerprint device or the office laptop goes quiet, a morning summary of who is in, and a heads up when an unknown code punches. They work even when byTeam is closed.",
+        visual: "notifications",
+        steps: ["On an iPhone, add byTeam to the Home Screen first.", "Open Settings, Notifications and turn them on for this device.", "Choose what you want, then tap Send a test."],
+        href: "/settings",
+        tryLabel: "Open Settings",
+      },
+      {
+        id: "insights",
+        title: "Insights: what is worth a look",
+        body: "Short facts worked out from what byTeam already knows: lates going up, someone one late from a pay cut, forgotten leaving punches, a quiet device. The top few show on Today.",
+        visual: "insights",
+        steps: ["Look at Worth a look on Today.", "Tap a fact to go to the person or screen it is about.", "Open Insights for the full list."],
+        href: "/insights",
+        tryLabel: "Open Insights",
+      },
+    ],
+  },
+  {
     id: "2026-11",
     title: "November update",
-    date: "2026-11-10",
+    date: "2026-11-09",
     summary: "A new look, an app for your phone, and a lot of small things made easier.",
     items: [
       {
