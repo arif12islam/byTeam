@@ -65,11 +65,12 @@ async function DayContent({
   const { employee, result, punches } = detail;
   // Opened from one person's calendar (or an Insights fact): go back to that calendar. Otherwise back to everyone.
   const fromPerson = from === "person";
-  const back = fromPerson ? personMonthHref(employee.id, date.slice(0, 7)) : `/attendance?month=${date.slice(0, 7)}`;
+  const fromToday = from === "today";
+  const back = fromPerson ? personMonthHref(employee.id, date.slice(0, 7)) : fromToday ? "/today" : `/attendance?month=${date.slice(0, 7)}`;
 
   return (
     <>
-      <BackLink href={back}>{fromPerson ? `Back to ${employee.name}` : "Back to attendance"}</BackLink>
+      <BackLink href={back}>{fromPerson ? `Back to ${employee.name}` : fromToday ? "Back to Today" : "Back to attendance"}</BackLink>
       <PageHeader
         avatar={employee.name}
         title={employee.name}
