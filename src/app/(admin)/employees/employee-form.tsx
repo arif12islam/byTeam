@@ -75,7 +75,7 @@ export function EmployeeForm({ shifts, departments, employee, initialCode }: Pro
             departments.length === 0 ? (
               <>
                 No departments yet.{" "}
-                <Link href="/settings#departments" className="text-primary underline underline-offset-4">
+                <Link href="/settings?tab=company#departments" className="text-primary underline underline-offset-4">
                   Add one in Settings
                 </Link>
                 .
@@ -83,7 +83,7 @@ export function EmployeeForm({ shifts, departments, employee, initialCode }: Pro
             ) : (
               <>
                 Missing one?{" "}
-                <Link href="/settings#departments" className="text-primary underline underline-offset-4">
+                <Link href="/settings?tab=company#departments" className="text-primary underline underline-offset-4">
                   Manage departments
                 </Link>
                 .
