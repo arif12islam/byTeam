@@ -47,8 +47,8 @@ export const RELEASES: Release[] = [
         title: "Import public holidays",
         body: "Load a year of Bangladesh holidays from Google's calendar, or paste your own list. You see every date first and tick only what is a day off for your office.",
         visual: "holidays",
-        steps: ["Open Settings, Holidays, Import public holidays.", "Choose Google's calendar or paste a list, then tap Show the list.", "Untick any date that is not a day off, then tap Add."],
-        href: "/settings",
+        steps: ["Open Settings, Holidays tab, Import public holidays.", "Choose Google's calendar or paste a list, then tap Show the list.", "Untick any date that is not a day off, then tap Add."],
+        href: "/settings?tab=holidays",
         tryLabel: "Open Settings",
       },
       {
@@ -56,8 +56,8 @@ export const RELEASES: Release[] = [
         title: "Alerts on your phone",
         body: "Get a notification when the fingerprint device or the office laptop goes quiet, a morning summary of who is in, and a heads up when an unknown code punches. They work even when byTeam is closed.",
         visual: "notifications",
-        steps: ["On an iPhone, add byTeam to the Home Screen first.", "Open Settings, Notifications and turn them on for this device.", "Choose what you want, then tap Send a test."],
-        href: "/settings",
+        steps: ["On an iPhone, add byTeam to the Home Screen first.", "Open Settings, Notifications tab and turn them on for this device.", "Choose what you want, then tap Send a test."],
+        href: "/settings?tab=notifications",
         tryLabel: "Open Settings",
       },
       {
@@ -90,7 +90,7 @@ export const RELEASES: Release[] = [
         body: "Set your name, email and password yourself. Your name shows in the menu and in the audit log.",
         visual: "login",
         steps: ["Open Settings and find Your login.", "Change the name, email or password.", "Enter your current password and save."],
-        href: "/settings",
+        href: "/settings?tab=login",
         tryLabel: "Open Settings",
       },
       {
@@ -108,7 +108,7 @@ export const RELEASES: Release[] = [
         body: "No more typing the same department differently. Add departments once in Settings, then pick them for each employee. Renaming one renames it for everyone in it.",
         visual: "departments",
         steps: ["Settings, Departments: add or rename them.", "Open an employee and pick the department.", "Missing one? Use Manage departments."],
-        href: "/settings#departments",
+        href: "/settings?tab=company#departments",
         tryLabel: "Manage departments",
       },
       {
