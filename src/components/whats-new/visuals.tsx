@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Share, Trash2 } from "lucide-react";
+import { Bell, Check, ChevronDown, Lightbulb, Share, Trash2 } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 import { Avatar } from "@/components/ui/avatar";
@@ -319,6 +319,122 @@ function DeleteVisual() {
   );
 }
 
+function HolidaysVisual() {
+  const rows: [string, string, boolean, string | null][] = [
+    ["Victory Day", "Wed 16 Dec 2026", true, null],
+    ["Christmas Day", "Fri 25 Dec 2026", false, "Weekly off day"],
+    ["Bengali New Year", "Tue 14 Apr 2026", false, "Before today"],
+  ];
+  return (
+    <Stage>
+      <Panel className="space-y-3">
+        <Pin n={1} className="w-fit pr-4">
+          <p className="text-sm font-semibold">Import public holidays</p>
+        </Pin>
+        <Pin n={2}>
+          <div className="grid grid-cols-2 gap-1.5 text-xs">
+            <div className="rounded-md border border-primary bg-accent px-2 py-1.5 font-medium">Google&apos;s calendar</div>
+            <div className="rounded-md border border-input px-2 py-1.5 font-medium">Paste a list</div>
+          </div>
+        </Pin>
+        <ul className="divide-y divide-border rounded-md border border-border text-xs">
+          {rows.map(([name, date, ticked, tag]) => (
+            <li key={name} className="flex items-center gap-2 px-2 py-1.5">
+              <span className={cn("grid size-4 shrink-0 place-items-center rounded border", ticked ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card")}>
+                {ticked ? <Check className="size-3" /> : null}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{name}</span>
+                <span className="block text-muted-foreground">{date}</span>
+              </span>
+              {tag ? <Badge>{tag}</Badge> : null}
+            </li>
+          ))}
+        </ul>
+        <Pin n={3} className="w-fit pr-4">
+          <Button>Add 1 holiday</Button>
+        </Pin>
+      </Panel>
+    </Stage>
+  );
+}
+
+function NotificationsVisual() {
+  return (
+    <Stage>
+      <div className="space-y-3">
+        <Panel className="space-y-2">
+          <Pin n={1} className="w-fit pr-4">
+            <p className="text-xs text-muted-foreground">Home Screen app</p>
+          </Pin>
+          <div className="flex items-start gap-2.5 rounded-xl bg-secondary p-2.5">
+            <BrandMark className="size-8 rounded-lg" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold">Fingerprint device offline</p>
+              <p className="text-xs text-muted-foreground">Front door was last heard from 2 h ago. Check its power and the office laptop.</p>
+            </div>
+            <span className="text-[10px] text-muted-foreground">now</span>
+          </div>
+        </Panel>
+        <Panel className="space-y-2">
+          <Pin n={2} className="w-fit pr-4">
+            <p className="flex items-center gap-1.5 text-sm font-semibold">
+              <Bell className="size-3.5" />
+              Notifications
+            </p>
+          </Pin>
+          {["Fingerprint device offline", "Morning summary", "Unknown code punched"].map((name) => (
+            <div key={name} className="flex items-center gap-2 rounded-md border border-primary bg-accent px-2 py-1.5 text-xs">
+              <Check className="size-3.5" />
+              {name}
+            </div>
+          ))}
+          <div className="flex items-center gap-2">
+            <Pin n={3}>
+              <Button tone="outline">Send a test</Button>
+            </Pin>
+          </div>
+        </Panel>
+      </div>
+    </Stage>
+  );
+}
+
+function InsightsVisual() {
+  const facts: [string, string][] = [
+    ["bg-red-500", "Front door was last heard from 2 h ago. Check its power and the office laptop."],
+    ["bg-amber-400", "Rahim was late 6 times so far this month, up from 2 at this point last month."],
+    ["bg-blue-500", "Sharif has no leaving punch on 4 days this month."],
+  ];
+  return (
+    <Stage>
+      <Panel className="space-y-1">
+        <Pin n={1} className="w-fit pr-4">
+          <p className="flex items-center gap-1.5 text-sm font-semibold">
+            <Lightbulb className="size-3.5 text-muted-foreground" />
+            Worth a look
+          </p>
+        </Pin>
+        <ul className="divide-y divide-border">
+          {facts.map(([dot, text], i) => (
+            <li key={text} className="flex items-start gap-2 py-2 text-xs">
+              <span className={cn("mt-1 size-2 shrink-0 rounded-full", dot)} />
+              <span className="min-w-0 flex-1">{text}</span>
+              {i === 1 ? <Marker n={2} /> : null}
+            </li>
+          ))}
+        </ul>
+        <div className="flex justify-end pt-1">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-primary underline underline-offset-2">
+            See all
+            <Marker n={3} />
+          </span>
+        </div>
+      </Panel>
+    </Stage>
+  );
+}
+
 const COMPONENTS: Record<VisualKey, () => React.JSX.Element> = {
   app: AppVisual,
   login: LoginVisual,
@@ -327,6 +443,9 @@ const COMPONENTS: Record<VisualKey, () => React.JSX.Element> = {
   leavingPunch: LeavingPunchVisual,
   export: ExportVisual,
   delete: DeleteVisual,
+  holidays: HolidaysVisual,
+  notifications: NotificationsVisual,
+  insights: InsightsVisual,
 };
 
 /** The picture for a release item. */
