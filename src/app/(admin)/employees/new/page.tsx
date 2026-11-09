@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db";
+import { listDepartments } from "@/lib/employees/departments";
 import { suggestedCode } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
 import { listShifts } from "@/lib/shifts/shifts";
@@ -28,7 +29,7 @@ export default function NewEmployeePage(props: PageProps<"/employees/new">) {
 async function NewEmployee({ searchParams }: { searchParams: PageProps<"/employees/new">["searchParams"] }) {
   await requireRole("owner", "hr");
   const code = suggestedCode((await searchParams).code);
-  const shifts = await listShifts(getDb());
+  const [shifts, departments] = await Promise.all([listShifts(getDb()), listDepartments(getDb())]);
 
   if (shifts.length === 0) {
     return (
@@ -44,7 +45,7 @@ async function NewEmployee({ searchParams }: { searchParams: PageProps<"/employe
 
   return (
     <section className="mt-6 max-w-3xl rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
-      <EmployeeForm shifts={shifts} initialCode={code} />
+      <EmployeeForm shifts={shifts} departments={departments.map((d) => d.name)} initialCode={code} />
     </section>
   );
 }

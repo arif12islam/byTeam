@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { countActiveSamplePeople } from "@/lib/demo/sample";
 import { listRecentOutages } from "@/lib/attendance/outages";
+import { listDepartments } from "@/lib/employees/departments";
 import { getCompanySettings } from "@/lib/settings/company";
 import { groupByYear, listHolidays } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
@@ -16,6 +17,7 @@ import { OutageForm, RemoveOutageForm } from "./outage-forms";
 import { SampleDataForm } from "./sample-data-form";
 import { CompanyForm } from "./company-form";
 import { HolidayForm } from "./holiday-form";
+import { AddDepartmentForm, DepartmentRowForms } from "./department-forms";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -25,7 +27,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Company details, weekly off days, public holidays, office outages and your login."
+        description="Company details, departments, weekly off days, public holidays, office outages and your login."
       />
       <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading settings</p>}>
         <SettingsContent />
@@ -48,11 +50,12 @@ async function SettingsContent() {
   const user = await requireRole("owner", "hr");
 
   const db = getDb();
-  const [company, holidays, outages, activeSamples] = await Promise.all([
+  const [company, holidays, outages, activeSamples, departments] = await Promise.all([
     getCompanySettings(db),
     listHolidays(db),
     listRecentOutages(db),
     countActiveSamplePeople(db),
+    listDepartments(db),
   ]);
   const groups = groupByYear(holidays);
 
@@ -61,6 +64,24 @@ async function SettingsContent() {
       <Section title="Company" description="Shown on payslips and reports.">
         <CompanyForm {...company} />
       </Section>
+
+      <div id="departments" className="scroll-mt-6">
+        <Section title="Departments" description="The list you choose from when you add or edit an employee. Renaming a department renames it for everyone in it. Delete one once nobody is in it.">
+          <AddDepartmentForm />
+
+          {departments.length === 0 ? (
+            <p className="mt-6 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
+              No departments yet. Add the first one above, then pick it when you add an employee.
+            </p>
+          ) : (
+            <ul className="mt-6 divide-y divide-border rounded-md border border-border">
+              {departments.map((department) => (
+                <DepartmentRowForms key={department.id} department={department} />
+              ))}
+            </ul>
+          )}
+        </Section>
+      </div>
 
       <Section
         title="Holidays"

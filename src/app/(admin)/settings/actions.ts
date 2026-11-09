@@ -11,6 +11,7 @@ import { getAuth } from "@/lib/auth";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { createOutage, removeOutage } from "@/lib/attendance/outages";
 import { loadSampleData, switchOffSamplePeople } from "@/lib/demo/sample";
+import { createDepartment, deleteDepartment, renameDepartment } from "@/lib/employees/departments";
 import { companySettingsSchema, saveCompanySettings } from "@/lib/settings/company";
 import { addHoliday, holidaySchema, removeHoliday } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
@@ -136,4 +137,39 @@ export async function changeLoginAction(_previous: FormState, formData: FormData
   if (!result.nameChanged && !result.emailChanged && !result.passwordChanged) return { message: "Nothing changed." };
   if (result.passwordChanged) return { message: "Saved. Other devices are signed out and need the new password." };
   return { message: result.emailChanged ? "Saved. Use the new email the next time you sign in." : "Saved." };
+}
+
+export async function addDepartmentAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const name = String(formData.get("name") ?? "");
+  const result = await createDepartment(getDb(), { name }, user.id);
+  if (!result.ok) return formError(formData, result.error);
+
+  revalidatePath("/settings");
+  revalidatePath("/employees", "layout");
+  return { message: `Added ${name.trim()}.` };
+}
+
+export async function renameDepartmentAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const id = String(formData.get("id") ?? "");
+  const result = await renameDepartment(getDb(), id, { name: String(formData.get("name") ?? "") }, user.id);
+  if (!result.ok) return formError(formData, result.error);
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+  return { message: "Saved." };
+}
+
+export async function deleteDepartmentAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const result = await deleteDepartment(getDb(), String(formData.get("id") ?? ""), user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/settings");
+  revalidatePath("/employees", "layout");
+  return { message: "Deleted." };
 }

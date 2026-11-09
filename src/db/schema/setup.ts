@@ -13,6 +13,7 @@ import {
   text,
   time,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -99,6 +100,22 @@ export const shifts = pgTable(
     check("shifts_end_after_start", sql`${t.endTime} > ${t.startTime}`),
     check("shifts_grace_not_negative", sql`${t.graceMinutes} >= 0`),
   ],
+);
+
+/**
+ * The departments people can be placed in, so the employee form offers a list
+ * instead of free text. employees.department keeps the name as text (reports
+ * group by it); renaming a department renames it there too.
+ */
+export const departments = pgTable(
+  "departments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("departments_name_lower_idx").on(sql`lower(${t.name})`)],
 );
 
 /** Staff records. emp_code is the PIN on the device, so it is unique. */

@@ -7,6 +7,7 @@ import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
+import { listDepartments } from "@/lib/employees/departments";
 import { getEmployee } from "@/lib/employees/employees";
 import { requireRole } from "@/lib/session";
 import { listShifts } from "@/lib/shifts/shifts";
@@ -32,7 +33,7 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
   if (!id.success) notFound();
 
   const db = getDb();
-  const [employee, shifts] = await Promise.all([getEmployee(db, id.data), listShifts(db)]);
+  const [employee, shifts, departments] = await Promise.all([getEmployee(db, id.data), listShifts(db), listDepartments(db)]);
   if (!employee) notFound();
 
   return (
@@ -48,7 +49,7 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
         <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
           <h2 className="text-base font-semibold">Details</h2>
           <div className="mt-5">
-            <EmployeeForm employee={employee} shifts={shifts} />
+            <EmployeeForm employee={employee} shifts={shifts} departments={departments.map((d) => d.name)} />
           </div>
         </section>
 
