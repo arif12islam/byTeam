@@ -6,6 +6,7 @@ import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db";
 import { listDayAdjustments, type DayAdjustment } from "@/lib/attendance/adjustments";
+import { personMonthHref } from "@/lib/attendance/links";
 import { statusLabel } from "@/lib/attendance/labels";
 import { loadDayDetail } from "@/lib/attendance/month";
 import { requireRole } from "@/lib/session";
@@ -22,7 +23,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default function AttendanceDayPage(props: PageProps<"/attendance/[employeeId]/[date]">) {
   return (
     <Suspense fallback={<p className="mt-6 text-sm text-muted-foreground">Loading day</p>}>
-      <DayContent params={props.params} />
+      <DayContent params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
@@ -43,10 +44,17 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-async function DayContent({ params }: { params: PageProps<"/attendance/[employeeId]/[date]">["params"] }) {
+async function DayContent({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/attendance/[employeeId]/[date]">["params"];
+  searchParams: PageProps<"/attendance/[employeeId]/[date]">["searchParams"];
+}) {
   await requireRole("owner", "hr");
 
   const { employeeId, date } = await params;
+  const { from } = await searchParams;
   if (!UUID.test(employeeId) || !isValidOfficeDate(date)) notFound();
 
   const today = toOfficeDate(new Date());
@@ -55,11 +63,13 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
   if (!detail) notFound();
 
   const { employee, result, punches } = detail;
-  const back = `/attendance?month=${date.slice(0, 7)}`;
+  // Opened from one person's calendar (or an Insights fact): go back to that calendar. Otherwise back to everyone.
+  const fromPerson = from === "person";
+  const back = fromPerson ? personMonthHref(employee.id, date.slice(0, 7)) : `/attendance?month=${date.slice(0, 7)}`;
 
   return (
     <>
-      <BackLink href={back}>Back to attendance</BackLink>
+      <BackLink href={back}>{fromPerson ? `Back to ${employee.name}` : "Back to attendance"}</BackLink>
       <PageHeader
         avatar={employee.name}
         title={employee.name}

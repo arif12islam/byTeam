@@ -4,12 +4,20 @@ import type { DayResult } from "@/lib/attendance/compute-day";
 import { buildPeriodGrid, type GridInput } from "@/lib/attendance/month";
 import type { DeviceRow } from "@/lib/devices/devices";
 import {
+  absenceNextToOffDays,
+  absentStreak,
+  backOnTrack,
   buildInsights,
   deviceFacts,
   factsForToday,
   forgotToPunchOut,
+  lateMinutesUp,
+  latePattern,
+  lateStreak,
   latesTrend,
   latesUp,
+  leftEarly,
+  limitPerPerson,
   lowLeaveBalance,
   nearLateDeduction,
   payrollChange,
@@ -82,7 +90,7 @@ describe("latesUp", () => {
       }),
     );
     expect(facts).toHaveLength(1);
-    expect(facts[0]).toMatchObject({ id: "lates-up:a", tone: "warning", category: "people", href: "/employees/a" });
+    expect(facts[0]).toMatchObject({ id: "lates-up:a", tone: "warning", category: "people", href: "/attendance/a?month=2026-11", subject: "a" });
     expect(facts[0].text).toBe("Rahim was late 6 times so far this month, up from 2 at this point last month.");
   });
 
@@ -122,7 +130,7 @@ describe("forgotToPunchOut", () => {
   it("names someone with 3 or more days without a leaving punch, not counting today", () => {
     const facts = forgotToPunchOut(input({ current: [person("a", "Sharif", "2026-11", forgot([2, 3, 4, 12]), 12), person("b", "Bela", "2026-11", forgot([2, 12]), 12), person("c", "Chand", "2026-11", forgot([3, 4, 5]), 12)] }));
     expect(ids(facts).sort()).toEqual(["forgot-out:a", "forgot-out:c"]);
-    expect(facts.find((f) => f.id === "forgot-out:a")?.text).toBe("Sharif has no leaving punch on 3 days this month.");
+    expect(facts.find((f) => f.id === "forgot-out:a")?.text).toBe("Sharif has no leaving punch on 3 days this month. Open the oldest to add the leaving time.");
   });
 
   it("is silent when the office does not use the leaving punch", () => {
@@ -260,7 +268,7 @@ describe("unmatchedCodes", () => {
 describe("payrollChange", () => {
   it("says how net pay moved between the two latest months, and the change in people", () => {
     const [fact] = payrollChange(input({ payroll: [{ month: "2026-10", net: 612_000, people: 20 }, { month: "2026-09", net: 588_000, people: 18 }] }));
-    expect(fact).toMatchObject({ category: "payroll", tone: "info", href: "/payroll" });
+    expect(fact).toMatchObject({ category: "payroll", tone: "info", href: "/payroll?month=2026-10" });
     expect(fact.text).toBe("Net pay for Oct 2026 was 4% higher than Sept 2026, with 2 more people paid.");
     expect(payrollChange(input({ payroll: [{ month: "2026-10", net: 500_000, people: 17 }, { month: "2026-09", net: 600_000, people: 18 }] }))[0].text).toBe(
       "Net pay for Oct 2026 was 17% lower than Sept 2026, with 1 fewer person paid.",
@@ -329,5 +337,160 @@ describe("ranking and the whole set", () => {
       expect(fact.text, fact.id).not.toMatch(/\b[A-Z]{4,}\b/);
       expect(fact.text.endsWith("."), fact.id).toBe(true);
     }
+  });
+});
+
+
+// ---- Rules about one person over the last two months ----
+// TODAY is Thursday 12 Nov 2026, so 1 and 8 Nov are Sundays and 6 Nov is a Friday. October 2026 starts on a Thursday.
+
+const off = { status: "weekly_off" as const, punchCount: 0 };
+const range = (from: number, to: number, over: Partial<DayResult>) => Object.fromEntries(Array.from({ length: to - from + 1 }, (_, i) => [from + i, over]));
+const mine = (days: Record<number, Partial<DayResult>>, last = 12) => [person("a", "Rahim", "2026-11", days, last)];
+
+describe("absentStreak", () => {
+  it("names someone absent on the latest working days and opens the first of them", () => {
+    const [fact] = absentStreak(input({ current: mine({ 10: absent, 11: absent }) }));
+    expect(fact).toMatchObject({ id: "absent-streak:a", tone: "danger", subject: "a", href: "/attendance/a/2026-11-10?from=person" });
+    expect(fact.text).toContain("absent 2 working days in a row, since");
+    expect(fact.text).toContain("Worth a call.");
+  });
+
+  it("does not count today, a present day in between, or a person with no record for yesterday", () => {
+    expect(absentStreak(input({ current: mine({ 11: absent, 12: absent }) }))).toEqual([]);
+    expect(absentStreak(input({ current: mine({ 9: absent, 10: { status: "present" }, 11: absent }) }))).toEqual([]);
+    expect(absentStreak(input({ current: mine({ 9: absent, 10: absent }, 10) }))).toEqual([]);
+  });
+
+  it("is not broken by a day off or a holiday in between", () => {
+    const [fact] = absentStreak(input({ current: mine({ 9: absent, 10: off, 11: absent }) }));
+    expect(fact.text).toContain("absent 2 working days in a row");
+  });
+
+  it("says at least when the run goes back past the start of what it can see", () => {
+    const previous = [person("a", "Rahim", "2026-10", range(1, 31, absent), 31)];
+    const [fact] = absentStreak(input({ current: mine(range(1, 11, absent)), previous }));
+    expect(fact.text).toContain("for at least");
+  });
+});
+
+describe("lateStreak", () => {
+  it("names someone late on each of the last 4 or more working days", () => {
+    const [fact] = lateStreak(input({ current: mine(range(8, 11, late)) }));
+    expect(fact).toMatchObject({ id: "late-streak:a", tone: "warning", href: "/attendance/a?month=2026-11" });
+    expect(fact.text).toBe("Rahim was late on each of the last 4 working days.");
+  });
+
+  it("needs 4 in a row, ending on the last working day", () => {
+    expect(lateStreak(input({ current: mine(range(9, 11, late)) }))).toEqual([]);
+    expect(lateStreak(input({ current: mine({ ...range(7, 10, late), 11: { status: "present" } }) }))).toEqual([]);
+  });
+});
+
+describe("latePattern", () => {
+  const mondays = (month: string, days: number[]) => Object.fromEntries(days.map((d) => [d, late]));
+
+  it("names the weekday someone is mostly late on", () => {
+    const previous = [person("a", "Rahim", "2026-10", mondays("2026-10", [5, 12, 19]), 31)];
+    const [fact] = latePattern(input({ current: mine({ 2: late }), previous }));
+    expect(fact).toMatchObject({ id: "late-pattern:a", tone: "info" });
+    expect(fact.text).toBe("Rahim is late most Mondays: 4 of 4 lates in two months.");
+  });
+
+  it("says nothing when the lates are spread over the week", () => {
+    const previous = [person("a", "Rahim", "2026-10", mondays("2026-10", [5, 12]), 31)];
+    expect(latePattern(input({ current: mine({ 3: late, 4: late }), previous }))).toEqual([]);
+  });
+});
+
+describe("absenceNextToOffDays", () => {
+  it("names someone whose absences sit beside days off", () => {
+    const [fact] = absenceNextToOffDays(input({ current: mine({ 1: off, 2: absent, 6: off, 5: absent, 8: off, 9: absent }) }));
+    expect(fact.text).toBe("Rahim's absences fall next to days off: 3 of 3 in two months.");
+  });
+
+  it("says nothing when most absences are in the middle of the week", () => {
+    expect(absenceNextToOffDays(input({ current: mine({ 1: off, 2: absent, 8: off, 9: absent, 4: absent, 10: absent }) }))).toEqual([]);
+  });
+});
+
+describe("lateMinutesUp", () => {
+  const long = (minutes: number, n: number) => range(2, 1 + n, { status: "late", lateMinutes: minutes });
+
+  it("names someone whose lates are longer than last month", () => {
+    const previous = [person("a", "Rahim", "2026-10", long(20, 3), 31)];
+    const [fact] = lateMinutesUp(input({ current: mine(long(40, 3)), previous }));
+    expect(fact.text).toContain("Rahim's lates are getting longer: ");
+    expect(fact.subject).toBe("a");
+  });
+
+  it("needs 1.5 times last month's average and 3 lates", () => {
+    const previous = [person("a", "Rahim", "2026-10", long(30, 3), 31)];
+    expect(lateMinutesUp(input({ current: mine(long(40, 3)), previous }))).toEqual([]);
+    expect(lateMinutesUp(input({ current: mine(long(60, 2)), previous: [person("a", "Rahim", "2026-10", long(20, 3), 31)] }))).toEqual([]);
+  });
+});
+
+describe("leftEarly", () => {
+  const early = { earlyMinutes: 15 };
+
+  it("names someone who left early on 3 or more days", () => {
+    const [fact] = leftEarly(input({ current: mine({ 2: early, 3: early, 4: early }) }));
+    expect(fact.text).toBe("Rahim left early on 3 days this month.");
+  });
+
+  it("says nothing under 3 days or when the leaving punch is off", () => {
+    expect(leftEarly(input({ current: mine({ 2: early, 3: early }) }))).toEqual([]);
+    expect(leftEarly(input({ current: mine({ 2: early, 3: early, 4: early }), trackLeavingPunch: false }))).toEqual([]);
+  });
+});
+
+describe("backOnTrack", () => {
+  const rough = [person("a", "Rahim", "2026-10", lates(4), 31)];
+
+  it("names someone on time for 10 or more working days after a rough month", () => {
+    const [fact] = backOnTrack(input({ current: mine({}), previous: rough }));
+    expect(fact).toMatchObject({ id: "back-on-track:a", tone: "success" });
+    expect(fact.text).toBe("Rahim has been on time for 11 working days, after 4 lates and absences last month.");
+  });
+
+  it("needs the rough month and the run", () => {
+    expect(backOnTrack(input({ current: mine({ 5: late }), previous: rough }))).toEqual([]);
+    expect(backOnTrack(input({ current: mine({}), previous: [person("a", "Rahim", "2026-10", lates(3), 31)] }))).toEqual([]);
+  });
+});
+
+describe("limitPerPerson", () => {
+  const f = (kind: string, subject: string, weight = 1): Fact => ({ id: `${kind}:${subject}`, category: "people", tone: "info", text: kind, href: null, subject, weight });
+  const kinds = (facts: Fact[]) => facts.map((x) => x.id.split(":")[0]);
+
+  it("lets the bigger rule replace the one it contains", () => {
+    expect(kinds(limitPerPerson([f("absent-streak", "a"), f("absent-next-to-off", "a")]))).toEqual(["absent-streak"]);
+    expect(kinds(limitPerPerson([f("late-streak", "a"), f("lates-up", "a"), f("late-pattern", "a"), f("late-longer", "a")]))).toEqual(["late-streak"]);
+    expect(kinds(limitPerPerson([f("lates-up", "a"), f("late-pattern", "a")]))).toEqual(["lates-up"]);
+  });
+
+  it("gives one person at most 2 facts, but always keeps the one about pay", () => {
+    const kept = limitPerPerson([f("left-early", "a"), f("forgot-out", "a"), f("leaves", "a"), f("near-deduction", "a")]);
+    expect(kinds(kept)).toEqual(["left-early", "forgot-out", "near-deduction"]);
+  });
+
+  it("does not limit facts about nobody in particular", () => {
+    const facts: Fact[] = ["a", "b", "c"].map((id) => ({ id, category: "people", tone: "info", text: id, href: null, weight: 1 }));
+    expect(limitPerPerson(facts)).toHaveLength(3);
+  });
+});
+
+describe("buildInsights with the new rules", () => {
+  it("links people to their calendar, keeps ids unique and never writes an em dash", () => {
+    const current = [
+      person("a", "Rahim", "2026-11", { ...range(8, 11, late), 2: { earlyMinutes: 10 }, 3: { earlyMinutes: 10 }, 4: { earlyMinutes: 10 } }, 12),
+      person("b", "Karim", "2026-11", { 10: absent, 11: absent }, 12),
+    ];
+    const { facts } = buildInsights(input({ current }));
+    expect(new Set(ids(facts)).size).toBe(facts.length);
+    expect(facts.every((x) => !x.text.includes("\u2014"))).toBe(true);
+    for (const x of facts.filter((y) => y.subject)) expect(x.href).toMatch(/^\/attendance\/(a|b)(\/|\?)/);
+    expect(facts.filter((x) => x.subject === "a").length).toBeLessThanOrEqual(3);
   });
 });

@@ -24,7 +24,16 @@ function describeCell(date: string, cell: GridCell): string {
  * happened. Tap a day to see the punches behind it. One column on phones,
  * two or three side by side on wider screens.
  */
-export function AttendanceCards({ grid, trackLeavingPunch = true }: { grid: MonthGrid; trackLeavingPunch?: boolean }) {
+export function AttendanceCards({
+  grid,
+  trackLeavingPunch = true,
+  dayQuery = "",
+}: {
+  grid: MonthGrid;
+  trackLeavingPunch?: boolean;
+  /** Added to each day link, for example "?from=person" so the day page knows where to go back to. */
+  dayQuery?: string;
+}) {
   // One small calendar per month the period touches. A single month shows no month heading.
   const months: { month: string; dates: string[] }[] = [];
   for (const date of grid.dates) {
@@ -115,7 +124,7 @@ export function AttendanceCards({ grid, trackLeavingPunch = true }: { grid: Mont
                   return (
                     <Link
                       key={date}
-                      href={`/attendance/${row.employee.id}/${date}`}
+                      href={`/attendance/${row.employee.id}/${date}${dayQuery}`}
                       aria-label={describeCell(date, cell)}
                       title={describeCell(date, cell)}
                       className={cn(
