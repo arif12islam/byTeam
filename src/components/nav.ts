@@ -6,6 +6,7 @@ import {
   Fingerprint,
   Timer,
   History,
+  Lightbulb,
   Settings,
   Sparkles,
   SlidersHorizontal,
@@ -39,6 +40,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { href: "/payroll", label: "Payroll", icon: Wallet },
       { href: "/reports", label: "Reports", icon: ChartColumn },
+      { href: "/insights", label: "Insights", icon: Lightbulb },
     ],
   },
   {

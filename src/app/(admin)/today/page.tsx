@@ -22,6 +22,8 @@ import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatOfficeDate, formatOfficeTime, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
+import { InsightsCard } from "@/components/insights/insights-card";
+
 import { ArrivalsChart } from "./arrivals-chart";
 import { TodayBoard, type BoardEntry } from "./board";
 import { PunchFeed } from "./punch-feed";
@@ -158,6 +160,9 @@ async function TodayContent() {
 
   const aside = (
     <>
+      <Suspense fallback={null}>
+        <InsightsCard />
+      </Suspense>
       <PunchFeed items={feed} now={now} />
       {buckets.length > 0 ? (
         <Card className="p-3 sm:p-3.5">
