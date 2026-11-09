@@ -9,7 +9,7 @@ import { listDayAdjustments, type DayAdjustment } from "@/lib/attendance/adjustm
 import { statusLabel } from "@/lib/attendance/labels";
 import { loadDayDetail } from "@/lib/attendance/month";
 import { requireRole } from "@/lib/session";
-import { formatOfficeDate, formatOfficeDateTime, formatOfficeTime, isValidOfficeDate, toOfficeDate } from "@/lib/time";
+import { formatDuration, formatOfficeDate, formatOfficeDateTime, formatOfficeTime, isValidOfficeDate, toOfficeDate } from "@/lib/time";
 
 import { AdjustForm } from "./adjust-form";
 
@@ -79,8 +79,8 @@ async function DayContent({ params }: { params: PageProps<"/attendance/[employee
               <Fact label="Status" value={statusLabel[result.status] + (result.isManual ? " (corrected by hand)" : "")} />
               <Fact label="Came in" value={result.firstIn ? formatOfficeTime(result.firstIn) : "No punch"} />
               <Fact label="Left" value={result.lastOut ? formatOfficeTime(result.lastOut) : result.firstIn ? "No leaving punch" : "No punch"} />
-              <Fact label="Late" value={result.lateMinutes > 0 ? `${result.lateMinutes} min` : "No"} />
-              <Fact label="Left early" value={result.earlyMinutes > 0 ? `${result.earlyMinutes} min` : "No"} />
+              <Fact label="Late" value={result.lateMinutes > 0 ? formatDuration(result.lateMinutes) : "No"} />
+              <Fact label="Left early" value={result.earlyMinutes > 0 ? formatDuration(result.earlyMinutes) : "No"} />
               <Fact label="Shift" value={`${employee.shiftName}, ${employee.shiftStart} to ${employee.shiftEnd}, ${employee.graceMinutes} min grace`} />
               {result.workedOnOffDay ? <Fact label="Day off" value="Came in on a day off" /> : null}
             </dl>

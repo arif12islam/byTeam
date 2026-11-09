@@ -1,4 +1,5 @@
 import type { MonthGrid } from "@/lib/attendance/month";
+import { formatHoursMinutes } from "@/lib/time";
 
 /** One field of a CSV line. Quotes it when it holds a comma, quote or line break. */
 export function csvField(value: string | number | null): string {
@@ -9,7 +10,7 @@ export function csvField(value: string | number | null): string {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-const HEADER = ["Code", "Name", "Department", "Days present", "Days late", "Days absent", "Days on leave", "Minutes late", "Missing leaving punch", "Net pay"];
+const HEADER = ["Code", "Name", "Department", "Days present", "Days late", "Days absent", "Days on leave", "Minutes late", "Late (h:mm)", "Missing leaving punch", "Net pay"];
 
 /**
  * The period as a CSV, one line per employee. `netByEmployee` holds each
@@ -29,6 +30,7 @@ export function buildReportCsv(grid: MonthGrid, netByEmployee: ReadonlyMap<strin
         t.absent,
         t.leave,
         t.lateMinutes,
+        formatHoursMinutes(t.lateMinutes),
         t.missingOut,
         netByEmployee.get(row.employee.id) ?? null,
       ]

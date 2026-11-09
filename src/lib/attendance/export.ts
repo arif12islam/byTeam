@@ -1,12 +1,13 @@
 import ExcelJS from "exceljs";
 
 import { periodLabel } from "@/lib/period";
+import { formatHoursMinutes } from "@/lib/time";
 
 import { cellText } from "./labels";
 import type { MonthGrid } from "./month";
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const TOTAL_HEADINGS = ["Present", "Late", "Absent", "Leave", "Late minutes", "No leaving punch", "Worked on days off"];
+const TOTAL_HEADINGS = ["Present", "Late", "Absent", "Leave", "Late minutes", "Late (h:mm)", "No leaving punch", "Worked on days off"];
 
 /** Letters for the first column numbers: 1 is A, 27 is AA. */
 function columnLetter(n: number): string {
@@ -46,6 +47,7 @@ export async function buildGridWorkbook(grid: MonthGrid): Promise<Buffer> {
       totals.absent,
       totals.leave,
       totals.lateMinutes,
+      formatHoursMinutes(totals.lateMinutes),
       totals.missingOut,
       totals.workedOffDays,
     ]);

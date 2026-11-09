@@ -5,14 +5,14 @@ import { toneClasses } from "@/components/ui/tone";
 import { statusFill } from "@/components/status";
 import { statusLabel } from "@/lib/attendance/labels";
 import type { GridCell, MonthGrid } from "@/lib/attendance/month";
-import { formatMonth, weekdayOf } from "@/lib/time";
+import { formatDuration, formatMonth, weekdayOf } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const weekdayInitials = ["S", "M", "T", "W", "T", "F", "S"];
 
 function describeCell(date: string, cell: GridCell): string {
   const parts = [`${date}: ${statusLabel[cell.status]}`];
-  if (cell.status === "late") parts.push(`${cell.lateMinutes} min late`);
+  if (cell.status === "late") parts.push(`${formatDuration(cell.lateMinutes)} late`);
   if (cell.missingOut) parts.push("no leaving punch");
   if (cell.workedOnOffDay) parts.push("came in on a day off");
   if (cell.isManual) parts.push("corrected by hand");
