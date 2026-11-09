@@ -37,7 +37,7 @@ export default function EmployeesPage(props: PageProps<"/employees">) {
 async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employees">["searchParams"] }) {
   await requireRole("owner", "hr");
 
-  const { show } = await searchParams;
+  const { show, deleted } = await searchParams;
   const view = show === "inactive" ? "inactive" : "active";
 
   const db = getDb();
@@ -58,6 +58,12 @@ async function EmployeeList({ searchParams }: { searchParams: PageProps<"/employ
 
   return (
     <div className="mt-6">
+      {typeof deleted === "string" && deleted !== "" ? (
+        <Card className="mb-4 text-sm text-muted-foreground shadow-none">
+          Employee deleted with their history. Their punches are kept under the unknown code {deleted}. byTeam cannot remove users from the K40H: on the
+          device, open Menu, User Mgt, find user {deleted} and delete it.
+        </Card>
+      ) : null}
       <nav aria-label="Employee status" className="inline-flex gap-1 rounded-xl bg-secondary p-1">
         {tab("active", "Active", counts.active)}
         {tab("inactive", "Inactive", counts.inactive)}

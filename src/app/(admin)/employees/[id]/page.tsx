@@ -14,6 +14,7 @@ import { requireRole } from "@/lib/session";
 import { listShifts } from "@/lib/shifts/shifts";
 
 import { deleteEmployeeAction, setActiveAction } from "../actions";
+import { DeleteWithHistoryForm } from "./delete-with-history-form";
 import { SalarySection } from "./salary-section";
 import { EmployeeForm } from "../employee-form";
 
@@ -28,7 +29,7 @@ export default function EmployeePage(props: PageProps<"/employees/[id]">) {
 }
 
 async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">["params"] }) {
-  await requireRole("owner", "hr");
+  const user = await requireRole("owner", "hr");
 
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
@@ -88,6 +89,20 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
             />
           </div>
         </section>
+
+        {user.role === "owner" ? (
+          <section className="rounded-xl border border-destructive/40 bg-card p-4 shadow-card sm:p-5">
+            <h2 className="text-base font-semibold">Delete with history</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Owner only, and it cannot be undone. This removes {employee.name} and their attendance, corrections, leave, salary, payroll lines and
+              bonuses and advances. Their fingerprint punches are kept, as an unlinked code. It is refused while they are in a finalized payroll
+              month. To keep the history, deactivate them instead.
+            </p>
+            <div className="mt-4">
+              <DeleteWithHistoryForm id={employee.id} name={employee.name} />
+            </div>
+          </section>
+        ) : null}
       </div>
     </>
   );

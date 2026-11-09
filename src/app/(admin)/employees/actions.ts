@@ -12,12 +12,14 @@ import { departmentExists } from "@/lib/employees/departments";
 import {
   createEmployee,
   deleteEmployee,
+  deleteEmployeeWithHistory,
   employeeDetailsSchema,
   getEmployee,
   newEmployeeSchema,
   setEmployeeActive,
   updateEmployee,
 } from "@/lib/employees/employees";
+import { forgetInsights } from "@/lib/insights/load";
 import { requireRole } from "@/lib/session";
 
 function detailsFrom(formData: FormData) {
@@ -113,4 +115,19 @@ export async function deleteEmployeeAction(_previous: FormState, formData: FormD
 
   revalidatePath("/", "layout");
   redirect("/employees");
+}
+
+/** Owner only. Deletes the person with everything but their punches. The name must be typed to confirm. */
+export async function deleteEmployeeWithHistoryAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner");
+
+  const id = z.uuid().safeParse(formData.get("id"));
+  if (!id.success) return { error: "That employee no longer exists." };
+
+  const result = await deleteEmployeeWithHistory(getDb(), id.data, String(formData.get("confirmName") ?? ""), user.id);
+  if (!result.ok) return { error: result.error };
+
+  forgetInsights();
+  revalidatePath("/", "layout");
+  redirect(`/employees?deleted=${encodeURIComponent(result.empCode)}`);
 }
