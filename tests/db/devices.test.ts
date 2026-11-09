@@ -52,9 +52,11 @@ describe.skipIf(!testDatabaseUrl)("devices and commands", () => {
   });
 
   describe("claimNextCommand", () => {
+  // These tests queue and claim commands by serial number only, so their devices are switched off: another test file adding an
+  // employee queues that person on every ACTIVE device, which would add commands to these queues at any moment.
     it("gives commands oldest first, one at a time, and nothing when empty", async () => {
       const sn = uniqueSerial();
-      await addTestDevice(db, sn);
+      await addTestDevice(db, sn, false);
       const [first, second] = await queue(sn, "FIRST", "SECOND");
       const now = new Date();
 
@@ -67,15 +69,15 @@ describe.skipIf(!testDatabaseUrl)("devices and commands", () => {
     it("never gives a device another device's command", async () => {
       const mine = uniqueSerial();
       const other = uniqueSerial();
-      await addTestDevice(db, mine);
-      await addTestDevice(db, other);
+      await addTestDevice(db, mine, false);
+      await addTestDevice(db, other, false);
       await queue(other, "NOT FOR YOU");
       expect(await claimNextCommand(db, mine, new Date())).toBeNull();
     });
 
     it("gives one command to only one of several polls at the same moment", async () => {
       const sn = uniqueSerial();
-      await addTestDevice(db, sn);
+      await addTestDevice(db, sn, false);
       await queue(sn, "A", "B", "C");
 
       const results = await Promise.all(Array.from({ length: 10 }, () => claimNextCommand(db, sn, new Date())));
@@ -86,7 +88,7 @@ describe.skipIf(!testDatabaseUrl)("devices and commands", () => {
 
     it("offers an unconfirmed command again after the wait, then gives up after the last try", async () => {
       const sn = uniqueSerial();
-      await addTestDevice(db, sn);
+      await addTestDevice(db, sn, false);
       const [cmd] = await queue(sn, "NEVER CONFIRMED");
       const wait = (RESEND_AFTER_SECONDS + 1) * 1000;
       let now = new Date("2026-10-24T06:00:00Z");
@@ -112,7 +114,7 @@ describe.skipIf(!testDatabaseUrl)("devices and commands", () => {
   describe("completeCommand", () => {
     it("marks a sent command done for zero or more and failed for a negative code", async () => {
       const sn = uniqueSerial();
-      await addTestDevice(db, sn);
+      await addTestDevice(db, sn, false);
       const [a, b, c] = await queue(sn, "A", "B", "C");
       for (let i = 0; i < 3; i += 1) await claimNextCommand(db, sn, new Date());
 
@@ -128,8 +130,8 @@ describe.skipIf(!testDatabaseUrl)("devices and commands", () => {
     it("ignores a repeat, a command never sent, and another device's command", async () => {
       const mine = uniqueSerial();
       const other = uniqueSerial();
-      await addTestDevice(db, mine);
-      await addTestDevice(db, other);
+      await addTestDevice(db, mine, false);
+      await addTestDevice(db, other, false);
       const [sent, notSent] = await queue(mine, "SENT", "NOT SENT YET");
       const [theirs] = await queue(other, "THEIRS");
       await claimNextCommand(db, mine, new Date());

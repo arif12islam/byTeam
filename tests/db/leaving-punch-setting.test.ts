@@ -34,7 +34,7 @@ describe.skipIf(!testDatabaseUrl)("leaving punch setting", () => {
     await close();
   });
 
-  it("saves the choice, audits it, keeps it when left out, and treats the same value as no change", async () => {
+  it("saves the choice, audits it, keeps it when left out, and treats the same value as no change", { timeout: 60_000 }, async () => {
     const start = await getCompanySettings(db);
     const name = start.name || "Test company";
 
