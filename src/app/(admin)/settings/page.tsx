@@ -9,12 +9,13 @@ import { listDepartments } from "@/lib/employees/departments";
 import { getCompanySettings } from "@/lib/settings/company";
 import { groupByYear, listHolidays } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
-import { formatOfficeDate } from "@/lib/time";
+import { formatOfficeDate, toOfficeDate } from "@/lib/time";
 
 import { removeHolidayAction } from "./actions";
 import { EditOutageForm, OutageForm, RemoveOutageForm } from "./outage-forms";
 import { CompanyForm } from "./company-form";
 import { EditHolidayForm, HolidayForm } from "./holiday-form";
+import { HolidayImport } from "./holiday-import";
 import { AddDepartmentForm, DepartmentRowForms } from "./department-forms";
 import { LoginForm } from "./login-form";
 
@@ -55,6 +56,8 @@ async function SettingsContent() {
     listDepartments(db),
   ]);
   const groups = groupByYear(holidays);
+  const thisYear = Number(toOfficeDate(new Date()).slice(0, 4));
+  const importYears = [thisYear, thisYear + 1];
 
   return (
     <div className="mt-6 grid max-w-3xl gap-6">
@@ -85,6 +88,9 @@ async function SettingsContent() {
         description="Public holidays are paid days off. Attendance skips them."
       >
         <HolidayForm />
+        <div className="mt-4">
+          <HolidayImport years={importYears} />
+        </div>
 
         {groups.length === 0 ? (
           <p className="mt-6 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground">
