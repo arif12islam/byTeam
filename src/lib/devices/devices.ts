@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 
 import type { getDb } from "@/db";
@@ -60,6 +60,12 @@ export type DeviceRow = {
   active: boolean;
 };
 
+/**
+ * The switched-off device that owned the punches of the old sample data. Its
+ * punches can never be deleted, so the app leaves it out of every list instead.
+ */
+export const RETIRED_SAMPLE_DEVICE_SERIAL = "SAMPLE-PUNCHES";
+
 export async function listDevices(db: Db): Promise<DeviceRow[]> {
   return db
     .select({
@@ -72,6 +78,7 @@ export async function listDevices(db: Db): Promise<DeviceRow[]> {
       active: devices.active,
     })
     .from(devices)
+    .where(ne(devices.serialNo, RETIRED_SAMPLE_DEVICE_SERIAL))
     .orderBy(asc(devices.name), asc(devices.serialNo));
 }
 

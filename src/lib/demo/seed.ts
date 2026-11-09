@@ -40,7 +40,7 @@ export async function applyDemoPlan(
     today?: string;
     /** Names of the shared setup rows. Tests give their own so files running together never meet. */
     names?: { shift?: string; paidLeave?: string; unpaidLeave?: string };
-    /** Add the plan's made-up public holiday. Off for sample data in a real database, where it would change real people's days. */
+    /** Add the plan's made-up public holiday. Tests that share a database turn it off, so one file's holiday does not change another's days. */
     holiday?: boolean;
     /** Name of the switched-off device that owns the punches. */
     deviceName?: string;

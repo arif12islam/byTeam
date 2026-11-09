@@ -1,7 +1,8 @@
-import { desc, eq, max, min, notExists, sql } from "drizzle-orm";
+import { and, desc, eq, max, min, ne, notExists, sql } from "drizzle-orm";
 
 import type { getDb } from "@/db";
 import { employees, rawPunches } from "@/db/schema";
+import { RETIRED_SAMPLE_DEVICE_SERIAL } from "@/lib/devices/devices";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -21,6 +22,7 @@ const LIMIT = 50;
  * Employee codes that have punched but belong to nobody, most recent first.
  * Usually someone enrolled at the device who has not been added in the app yet.
  * The punches are kept: once an employee with that code exists they count.
+ * Punches of the retired sample device are left out.
  */
 export async function listUnmatchedCodes(db: Db): Promise<UnmatchedCode[]> {
   const rows = await db
@@ -32,7 +34,12 @@ export async function listUnmatchedCodes(db: Db): Promise<UnmatchedCode[]> {
       devices: sql<string[]>`array_agg(distinct ${rawPunches.deviceSn})`,
     })
     .from(rawPunches)
-    .where(notExists(db.select({ one: sql`1` }).from(employees).where(eq(employees.empCode, rawPunches.empCode))))
+    .where(
+      and(
+        ne(rawPunches.deviceSn, RETIRED_SAMPLE_DEVICE_SERIAL),
+        notExists(db.select({ one: sql`1` }).from(employees).where(eq(employees.empCode, rawPunches.empCode))),
+      ),
+    )
     .groupBy(rawPunches.empCode)
     .orderBy(desc(max(rawPunches.punchedAt)))
     .limit(LIMIT);

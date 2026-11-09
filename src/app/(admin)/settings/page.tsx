@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
-import { countActiveSamplePeople } from "@/lib/demo/sample";
 import { listRecentOutages } from "@/lib/attendance/outages";
 import { listDepartments } from "@/lib/employees/departments";
 import { getCompanySettings } from "@/lib/settings/company";
@@ -14,7 +13,6 @@ import { formatOfficeDate } from "@/lib/time";
 
 import { removeHolidayAction } from "./actions";
 import { EditOutageForm, OutageForm, RemoveOutageForm } from "./outage-forms";
-import { SampleDataForm } from "./sample-data-form";
 import { CompanyForm } from "./company-form";
 import { EditHolidayForm, HolidayForm } from "./holiday-form";
 import { AddDepartmentForm, DepartmentRowForms } from "./department-forms";
@@ -50,11 +48,10 @@ async function SettingsContent() {
   const user = await requireRole("owner", "hr");
 
   const db = getDb();
-  const [company, holidays, outages, activeSamples, departments] = await Promise.all([
+  const [company, holidays, outages, departments] = await Promise.all([
     getCompanySettings(db),
     listHolidays(db),
     listRecentOutages(db),
-    countActiveSamplePeople(db),
     listDepartments(db),
   ]);
   const groups = groupByYear(holidays);
@@ -154,15 +151,6 @@ async function SettingsContent() {
       <Section title="Your login" description="Change your name, and the email and password you sign in with.">
         <LoginForm name={user.name} email={user.email} />
       </Section>
-
-      {user.role === "owner" ? (
-        <Section
-          title="Sample data"
-          description="To try every screen before the device is connected: eight made-up people named Sample ..., with last month's punches, late days, absences, leave, a bonus and an advance. Punches can never be deleted, so the sample stays in the history. Switch the sample people off before the real pilot and they drop out of Today, Attendance and new payroll runs."
-        >
-          <SampleDataForm activeSamples={activeSamples} />
-        </Section>
-      ) : null}
     </div>
   );
 }
