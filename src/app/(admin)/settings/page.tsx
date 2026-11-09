@@ -13,10 +13,10 @@ import { requireRole } from "@/lib/session";
 import { formatOfficeDate } from "@/lib/time";
 
 import { removeHolidayAction } from "./actions";
-import { OutageForm, RemoveOutageForm } from "./outage-forms";
+import { EditOutageForm, OutageForm, RemoveOutageForm } from "./outage-forms";
 import { SampleDataForm } from "./sample-data-form";
 import { CompanyForm } from "./company-form";
-import { HolidayForm } from "./holiday-form";
+import { EditHolidayForm, HolidayForm } from "./holiday-form";
 import { AddDepartmentForm, DepartmentRowForms } from "./department-forms";
 import { LoginForm } from "./login-form";
 
@@ -100,17 +100,20 @@ async function SettingsContent() {
                 <h3 className="text-sm font-medium text-muted-foreground">{group.year}</h3>
                 <ul className="mt-2 divide-y divide-border rounded-md border border-border">
                   {group.holidays.map((holiday) => (
-                    <li key={holiday.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{holiday.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatOfficeDate(holiday.date)}</p>
+                    <li key={holiday.id}>
+                      <div className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{holiday.name}</p>
+                          <p className="text-xs text-muted-foreground">{formatOfficeDate(holiday.date)}</p>
+                        </div>
+                        <form action={removeHolidayAction}>
+                          <input type="hidden" name="id" value={holiday.id} />
+                          <Button type="submit" variant="ghost" size="sm" aria-label={`Remove ${holiday.name}`}>
+                            Remove
+                          </Button>
+                        </form>
                       </div>
-                      <form action={removeHolidayAction}>
-                        <input type="hidden" name="id" value={holiday.id} />
-                        <Button type="submit" variant="ghost" size="sm" aria-label={`Remove ${holiday.name}`}>
-                          Remove
-                        </Button>
-                      </form>
+                      <EditHolidayForm holiday={holiday} />
                     </li>
                   ))}
                 </ul>
@@ -141,6 +144,7 @@ async function SettingsContent() {
                   </p>
                 </div>
                 <RemoveOutageForm id={outage.id} label={`${outage.reason} on ${outage.date}`} />
+                <EditOutageForm outage={outage} />
               </li>
             ))}
           </ul>

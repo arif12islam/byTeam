@@ -1,8 +1,18 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import type { getDb } from "@/db";
-import { employees, shifts } from "@/db/schema";
+import {
+  attendanceAdjustments,
+  attendanceDays,
+  employees,
+  leaveRequests,
+  payrollAdjustments,
+  payrollItems,
+  rawPunches,
+  salaryStructures,
+  shifts,
+} from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { recalcAfterEmployeeChange } from "@/lib/attendance/triggers";
 import { queueUserUpdate } from "@/lib/devices/queue";
@@ -175,5 +185,40 @@ export async function setEmployeeActive(db: Db, id: string, active: boolean, act
       after,
     });
     return { changed: true };
+  });
+}
+
+export type DeleteEmployeeResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Deletes an employee that was added by mistake: one with no punches, leave,
+ * payroll or hand corrections on record. Their computed attendance days and
+ * salary entries go with them, since they only exist for this person. Anyone
+ * with history is switched off instead, because history is never deleted.
+ */
+export async function deleteEmployee(db: Db, id: string, actorId: string): Promise<DeleteEmployeeResult> {
+  return db.transaction(async (tx): Promise<DeleteEmployeeResult> => {
+    const [before] = await tx.select().from(employees).where(eq(employees.id, id));
+    if (!before) return { ok: true };
+
+    const total = async (query: Promise<{ n: number }[]>) => (await query)[0].n;
+    const reasons: string[] = [];
+    if ((await total(tx.select({ n: count() }).from(rawPunches).where(eq(rawPunches.empCode, before.empCode)))) > 0) reasons.push("punches");
+    if ((await total(tx.select({ n: count() }).from(leaveRequests).where(eq(leaveRequests.employeeId, id)))) > 0) reasons.push("leave");
+    if ((await total(tx.select({ n: count() }).from(payrollItems).where(eq(payrollItems.employeeId, id)))) > 0) reasons.push("payroll");
+    if ((await total(tx.select({ n: count() }).from(payrollAdjustments).where(eq(payrollAdjustments.employeeId, id)))) > 0) reasons.push("bonuses or advances");
+    if ((await total(tx.select({ n: count() }).from(attendanceAdjustments).where(eq(attendanceAdjustments.employeeId, id)))) > 0) reasons.push("hand corrections");
+    if (reasons.length > 0) {
+      return {
+        ok: false,
+        error: `${before.name} has ${reasons.join(", ")} on record, and history is never deleted. Switch them off instead: they leave Today, Attendance and new payroll, and the history stays.`,
+      };
+    }
+
+    await tx.delete(attendanceDays).where(eq(attendanceDays.employeeId, id));
+    await tx.delete(salaryStructures).where(eq(salaryStructures.employeeId, id));
+    await tx.delete(employees).where(eq(employees.id, id));
+    await audit(tx, { actorId, action: "employee.delete", entity: "employee", entityId: id, before });
+    return { ok: true };
   });
 }

@@ -1,8 +1,8 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, count, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { getDb } from "@/db";
-import { companySettings, leaveTypes, LEAVE_YEAR_BASES, type LeaveYearBasis } from "@/db/schema";
+import { companySettings, leaveRequests, leaveTypes, LEAVE_YEAR_BASES, type LeaveYearBasis } from "@/db/schema";
 import { audit } from "@/lib/audit";
 
 type Db = ReturnType<typeof getDb>;
@@ -123,5 +123,30 @@ export async function saveLeaveYearBasis(db: Db, input: unknown, actorId: string
       after,
     });
     return { changed: true };
+  });
+}
+
+export type DeleteLeaveTypeResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Deletes a leave type nobody has used. One that has requests stays in the
+ * history, so the way to retire it is to switch it off.
+ */
+export async function deleteLeaveType(db: Db, id: string, actorId: string): Promise<DeleteLeaveTypeResult> {
+  return db.transaction(async (tx): Promise<DeleteLeaveTypeResult> => {
+    const [before] = await tx.select().from(leaveTypes).where(eq(leaveTypes.id, id));
+    if (!before) return { ok: true };
+
+    const [{ requests }] = await tx.select({ requests: count(leaveRequests.id) }).from(leaveRequests).where(eq(leaveRequests.leaveTypeId, id));
+    if (requests > 0) {
+      return {
+        ok: false,
+        error: `${requests === 1 ? "1 leave request uses" : `${requests} leave requests use`} ${before.name}, so it stays in the history. Switch it off instead and it will not be offered for new requests.`,
+      };
+    }
+
+    await tx.delete(leaveTypes).where(eq(leaveTypes.id, id));
+    await audit(tx, { actorId, action: "leave_type.delete", entity: "leave_type", entityId: id, before });
+    return { ok: true };
   });
 }

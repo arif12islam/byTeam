@@ -6,7 +6,7 @@ import { getDb } from "@/db";
 import type { FormState } from "@/components/field";
 import { formError } from "@/lib/form";
 import { isUniqueViolation } from "@/lib/db-errors";
-import { createShift, shiftSchema, updateShift } from "@/lib/shifts/shifts";
+import { createShift, deleteShift, shiftSchema, updateShift } from "@/lib/shifts/shifts";
 import { requireRole } from "@/lib/session";
 
 export async function saveShiftAction(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -39,4 +39,15 @@ export async function saveShiftAction(_previous: FormState, formData: FormData):
 
   revalidatePath("/shifts");
   return { message: `Added ${parsed.data.name}.` };
+}
+
+export async function deleteShiftAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const result = await deleteShift(getDb(), String(formData.get("id") ?? ""), user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/shifts");
+  revalidatePath("/employees", "layout");
+  return { message: "Deleted." };
 }

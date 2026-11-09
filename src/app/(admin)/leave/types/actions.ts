@@ -6,7 +6,7 @@ import type { FormState } from "@/components/field";
 import { getDb } from "@/db";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { formError } from "@/lib/form";
-import { createLeaveType, leaveTypeSchema, leaveYearBasisSchema, saveLeaveYearBasis, updateLeaveType } from "@/lib/leave/types";
+import { createLeaveType, deleteLeaveType, leaveTypeSchema, leaveYearBasisSchema, saveLeaveYearBasis, updateLeaveType } from "@/lib/leave/types";
 import { requireRole } from "@/lib/session";
 
 export async function saveLeaveTypeAction(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -51,4 +51,14 @@ export async function saveLeaveYearBasisAction(_previous: FormState, formData: F
   const { changed } = await saveLeaveYearBasis(getDb(), parsed.data, user.id);
   revalidatePath("/leave/types");
   return { message: changed ? "Leave year saved." : "Nothing changed." };
+}
+
+export async function deleteLeaveTypeAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const result = await deleteLeaveType(getDb(), String(formData.get("id") ?? ""), user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/leave", "layout");
+  return { message: "Deleted." };
 }

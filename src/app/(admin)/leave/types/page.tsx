@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { BackLink } from "@/components/back-link";
+import { DeleteForm } from "@/components/delete-form";
 import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db";
 import { getLeaveYearBasis, listLeaveTypes } from "@/lib/leave/types";
 import { requireRole } from "@/lib/session";
 
+import { deleteLeaveTypeAction } from "./actions";
 import { LeaveTypeForm } from "./leave-type-form";
 import { YearBasisForm } from "./year-form";
 
@@ -72,6 +74,15 @@ async function LeaveTypesContent() {
             </div>
             <div className="mt-5">
               <LeaveTypeForm leaveType={type} />
+            </div>
+            <div className="mt-4 border-t border-border pt-4">
+              {type.requestCount > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  This type has leave on record, so it stays in the history. Untick &quot;in use&quot; above to stop offering it.
+                </p>
+              ) : (
+                <DeleteForm action={deleteLeaveTypeAction} id={type.id} label="Delete leave type" confirmText={`Delete the leave type ${type.name}? This cannot be undone.`} />
+              )}
             </div>
           </section>
         ))

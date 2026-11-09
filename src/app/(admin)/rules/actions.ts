@@ -6,7 +6,7 @@ import type { FormState } from "@/components/field";
 import { getDb } from "@/db";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { formError } from "@/lib/form";
-import { createRuleSet, ruleSetSchema, updateRuleSet } from "@/lib/payroll/rules";
+import { createRuleSet, deleteRuleSet, ruleSetSchema, updateRuleSet } from "@/lib/payroll/rules";
 import { requireRole } from "@/lib/session";
 import { formatMonth } from "@/lib/time";
 
@@ -46,4 +46,16 @@ export async function saveRuleSetAction(_previous: FormState, formData: FormData
 
   revalidatePath("/rules");
   return { message: `Rules will apply from ${formatMonth(parsed.data.effectiveFromMonth)}.` };
+}
+
+export async function deleteRuleSetAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  // Only the owner changes pay rules.
+  const user = await requireRole("owner");
+
+  const result = await deleteRuleSet(getDb(), String(formData.get("id") ?? ""), user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/rules");
+  revalidatePath("/payroll");
+  return { message: "Deleted." };
 }

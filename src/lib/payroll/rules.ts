@@ -2,9 +2,9 @@ import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import type { getDb } from "@/db";
-import { DEDUCTION_BASES, DIVISORS, LATE_MODES, ruleSets } from "@/db/schema";
+import { DEDUCTION_BASES, DIVISORS, LATE_MODES, payrollRuns, ruleSets } from "@/db/schema";
 import { audit } from "@/lib/audit";
-import { isValidMonth } from "@/lib/time";
+import { formatMonth, isValidMonth } from "@/lib/time";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -185,5 +185,33 @@ export async function updateRuleSet(db: Db, id: string, input: RuleSetInput, act
     const [after] = await tx.update(ruleSets).set(next).where(eq(ruleSets.id, id)).returning();
     await audit(tx, { actorId, action: "rule_set.update", entity: "rule_set", entityId: id, before, after });
     return { ruleSet: toRow(after), changed: true };
+  });
+}
+
+export type DeleteRuleSetResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Deletes a rule set. Refused when a finalized payroll month is paid under it:
+ * that month keeps a copy of the rules, but the saved rules are the record of
+ * what applied, so they stay. Draft months simply move to the rules before it.
+ */
+export async function deleteRuleSet(db: Db, id: string, actorId: string): Promise<DeleteRuleSetResult> {
+  return db.transaction(async (tx): Promise<DeleteRuleSetResult> => {
+    const all = await listRuleSets(tx);
+    const target = all.find((r) => r.id === id);
+    if (!target) return { ok: true };
+
+    const finalized = await tx.select({ month: payrollRuns.month }).from(payrollRuns).where(eq(payrollRuns.status, "finalized")).for("share");
+    const paid = finalized.map((r) => r.month.slice(0, 7)).filter((month) => ruleSetForMonth(all, month)?.id === id).sort();
+    if (paid.length > 0) {
+      return {
+        ok: false,
+        error: `Payroll for ${paid.map(formatMonth).join(", ")} is finalized under these rules, so they stay as the record. Change them instead, or add newer rules.`,
+      };
+    }
+
+    const [before] = await tx.delete(ruleSets).where(eq(ruleSets.id, id)).returning();
+    await audit(tx, { actorId, action: "rule_set.delete", entity: "rule_set", entityId: id, before });
+    return { ok: true };
   });
 }
