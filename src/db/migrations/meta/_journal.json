@@ -85,6 +85,13 @@
       "when": 1794210364574,
       "tag": "0011_m7_leaving_punch_setting",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794212482667,
+      "tag": "0012_m7_remove_sample_data",
+      "breakpoints": true
     }
   ]
 }

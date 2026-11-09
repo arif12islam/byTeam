@@ -48,7 +48,7 @@ const actionFiles = find(path.join(SRC, "app"), (f) => /actions\.ts$/.test(f) &&
 const OPEN_ACTION_FILES = [path.join(SRC, "app", "(admin)", "actions.ts"), path.join(SRC, "app", "(auth)", "login", "actions.ts")];
 
 /** What only the owner may do. Everything else in the actions is for owner and HR. */
-const OWNER_ONLY = ["finalizeRunAction", "unlockRunAction", "saveRuleSetAction", "deleteRuleSetAction", "loadSampleDataAction", "switchOffSampleAction"];
+const OWNER_ONLY = ["finalizeRunAction", "unlockRunAction", "saveRuleSetAction", "deleteRuleSetAction"];
 
 type Action = (...args: unknown[]) => Promise<unknown>;
 
@@ -96,7 +96,7 @@ describe("every server action checks the role on the server", () => {
     const actions = await loadActions();
     const names = actions.map((a) => a.name);
     // Adding an action changes this number on purpose: whoever adds one has to check its role and the lists below.
-    expect(names).toHaveLength(39);
+    expect(names).toHaveLength(37);
     expect(names).toEqual(expect.arrayContaining(OWNER_ONLY));
     expect(new Set(names).size).toBe(names.length);
   });
