@@ -11,9 +11,12 @@ import { getAuth } from "@/lib/auth";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { createOutage, removeOutage, updateOutage } from "@/lib/attendance/outages";
 import { createDepartment, deleteDepartment, renameDepartment } from "@/lib/employees/departments";
-import { companySettingsSchema, saveCompanySettings } from "@/lib/settings/company";
-import { addHoliday, holidaySchema, removeHoliday, updateHoliday } from "@/lib/settings/holidays";
+import { companySettingsSchema, getCompanySettings, saveCompanySettings } from "@/lib/settings/company";
+import { buildCandidates, fetchGoogleFeed, importHolidays, MAX_IMPORT, parseIcs, parsePastedList, type FeedEvent, type HolidayPreviewState } from "@/lib/settings/holiday-import";
+import { addHoliday, holidaySchema, listHolidays, removeHoliday, updateHoliday } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
+import { toOfficeDate } from "@/lib/time";
+import { z } from "zod";
 
 export async function saveCompanyAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const user = await requireRole("owner", "hr");
@@ -193,4 +196,67 @@ export async function updateOutageAction(_previous: FormState, formData: FormDat
   revalidatePath("/settings");
   revalidatePath("/attendance");
   return { message: result.changed ? "Saved." : "Nothing changed." };
+}
+
+/** Step one of importing holidays: reads Google's calendar or a pasted list and returns the list to tick from. Saves nothing. */
+export async function previewHolidaysAction(_previous: HolidayPreviewState, formData: FormData): Promise<HolidayPreviewState> {
+  await requireRole("owner", "hr");
+
+  const year = z.coerce.number().int().min(2000).max(2100).safeParse(formData.get("year"));
+  if (!year.success) return { error: "Choose a year." };
+
+  let events: FeedEvent[];
+  let problems: string[] = [];
+  if (formData.get("source") === "paste") {
+    const text = String(formData.get("text") ?? "");
+    if (text.trim() === "") return { error: "Paste the list first, one holiday a line, like 2026-12-16 Victory Day." };
+    ({ events, problems } = parsePastedList(text.slice(0, 20_000)));
+  } else {
+    const feed = await fetchGoogleFeed();
+    if (!feed.ok) return { error: feed.error };
+    events = parseIcs(feed.text);
+  }
+
+  const db = getDb();
+  const [existing, company] = await Promise.all([listHolidays(db), getCompanySettings(db)]);
+  const candidates = buildCandidates(events, {
+    year: year.data,
+    existingDates: new Set(existing.map((h) => h.date)),
+    weeklyOffDays: company.weeklyOffDays,
+    today: toOfficeDate(new Date()),
+  });
+  if (candidates.length === 0) {
+    return {
+      error: `Nothing found for ${year.data}. Google's calendar may not have that year yet. Paste your own list instead.`,
+      problems,
+    };
+  }
+  return { candidates, year: year.data, problems };
+}
+
+const pickSchema = z.array(z.string().max(400)).max(MAX_IMPORT);
+
+/** Step two: adds the holidays that were ticked. */
+export async function importHolidaysAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const picks = pickSchema.safeParse(formData.getAll("pick"));
+  if (!picks.success) return { error: `Pick at most ${MAX_IMPORT} holidays at a time.` };
+  const items: { date: string; name: string }[] = [];
+  for (const raw of picks.data) {
+    try {
+      const value: unknown = JSON.parse(raw);
+      const parsed = holidaySchema.safeParse(value);
+      if (parsed.success) items.push(parsed.data);
+    } catch {
+      // A value that is not JSON is ignored: nothing but the form sends these.
+    }
+  }
+  if (items.length === 0) return { error: "Tick at least one holiday to add." };
+
+  const result = await importHolidays(getDb(), items, user.id);
+  revalidatePath("/settings");
+  revalidatePath("/attendance");
+  const skipped = result.skipped.length > 0 ? ` ${result.skipped.length} already had a holiday and were left as they are.` : "";
+  return { message: `Added ${result.added} ${result.added === 1 ? "holiday" : "holidays"}.${skipped}` };
 }
