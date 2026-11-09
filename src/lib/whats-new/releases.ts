@@ -37,6 +37,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    id: "2026-11-d",
+    title: "Back takes you where you were",
+    date: "2026-11-09",
+    summary: "Go back from a day or a person and the list is exactly where you left it.",
+    items: [
+      {
+        id: "remember-place",
+        title: "Pages remember your place",
+        body: "Scroll down a long list, open someone or a day, then go back: the page is where you left it, with the same month and filters. It works with the browser's back button, the Back links on each page, and when you reload.",
+        visual: "app",
+        steps: ["Scroll down on Attendance and open a day.", "Tap Back to attendance, or your phone's back.", "You are at the same spot in the list."],
+        href: "/attendance",
+        tryLabel: "Open Attendance",
+      },
+    ],
+  },
+  {
     id: "2026-11-c",
     title: "Smarter, more useful Insights",
     date: "2026-11-09",

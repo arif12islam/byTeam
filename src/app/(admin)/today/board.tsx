@@ -191,7 +191,7 @@ function PersonSheet({ entry, date, onClose }: { entry: BoardEntry; date: string
         </dl>
         {entry.missingOut ? <p className="mt-3 text-sm text-warning">No leaving punch yet.</p> : null}
 
-        <Link href={`/attendance/${entry.id}/${date}`} className={cn(buttonVariants({ variant: "outline" }), "mt-5 w-full")}>
+        <Link href={`/attendance/${entry.id}/${date}?from=today`} className={cn(buttonVariants({ variant: "outline" }), "mt-5 w-full")}>
           Open this day
         </Link>
       </div>

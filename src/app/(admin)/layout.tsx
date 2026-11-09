@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { ScrollMemory } from "@/components/scroll-memory";
 import { MobileTabBar, MobileTopBar, Sidebar } from "@/components/sidebar";
 import { UserMenu } from "@/components/user-menu";
 import { WhatsNewGate } from "@/components/whats-new/gate";
@@ -44,6 +45,9 @@ export default function AdminLayout({ children }: LayoutProps<"/">) {
       </div>
       <Suspense fallback={null}>
         <MobileTabBar account={sheetAccount} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ScrollMemory />
       </Suspense>
       <Suspense fallback={null}>
         <WhatsNewGate />
