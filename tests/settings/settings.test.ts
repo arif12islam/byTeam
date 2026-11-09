@@ -10,6 +10,11 @@ describe("companySettingsSchema", () => {
     expect(parsed).toEqual({ name: "Sand'Sun", weeklyOffDays: [5, 6] });
   });
 
+  it("takes the leaving punch choice, and leaves it out to keep the saved one", () => {
+    expect(companySettingsSchema.parse({ name: "X", weeklyOffDays: [], trackLeavingPunch: false }).trackLeavingPunch).toBe(false);
+    expect(companySettingsSchema.parse({ name: "X", weeklyOffDays: [] }).trackLeavingPunch).toBeUndefined();
+  });
+
   it("allows no off days while the office has not decided", () => {
     expect(companySettingsSchema.parse({ name: "X", weeklyOffDays: [] }).weeklyOffDays).toEqual([]);
   });
@@ -23,10 +28,12 @@ describe("companySettingsSchema", () => {
 });
 
 describe("sameSettings", () => {
-  it("compares name and off days", () => {
-    expect(sameSettings({ name: "A", weeklyOffDays: [5, 6] }, { name: "A", weeklyOffDays: [5, 6] })).toBe(true);
-    expect(sameSettings({ name: "A", weeklyOffDays: [5] }, { name: "A", weeklyOffDays: [5, 6] })).toBe(false);
-    expect(sameSettings({ name: "A", weeklyOffDays: [] }, { name: "B", weeklyOffDays: [] })).toBe(false);
+  it("compares name, off days and the leaving punch choice", () => {
+    const base = { name: "A", weeklyOffDays: [5, 6], trackLeavingPunch: true };
+    expect(sameSettings(base, { ...base })).toBe(true);
+    expect(sameSettings(base, { ...base, weeklyOffDays: [5] })).toBe(false);
+    expect(sameSettings(base, { ...base, name: "B" })).toBe(false);
+    expect(sameSettings(base, { ...base, trackLeavingPunch: false })).toBe(false);
   });
 });
 

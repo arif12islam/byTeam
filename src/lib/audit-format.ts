@@ -118,6 +118,7 @@ const FIELDS: Record<string, { label: string; kind: Kind }> = {
   endTime: { label: "Ends", kind: "time" },
   graceMinutes: { label: "Grace", kind: "minutes" },
   weeklyOffDays: { label: "Weekly off days", kind: "weekdays" },
+  trackLeavingPunch: { label: "Uses the leaving punch", kind: "bool" },
   leaveYearBasis: { label: "Leave year starts", kind: "enum" },
   currency: { label: "Currency", kind: "text" },
   timezone: { label: "Time zone", kind: "text" },

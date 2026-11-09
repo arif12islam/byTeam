@@ -6,6 +6,7 @@ import { buildReportCsv } from "@/lib/reports/csv";
 import { netByEmployee } from "@/lib/reports/payroll-report";
 import { canAct } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { getCompanySettings } from "@/lib/settings/company";
 import { toOfficeDate } from "@/lib/time";
 
 /**
@@ -23,13 +24,14 @@ export async function GET(request: Request) {
   const { period } = resolvePeriod({ from: query.get("from"), to: query.get("to"), month: query.get("month") }, today);
 
   const db = getDb();
-  const [grid, sheets] = await Promise.all([
+  const [grid, sheets, company] = await Promise.all([
     loadPeriodGrid(db, period, today),
     Promise.all(wholeMonthsIn(period).map((m) => loadPayrollSheet(db, m))),
+    getCompanySettings(db),
   ]);
   const net = netByEmployee(sheets.filter((s): s is NonNullable<typeof s> => s !== null));
 
-  return new Response(buildReportCsv(grid, net), {
+  return new Response(buildReportCsv(grid, net, { trackLeavingPunch: company.trackLeavingPunch }), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="report-${period.from}-to-${period.to}.csv"`,

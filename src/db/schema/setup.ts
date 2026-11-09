@@ -68,6 +68,11 @@ export const companySettings = pgTable(
      * as the calendar year and can be changed.
      */
     leaveYearBasis: leaveYearBasis("leave_year_basis").notNull().default("calendar"),
+    /**
+     * Whether the office uses the leaving punch. When off, only the first
+     * punch of the day counts: no missing leaving punch, no early leaving.
+     */
+    trackLeavingPunch: boolean("track_leaving_punch").notNull().default(true),
     updatedAt: updatedAt(),
   },
   (t) => [

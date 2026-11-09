@@ -16,6 +16,7 @@ import { cellText, statusLabel } from "@/lib/attendance/labels";
 import { loadPeriodGrid, type GridCell } from "@/lib/attendance/month";
 import { describePeriodNav, periodLabel, periodQuery, resolvePeriod } from "@/lib/period";
 import { requireRole } from "@/lib/session";
+import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatMonth, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +66,8 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
 
   const view = parseView((await cookies()).get(VIEW_COOKIE)?.value);
 
-  const grid = await loadPeriodGrid(getDb(), period, today);
+  const [grid, company] = await Promise.all([loadPeriodGrid(getDb(), period, today), getCompanySettings(getDb())]);
+  const trackLeavingPunch = company.trackLeavingPunch;
   // Dates grouped by month, for the heading row over a long period.
   const monthSpans: { month: string; days: number }[] = [];
   for (const date of grid.dates) {
@@ -101,7 +103,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
       ) : (
         <>
           <div className={cn(view === "table" && "md:hidden")}>
-            <AttendanceCards grid={grid} />
+            <AttendanceCards grid={grid} trackLeavingPunch={trackLeavingPunch} />
           </div>
           <div className={cn("hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card", view === "table" && "md:block")}>
             <table className="w-full border-collapse text-sm">
@@ -168,9 +170,9 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
       )}
 
       <p className={cn("hidden text-xs leading-relaxed text-muted-foreground", view === "table" && "md:block")}>
-        P present, L late, A absent, PL paid leave, UL unpaid leave, W weekly off day, H holiday. An exclamation mark
-        means no leaving punch, an asterisk means corrected by hand, a dash means no record for that day. Present counts
-        late days too.
+        P present, L late, A absent, PL paid leave, UL unpaid leave, W weekly off day, H holiday.{" "}
+        {trackLeavingPunch ? "An exclamation mark means no leaving punch, an asterisk" : "An asterisk"} means corrected by hand, a dash means no
+        record for that day. Present counts late days too.
       </p>
     </div>
   );

@@ -18,6 +18,7 @@ import {
 import { deviceStatus, listDevices } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
+import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatOfficeDate, formatOfficeTime, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -36,10 +37,10 @@ export default function TodayPage() {
 }
 
 /** The badge and the time text on the right of a person's row. */
-function describeEntry(entry: TodayEntry): { tone: Tone; badge: string; detail: string } {
+function describeEntry(entry: TodayEntry, trackLeavingPunch: boolean): { tone: Tone; badge: string; detail: string } {
   if (entry.group === "in" || entry.group === "worked_off_day") {
     const arrived = entry.firstIn ? `In ${formatOfficeTime(entry.firstIn)}` : "";
-    const left = entry.lastOut ? `, out ${formatOfficeTime(entry.lastOut)}` : ", not out yet";
+    const left = !trackLeavingPunch ? "" : entry.lastOut ? `, out ${formatOfficeTime(entry.lastOut)}` : ", not out yet";
     const late = entry.status === "late";
     return {
       tone: late ? "warning" : "success",
@@ -61,11 +62,12 @@ async function TodayContent() {
   const db = getDb();
   const now = new Date();
   const today = toOfficeDate(now);
-  const [board, deviceList, unmatched, dayPunches] = await Promise.all([
+  const [board, deviceList, unmatched, dayPunches, company] = await Promise.all([
     loadTodayBoard(db, now),
     listDevices(db),
     listUnmatchedCodes(db),
     loadDayPunches(db, today),
+    getCompanySettings(db),
   ]);
   const devices = deviceList.filter((d) => d.active);
   const offlineDevices = devices.filter((d) => deviceStatus(d.lastSeenAt, now) === "offline");
@@ -76,7 +78,7 @@ async function TodayContent() {
   const punchTimes = groupPunchesByCode(dayPunches);
   const feed = buildPunchFeed(dayPunches, board.entries);
   const entries: BoardEntry[] = board.entries.map((entry) => {
-    const { tone, badge, detail } = describeEntry(entry);
+    const { tone, badge, detail } = describeEntry(entry, company.trackLeavingPunch);
     return {
       id: entry.id,
       empCode: entry.empCode,

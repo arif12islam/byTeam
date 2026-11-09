@@ -104,6 +104,11 @@ export async function recalcAfterWeeklyOffChange(db: Db, today = toOfficeDate(ne
   await safely("a change to the weekly off days", () => recalc(db, { employeeIds: null, from: today, to: today }));
 }
 
+/** The leaving punch was turned on or off: today for every active employee, as for the weekly off days. */
+export async function recalcAfterLeavingPunchChange(db: Db, today = toOfficeDate(new Date())): Promise<void> {
+  await safely("a change to the leaving punch setting", () => recalc(db, { employeeIds: null, from: today, to: today }));
+}
+
 /** One employee and one date, after a manual adjustment. */
 export async function recalcDay(db: Db, employeeId: string, date: string): Promise<void> {
   await safely("an adjustment", () => recalc(db, { employeeIds: [employeeId], from: date, to: date }));

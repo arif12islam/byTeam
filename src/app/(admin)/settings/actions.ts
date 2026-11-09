@@ -22,6 +22,8 @@ export async function saveCompanyAction(_previous: FormState, formData: FormData
   const parsed = companySettingsSchema.safeParse({
     name: formData.get("name"),
     weeklyOffDays: formData.getAll("offDays"),
+    // A ticked checkbox sends "on"; an unticked one sends nothing.
+    trackLeavingPunch: formData.get("trackLeavingPunch") === "on",
   });
   if (!parsed.success) return formError(formData, parsed.error.issues[0].message);
 

@@ -4,6 +4,7 @@ import { loadPeriodGrid } from "@/lib/attendance/month";
 import { resolvePeriod } from "@/lib/period";
 import { canAct } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { getCompanySettings } from "@/lib/settings/company";
 import { toOfficeDate } from "@/lib/time";
 
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -21,8 +22,8 @@ export async function GET(request: Request) {
   const query = new URL(request.url).searchParams;
   const { period } = resolvePeriod({ from: query.get("from"), to: query.get("to"), month: query.get("month") }, today);
 
-  const grid = await loadPeriodGrid(getDb(), period, today);
-  const file = await buildGridWorkbook(grid);
+  const [grid, company] = await Promise.all([loadPeriodGrid(getDb(), period, today), getCompanySettings(getDb())]);
+  const file = await buildGridWorkbook(grid, { trackLeavingPunch: company.trackLeavingPunch });
 
   return new Response(new Uint8Array(file), {
     headers: {

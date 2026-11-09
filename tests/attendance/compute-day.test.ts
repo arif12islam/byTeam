@@ -306,3 +306,31 @@ describe("office outages", () => {
     expect(computeDay(day({ outages: [outage("08:30", "10:00")], punches: [at("10:05")] }))?.missingOut).toBe(true);
   });
 });
+
+describe("leaving punch turned off", () => {
+  const off = { trackLeavingPunch: false };
+
+  it("counts only the first punch: no leaving time, nothing missing, never early", () => {
+    const r = computeDay(day({ ...off, punches: [at("08:55"), at("16:00")] }));
+    expect(r).toMatchObject({ status: "present", firstIn: at("08:55"), lastOut: null, missingOut: false, earlyMinutes: 0, punchCount: 2 });
+  });
+
+  it("still marks a late arrival from the first punch", () => {
+    expect(computeDay(day({ ...off, punches: [at("09:40")] }))).toMatchObject({ status: "late", lateMinutes: 40, missingOut: false });
+  });
+
+  it("ignores a leaving time set by hand", () => {
+    const r = computeDay(day({ ...off, punches: [at("08:50")], overrides: { lastOut: at("14:00") } }));
+    expect(r).toMatchObject({ lastOut: null, earlyMinutes: 0, missingOut: false, isManual: false });
+  });
+
+  it("an absent day is still absent", () => {
+    expect(computeDay(day(off))).toMatchObject({ status: "absent", missingOut: false });
+  });
+
+  it("behaves as before when left out or true", () => {
+    const punches = [at("08:55"), at("16:00")];
+    expect(computeDay(day({ punches, trackLeavingPunch: true }))).toEqual(computeDay(day({ punches })));
+    expect(computeDay(day({ punches }))).toMatchObject({ lastOut: at("16:00"), earlyMinutes: 120 });
+  });
+});
