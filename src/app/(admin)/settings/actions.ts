@@ -9,11 +9,11 @@ import { formError } from "@/lib/form";
 import { changeLogin } from "@/lib/account";
 import { getAuth } from "@/lib/auth";
 import { isUniqueViolation } from "@/lib/db-errors";
-import { createOutage, removeOutage } from "@/lib/attendance/outages";
+import { createOutage, removeOutage, updateOutage } from "@/lib/attendance/outages";
 import { loadSampleData, switchOffSamplePeople } from "@/lib/demo/sample";
 import { createDepartment, deleteDepartment, renameDepartment } from "@/lib/employees/departments";
 import { companySettingsSchema, saveCompanySettings } from "@/lib/settings/company";
-import { addHoliday, holidaySchema, removeHoliday } from "@/lib/settings/holidays";
+import { addHoliday, holidaySchema, removeHoliday, updateHoliday } from "@/lib/settings/holidays";
 import { requireRole } from "@/lib/session";
 
 export async function saveCompanyAction(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -172,4 +172,45 @@ export async function deleteDepartmentAction(_previous: FormState, formData: For
   revalidatePath("/settings");
   revalidatePath("/employees", "layout");
   return { message: "Deleted." };
+}
+
+export async function updateHolidayAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const parsed = holidaySchema.safeParse({ date: formData.get("date"), name: formData.get("name") });
+  if (!parsed.success) return formError(formData, parsed.error.issues[0].message);
+
+  let result;
+  try {
+    result = await updateHoliday(getDb(), String(formData.get("id") ?? ""), parsed.data, user.id);
+  } catch (error) {
+    if (isUniqueViolation(error)) return formError(formData, "There is already a holiday on that date.");
+    throw error;
+  }
+  if (!result) return formError(formData, "That holiday no longer exists. Reload the page.");
+
+  revalidatePath("/settings");
+  revalidatePath("/attendance");
+  return { message: result.changed ? "Saved." : "Nothing changed." };
+}
+
+export async function updateOutageAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const result = await updateOutage(
+    getDb(),
+    String(formData.get("id") ?? ""),
+    {
+      date: String(formData.get("date") ?? ""),
+      startTime: String(formData.get("startTime") ?? ""),
+      endTime: String(formData.get("endTime") ?? ""),
+      reason: String(formData.get("reason") ?? ""),
+    },
+    user.id,
+  );
+  if (!result.ok) return formError(formData, result.error);
+
+  revalidatePath("/settings");
+  revalidatePath("/attendance");
+  return { message: result.changed ? "Saved." : "Nothing changed." };
 }

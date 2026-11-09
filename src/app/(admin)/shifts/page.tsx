@@ -6,6 +6,9 @@ import { getDb } from "@/db";
 import { requireRole } from "@/lib/session";
 import { formatShiftLength, listShifts } from "@/lib/shifts/shifts";
 
+import { DeleteForm } from "@/components/delete-form";
+
+import { deleteShiftAction } from "./actions";
 import { ShiftForm } from "./shift-form";
 
 export const metadata: Metadata = { title: "Shifts" };
@@ -57,6 +60,15 @@ async function ShiftsContent() {
             </div>
             <div className="mt-5">
               <ShiftForm shift={shift} />
+            </div>
+            <div className="mt-4 border-t border-border pt-4">
+              {shift.employeeCount > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  To delete this shift, move its {shift.employeeCount === 1 ? "employee" : `${shift.employeeCount} employees`} to another shift first.
+                </p>
+              ) : (
+                <DeleteForm action={deleteShiftAction} id={shift.id} label="Delete shift" confirmText={`Delete the shift ${shift.name}? This cannot be undone.`} />
+              )}
             </div>
           </section>
         ))

@@ -11,6 +11,7 @@ import { isForeignKeyViolation, isUniqueViolation } from "@/lib/db-errors";
 import { departmentExists } from "@/lib/employees/departments";
 import {
   createEmployee,
+  deleteEmployee,
   employeeDetailsSchema,
   getEmployee,
   newEmployeeSchema,
@@ -95,4 +96,17 @@ export async function setActiveAction(formData: FormData): Promise<void> {
   await setEmployeeActive(getDb(), id.data, formData.get("active") === "true", user.id);
   revalidatePath("/employees");
   revalidatePath(`/employees/${id.data}`);
+}
+
+export async function deleteEmployeeAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("owner", "hr");
+
+  const id = z.uuid().safeParse(formData.get("id"));
+  if (!id.success) return { error: "That employee no longer exists." };
+
+  const result = await deleteEmployee(getDb(), id.data, user.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/", "layout");
+  redirect("/employees");
 }

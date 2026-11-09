@@ -84,3 +84,39 @@ export async function removeOutage(db: Db, id: string, actorId: string, today = 
   await recalcAfterHolidayChange(db, existing.date, today);
   return { ok: true };
 }
+
+/**
+ * Corrects an outage: its date, times or reason. Both the old and the new date
+ * are recomputed. A date in a finalized month, old or new, is refused.
+ */
+export async function updateOutage(db: Db, id: string, input: OutageInput, actorId: string, today = toOfficeDate(new Date())): Promise<{ ok: true; changed: boolean } | { ok: false; error: string }> {
+  const parsed = outageSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const data = parsed.data;
+
+  const result = await db.transaction(async (tx): Promise<{ ok: true; changed: boolean; oldDate: string } | { ok: false; error: string }> => {
+    const [before] = await tx.select().from(officeOutages).where(eq(officeOutages.id, id));
+    if (!before) return { ok: false, error: "That outage no longer exists. Reload the page." };
+
+    const unchanged =
+      before.date === data.date && hm(before.startTime) === hm(data.startTime) && hm(before.endTime) === hm(data.endTime) && before.reason === data.reason;
+    if (unchanged) return { ok: true, changed: false, oldDate: before.date };
+
+    const [first, last] = [before.date, data.date].sort();
+    const locked = await finalizedMonthsBetween(tx, first, last, { lock: true });
+    const touched = new Set([before.date.slice(0, 7), data.date.slice(0, 7)]);
+    const blocked = new Set([...locked].filter((month) => touched.has(month)));
+    if (blocked.size > 0) return { ok: false, error: lockedMessage(blocked, "attendance for that day") };
+
+    const [after] = await tx.update(officeOutages).set(data).where(eq(officeOutages.id, id)).returning();
+    await audit(tx, { actorId, action: "outage.update", entity: "office_outage", entityId: id, before, after });
+    return { ok: true, changed: true, oldDate: before.date };
+  });
+  if (!result.ok) return result;
+
+  if (result.changed) {
+    await recalcAfterHolidayChange(db, result.oldDate, today);
+    if (result.oldDate !== data.date) await recalcAfterHolidayChange(db, data.date, today);
+  }
+  return { ok: true, changed: result.changed };
+}

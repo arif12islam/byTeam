@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { z } from "zod";
 
 import { BackLink } from "@/components/back-link";
+import { DeleteForm } from "@/components/delete-form";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
@@ -12,7 +13,7 @@ import { getEmployee } from "@/lib/employees/employees";
 import { requireRole } from "@/lib/session";
 import { listShifts } from "@/lib/shifts/shifts";
 
-import { setActiveAction } from "../actions";
+import { deleteEmployeeAction, setActiveAction } from "../actions";
 import { SalarySection } from "./salary-section";
 import { EmployeeForm } from "../employee-form";
 
@@ -71,6 +72,21 @@ async function EmployeeDetail({ params }: { params: PageProps<"/employees/[id]">
               {employee.active ? "Deactivate employee" : "Reactivate employee"}
             </Button>
           </form>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <h2 className="text-base font-semibold">Delete employee</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Only for someone added by mistake, with no punches, leave, payroll or corrections on record. Anyone with history cannot be deleted. Deactivate them instead.
+          </p>
+          <div className="mt-4">
+            <DeleteForm
+              action={deleteEmployeeAction}
+              id={employee.id}
+              label="Delete employee"
+              confirmText={`Delete ${employee.name} (code ${employee.empCode})? This cannot be undone.`}
+            />
+          </div>
         </section>
       </div>
     </>

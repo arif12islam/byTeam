@@ -9,6 +9,9 @@ import { requireRole } from "@/lib/session";
 import { listShifts } from "@/lib/shifts/shifts";
 import { formatMonth, toOfficeMonth } from "@/lib/time";
 
+import { DeleteForm } from "@/components/delete-form";
+
+import { deleteRuleSetAction } from "./actions";
 import { RuleSetForm } from "./rule-set-form";
 
 export const metadata: Metadata = { title: "Pay rules" };
@@ -62,9 +65,19 @@ async function RulesContent() {
             {current?.id === rule.id ? <p className="text-sm font-medium text-primary">In use this month</p> : null}
           </div>
           {canEdit ? (
-            <div className="mt-5">
-              <RuleSetForm ruleSet={rule} />
-            </div>
+            <>
+              <div className="mt-5">
+                <RuleSetForm ruleSet={rule} />
+              </div>
+              <div className="mt-4 border-t border-border pt-4">
+                <DeleteForm
+                  action={deleteRuleSetAction}
+                  id={rule.id}
+                  label="Delete these rules"
+                  confirmText={`Delete the rules that start in ${formatMonth(rule.effectiveFromMonth)}? Months before the next rules will use the rules before these.`}
+                />
+              </div>
+            </>
           ) : (
             <ul className="mt-3 space-y-1 text-sm">
               {describeRuleSet(rule).map((line) => (

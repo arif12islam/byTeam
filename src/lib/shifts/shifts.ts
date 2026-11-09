@@ -119,3 +119,25 @@ export async function updateShift(db: Db, id: string, input: ShiftInput, actorId
   if (result && "hoursChanged" in result && result.hoursChanged) await recalcAfterShiftChange(db, id);
   return result;
 }
+
+export type DeleteResult = { ok: true } | { ok: false; error: string };
+
+/** Deletes a shift nobody is on. Move the people to another shift first, so no one is left without one. */
+export async function deleteShift(db: Db, id: string, actorId: string): Promise<DeleteResult> {
+  return db.transaction(async (tx): Promise<DeleteResult> => {
+    const [before] = await tx.select().from(shifts).where(eq(shifts.id, id));
+    if (!before) return { ok: true };
+
+    const [{ people }] = await tx.select({ people: count(employees.id) }).from(employees).where(eq(employees.shiftId, id));
+    if (people > 0) {
+      return {
+        ok: false,
+        error: `${people === 1 ? "1 employee is" : `${people} employees are`} on ${before.name}. Move them to another shift first.`,
+      };
+    }
+
+    await tx.delete(shifts).where(eq(shifts.id, id));
+    await audit(tx, { actorId, action: "shift.delete", entity: "shift", entityId: id, before });
+    return { ok: true };
+  });
+}

@@ -75,3 +75,30 @@ export async function removeHoliday(db: Db, id: string, actorId: string): Promis
   await recalcAfterHolidayChange(db, removed);
   return true;
 }
+
+/**
+ * Changes a holiday's date or name. Throws a unique violation when another
+ * holiday is already on the new date. Returns null when it is gone. The old and
+ * the new date are both recomputed, since each changes from a holiday to a
+ * working day or back.
+ */
+export async function updateHoliday(db: Db, id: string, input: HolidayInput, actorId: string): Promise<{ changed: boolean } | null> {
+  const data = holidaySchema.parse(input);
+
+  const result = await db.transaction(async (tx) => {
+    const [before] = await tx.select().from(holidays).where(eq(holidays.id, id));
+    if (!before) return null;
+    if (before.date === data.date && before.name === data.name) return { changed: false, oldDate: before.date };
+
+    const [after] = await tx.update(holidays).set(data).where(eq(holidays.id, id)).returning();
+    await audit(tx, { actorId, action: "holiday.update", entity: "holiday", entityId: id, before, after });
+    return { changed: true, oldDate: before.date };
+  });
+  if (!result) return null;
+
+  if (result.changed) {
+    await recalcAfterHolidayChange(db, result.oldDate);
+    if (result.oldDate !== data.date) await recalcAfterHolidayChange(db, data.date);
+  }
+  return { changed: result.changed };
+}
