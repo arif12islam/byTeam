@@ -92,6 +92,13 @@
       "when": 1794212482667,
       "tag": "0012_m7_remove_sample_data",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794212842494,
+      "tag": "0013_m7_whats_new_seen",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,119 @@
+/**
+ * What's new in byTeam. After every update people will notice, add a release at
+ * the TOP of RELEASES: the first time someone opens the app after it, they get a
+ * short tour of it, one step per item, with a picture of the change and how it
+ * works. Everyone sees each release once. The newest release is the first one.
+ *
+ * Keep an item to one change a person can see or use. `visual` names a picture
+ * in src/components/whats-new/visuals.tsx; `steps` are the 2 or 3 things to do,
+ * numbered to match the markers in the picture.
+ */
+
+export const VISUALS = ["app", "login", "late", "departments", "leavingPunch", "export", "delete"] as const;
+export type VisualKey = (typeof VISUALS)[number];
+
+export type ReleaseItem = {
+  id: string;
+  title: string;
+  /** One or two sentences on what changed and why it helps. */
+  body: string;
+  visual: VisualKey;
+  /** What to do, in order. At most four, matching the numbered markers in the picture. */
+  steps: string[];
+  /** Where to try it. */
+  href?: string;
+  tryLabel?: string;
+};
+
+export type Release = {
+  /** Never changes once released: it is what a person's "seen" mark is compared with. */
+  id: string;
+  title: string;
+  /** YYYY-MM-DD. */
+  date: string;
+  summary: string;
+  items: ReleaseItem[];
+};
+
+export const RELEASES: Release[] = [
+  {
+    id: "2026-11",
+    title: "November update",
+    date: "2026-11-10",
+    summary: "A new look, an app for your phone, and a lot of small things made easier.",
+    items: [
+      {
+        id: "app",
+        title: "Use byTeam like an app",
+        body: "Add byTeam to your phone's home screen and it opens full screen, with the new logo as its icon, and no browser bars.",
+        visual: "app",
+        steps: ["Open byTeam in Safari (iPhone) or Chrome (Android).", "Tap Share, then Add to Home Screen.", "Open it from the new icon."],
+      },
+      {
+        id: "login",
+        title: "Change your own login",
+        body: "Set your name, email and password yourself. Your name shows in the menu and in the audit log.",
+        visual: "login",
+        steps: ["Open Settings and find Your login.", "Change the name, email or password.", "Enter your current password and save."],
+        href: "/settings",
+        tryLabel: "Open Settings",
+      },
+      {
+        id: "late",
+        title: "Late time in hours and minutes",
+        body: "A late of 125 minutes now reads 2 h 5 min, everywhere. Excel and CSV exports also get a Late (h:mm) column.",
+        visual: "late",
+        steps: ["Open Attendance or Today.", "Look at a late day: the badge shows hours and minutes."],
+        href: "/attendance",
+        tryLabel: "Open Attendance",
+      },
+      {
+        id: "departments",
+        title: "Choose a department from a list",
+        body: "No more typing the same department differently. Add departments once in Settings, then pick them for each employee. Renaming one renames it for everyone in it.",
+        visual: "departments",
+        steps: ["Settings, Departments: add or rename them.", "Open an employee and pick the department.", "Missing one? Use Manage departments."],
+        href: "/settings#departments",
+        tryLabel: "Manage departments",
+      },
+      {
+        id: "leaving-punch",
+        title: "Turn the leaving punch on or off",
+        body: "If your office only punches in, switch the leaving punch off. Then only the first punch counts, and there are no missing leaving punch warnings.",
+        visual: "leavingPunch",
+        steps: ["Open Settings, Company.", "Untick Use the leaving punch.", "Save. It applies from today."],
+        href: "/settings",
+        tryLabel: "Open Settings",
+      },
+      {
+        id: "export",
+        title: "Export attendance your way",
+        body: "Download attendance as Excel, PDF or CSV, and filter it by department, one person, or only people who were late, absent or on leave.",
+        visual: "export",
+        steps: ["Open Attendance and Export attendance.", "Pick the format and the filters.", "Tap Download."],
+        href: "/attendance",
+        tryLabel: "Open Attendance",
+      },
+      {
+        id: "edit-delete",
+        title: "Edit or delete what you add",
+        body: "Shifts, pay rules and leave types can be deleted when nothing depends on them. Holidays and outages can be edited. If something is in use, byTeam tells you why and what to do instead.",
+        visual: "delete",
+        steps: ["Open a shift, pay rule or leave type.", "Tap Delete and confirm.", "If it is in use, move the people first."],
+        href: "/shifts",
+        tryLabel: "Open Shifts",
+      },
+    ],
+  },
+];
+
+export const LATEST_RELEASE: Release = RELEASES[0];
+
+/**
+ * The release to show someone: the newest one when they have not seen it, else
+ * nothing. An id this list does not know (an older or removed release) counts as
+ * not seen, so nobody is left out of a release by mistake.
+ */
+export function unseenRelease(lastSeenId: string | null | undefined): Release | null {
+  return lastSeenId === LATEST_RELEASE.id ? null : LATEST_RELEASE;
+}

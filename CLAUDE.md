@@ -59,6 +59,7 @@ Run lint, typecheck, test and build before every commit. CI runs the same four.
 - Money is `numeric(12,2)`; round net pay to whole taka only at the end.
 - No Vercel-specific APIs (Edge Config, KV, Edge runtime) in core code. The app must run with `next start` on a VPS.
 - Migrations are generated with drizzle-kit and committed. Never edit an applied migration.
+- After a major update people will notice, add a release at the top of `src/lib/whats-new/releases.ts` (and a picture in `src/components/whats-new/visuals.tsx` if it needs one) in the same PR. Everyone sees the newest release once, the first time they open the app after it.
 - Pay rules (base, divisor, late policy) are settings in `rule_sets`, never constants in code. Any new pay rule that `docs/BUILD_PLAN.md` section 7 does not cover is not decided: make it configurable or ask.
 
 ## Next.js 16 notes

@@ -11,11 +11,14 @@ import { connect, testDatabaseUrl, type TestDb } from "./helpers";
 
 vi.mock("server-only", () => ({}));
 
+class Rollback extends Error {}
+
 /**
- * The company settings are one shared row that other test files read, so this
- * flips the choice and puts it back inside a single test, with nothing else
- * in between. How a day is computed with it off is covered in
- * tests/attendance/compute-day.test.ts.
+ * The company settings are one shared row that other test files read while this
+ * one runs, and a day is computed differently with the leaving punch off. So
+ * everything here happens inside a transaction that is rolled back at the end,
+ * and no other test ever sees the change. How a day is computed with it off is
+ * covered in tests/attendance/compute-day.test.ts.
  */
 describe.skipIf(!testDatabaseUrl)("leaving punch setting", () => {
   let db: TestDb;
@@ -33,26 +36,34 @@ describe.skipIf(!testDatabaseUrl)("leaving punch setting", () => {
 
   it("saves the choice, audits it, keeps it when left out, and treats the same value as no change", async () => {
     const start = await getCompanySettings(db);
-    try {
-      expect(await saveCompanySettings(db, { name: start.name || "Test company", weeklyOffDays: start.weeklyOffDays, trackLeavingPunch: false }, actor)).toEqual({
-        changed: start.trackLeavingPunch,
+    const name = start.name || "Test company";
+
+    const run = db.transaction(async (tx) => {
+      const inTx = tx as unknown as TestDb;
+      expect(await saveCompanySettings(inTx, { name, weeklyOffDays: start.weeklyOffDays, trackLeavingPunch: false }, actor)).toEqual({
+        changed: start.trackLeavingPunch || name !== start.name,
       });
-      expect((await getCompanySettings(db)).trackLeavingPunch).toBe(false);
+      expect((await getCompanySettings(tx)).trackLeavingPunch).toBe(false);
 
       // Left out: the saved choice stays.
-      await saveCompanySettings(db, { name: start.name || "Test company", weeklyOffDays: start.weeklyOffDays }, actor);
-      expect((await getCompanySettings(db)).trackLeavingPunch).toBe(false);
-      // Same value again: nothing to save.
-      expect(await saveCompanySettings(db, { name: start.name || "Test company", weeklyOffDays: start.weeklyOffDays, trackLeavingPunch: false }, actor)).toEqual({
-        changed: false,
-      });
+      await saveCompanySettings(inTx, { name, weeklyOffDays: start.weeklyOffDays }, actor);
+      expect((await getCompanySettings(tx)).trackLeavingPunch).toBe(false);
+      // The same value again: nothing to save.
+      expect(await saveCompanySettings(inTx, { name, weeklyOffDays: start.weeklyOffDays, trackLeavingPunch: false }, actor)).toEqual({ changed: false });
 
-      const [latest] = await db.select().from(auditLog).where(eq(auditLog.entity, "company_settings")).orderBy(desc(auditLog.createdAt)).limit(1);
+      const [latest] = await tx.select().from(auditLog).where(eq(auditLog.entity, "company_settings")).orderBy(desc(auditLog.createdAt)).limit(1);
       expect(latest.action).toBe("settings.update");
       expect(JSON.stringify(latest.after)).toContain('"trackLeavingPunch":false');
-    } finally {
-      await saveCompanySettings(db, { name: start.name || "Test company", weeklyOffDays: start.weeklyOffDays, trackLeavingPunch: true }, actor);
-    }
-    expect((await getCompanySettings(db)).trackLeavingPunch).toBe(true);
+
+      // Turning it back on is a change too.
+      expect(await saveCompanySettings(inTx, { name, weeklyOffDays: start.weeklyOffDays, trackLeavingPunch: true }, actor)).toEqual({ changed: true });
+      expect((await getCompanySettings(tx)).trackLeavingPunch).toBe(true);
+
+      throw new Rollback();
+    });
+    await expect(run).rejects.toBeInstanceOf(Rollback);
+
+    // Nothing was kept.
+    expect((await getCompanySettings(db)).trackLeavingPunch).toBe(start.trackLeavingPunch);
   });
 });
