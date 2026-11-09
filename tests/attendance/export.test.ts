@@ -56,7 +56,7 @@ describe("buildGridWorkbook", () => {
     const bela = sheet.getRow(3);
     expect([4, 5, 6, 7, 8].map((c) => bela.getCell(c).value)).toEqual(["P", "L!", "A*", "PL", null].map((v) => v ?? ""));
     const firstTotal = 4 + 31;
-    expect([0, 1, 2, 3, 4, 5, 6].map((i) => bela.getCell(firstTotal + i).value)).toEqual([2, 1, 1, 1, 25, 1, 0]);
+    expect([0, 1, 2, 3, 4, 5, 6, 7].map((i) => bela.getCell(firstTotal + i).value)).toEqual([2, 1, 1, 1, 25, "0:25", 1, 0]);
   });
 
   it("keeps a name that looks like a formula as text", async () => {

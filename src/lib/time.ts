@@ -165,6 +165,21 @@ export function officeMinuteOfDay(instant: Date): number {
   return Math.floor((((wall % 86_400_000) + 86_400_000) % 86_400_000) / 60_000);
 }
 
+/** A length of time in minutes for people to read: "45 min", "2 h", "1 h 5 min". */
+export function formatDuration(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** A length of time in minutes as h:mm, for spreadsheets: 65 is "1:05". */
+export function formatHoursMinutes(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 /** Every date from `from` to `to`, both included, as YYYY-MM-DD. Empty when `to` is before `from`. */
 export function eachDate(from: string, to: string): string[] {
   const dates: string[] = [];

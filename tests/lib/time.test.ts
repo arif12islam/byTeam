@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   daysInMonth,
   eachDate,
+  formatDuration,
+  formatHoursMinutes,
   formatMonth,
   formatOfficeDateTime,
   formatOfficeDate,
@@ -220,5 +222,29 @@ describe("shiftMonth", () => {
     expect(shiftMonth("2026-12", 1)).toBe("2027-01");
     expect(shiftMonth("2026-01", -1)).toBe("2025-12");
     expect(shiftMonth("2026-03", 0)).toBe("2026-03");
+  });
+});
+
+describe("formatDuration", () => {
+  it("writes minutes under an hour, whole hours and both", () => {
+    expect(formatDuration(0)).toBe("0 min");
+    expect(formatDuration(45)).toBe("45 min");
+    expect(formatDuration(60)).toBe("1 h");
+    expect(formatDuration(65)).toBe("1 h 5 min");
+    expect(formatDuration(150)).toBe("2 h 30 min");
+  });
+
+  it("rounds and never goes below zero", () => {
+    expect(formatDuration(59.6)).toBe("1 h");
+    expect(formatDuration(-5)).toBe("0 min");
+  });
+});
+
+describe("formatHoursMinutes", () => {
+  it("writes h:mm for spreadsheets", () => {
+    expect(formatHoursMinutes(0)).toBe("0:00");
+    expect(formatHoursMinutes(5)).toBe("0:05");
+    expect(formatHoursMinutes(65)).toBe("1:05");
+    expect(formatHoursMinutes(600)).toBe("10:00");
   });
 });

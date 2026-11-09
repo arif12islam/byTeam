@@ -16,7 +16,7 @@ import { cellText, statusLabel } from "@/lib/attendance/labels";
 import { loadPeriodGrid, type GridCell } from "@/lib/attendance/month";
 import { describePeriodNav, periodLabel, periodQuery, resolvePeriod } from "@/lib/period";
 import { requireRole } from "@/lib/session";
-import { formatMonth, toOfficeDate } from "@/lib/time";
+import { formatDuration, formatMonth, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { AttendanceCards } from "./attendance-cards";
@@ -47,7 +47,7 @@ function cellStyle(status: AttendanceStatus): string {
 
 function describeCell(date: string, cell: GridCell): string {
   const parts = [`${date}: ${statusLabel[cell.status]}`];
-  if (cell.status === "late") parts.push(`${cell.lateMinutes} min late`);
+  if (cell.status === "late") parts.push(`${formatDuration(cell.lateMinutes)} late`);
   if (cell.missingOut) parts.push("no leaving punch");
   if (cell.workedOnOffDay) parts.push("came in on a day off");
   if (cell.isManual) parts.push("corrected by hand");

@@ -58,9 +58,9 @@ describe("buildReportCsv", () => {
     const csv = buildReportCsv(grid, new Map([["e1", "24500.00"]]));
     expect(csv).toBe(
       [
-        "Code,Name,Department,Days present,Days late,Days absent,Days on leave,Minutes late,Missing leaving punch,Net pay",
-        '1001,"Rahim, Md",Sales,2,1,1,0,12,0,24500.00',
-        "1002,Sima,,0,0,0,0,0,0,",
+        "Code,Name,Department,Days present,Days late,Days absent,Days on leave,Minutes late,Late (h:mm),Missing leaving punch,Net pay",
+        '1001,"Rahim, Md",Sales,2,1,1,0,12,0:12,0,24500.00',
+        "1002,Sima,,0,0,0,0,0,0:00,0,",
         "",
       ].join("\n"),
     );

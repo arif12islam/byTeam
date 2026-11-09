@@ -37,7 +37,7 @@ import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
 import { buildAttendanceReport, formatRate, type PersonFigure } from "@/lib/reports/attendance-report";
 import { combineSheets, formatCompact, formatTaka, payrollByDepartment, payrollTrend, payrollTrendFor } from "@/lib/reports/payroll-report";
 import { requireRole } from "@/lib/session";
-import { formatMonth, toOfficeDate } from "@/lib/time";
+import { formatDuration, formatMonth, toOfficeDate } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Reports" };
 
@@ -212,7 +212,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
             value={totals.late}
             icon={AlarmClock}
             tone="warning"
-            hint={totals.lateMinutes > 0 ? `days, ${totals.lateMinutes} min in all` : "days"}
+            hint={totals.lateMinutes > 0 ? `days, ${formatDuration(totals.lateMinutes)} in all` : "days"}
           />
           <StatTile label="Absent" value={totals.absent} icon={UserX} tone="danger" hint="days" />
           <StatTile
@@ -335,7 +335,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
           empty="Nobody was late."
           people={report.mostLate}
           tone="warning"
-          detail={(p) => `${plural(p.late, "time")}, ${p.lateMinutes} min`}
+          detail={(p) => `${plural(p.late, "time")}, ${formatDuration(p.lateMinutes)}`}
         />
         <PeopleCard
           icon={UserX}

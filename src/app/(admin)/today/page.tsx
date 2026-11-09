@@ -18,7 +18,7 @@ import {
 import { deviceStatus, listDevices } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
-import { formatOfficeDate, formatOfficeTime, toOfficeDate } from "@/lib/time";
+import { formatDuration, formatOfficeDate, formatOfficeTime, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { ArrivalsChart } from "./arrivals-chart";
@@ -43,7 +43,7 @@ function describeEntry(entry: TodayEntry): { tone: Tone; badge: string; detail: 
     const late = entry.status === "late";
     return {
       tone: late ? "warning" : "success",
-      badge: late ? `${entry.lateMinutes} min late` : "On time",
+      badge: late ? `${formatDuration(entry.lateMinutes)} late` : "On time",
       detail: `${arrived}${left}`,
     };
   }

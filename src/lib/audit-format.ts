@@ -1,6 +1,6 @@
 import { statusLabel } from "@/lib/attendance/labels";
 import { formatTaka } from "@/lib/salary/money";
-import { formatMonth, formatOfficeDate, formatOfficeDateTime } from "@/lib/time";
+import { formatDuration, formatMonth, formatOfficeDate, formatOfficeDateTime } from "@/lib/time";
 
 /**
  * Audit log entries for people to read. The log stores records exactly as
@@ -284,7 +284,7 @@ export function formatAuditValue(
     case "bool":
       return value === true ? "Yes" : value === false ? "No" : plain(value);
     case "minutes":
-      return `${Number(value)} min`;
+      return formatDuration(Number(value));
     case "days": {
       const n = Number(value);
       return `${n} ${n === 1 ? "day" : "days"}`;
