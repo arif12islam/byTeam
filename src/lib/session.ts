@@ -12,6 +12,8 @@ export type CurrentUser = {
   name: string;
   email: string;
   role: UserRole;
+  /** The newest What's new release they have seen, or null. */
+  lastSeenRelease: string | null;
 };
 
 /** The signed-in user for this request, or null. Reads the session cookie. */
@@ -26,7 +28,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const role: unknown = session.user.role;
   if (!isUserRole(role)) return null;
 
-  return { id, name, email, role };
+  const seen: unknown = session.user.lastSeenRelease;
+  return { id, name, email, role, lastSeenRelease: typeof seen === "string" ? seen : null };
 });
 
 /** Pages: send visitors without a session to the login screen. */

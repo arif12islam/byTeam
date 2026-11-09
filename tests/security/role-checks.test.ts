@@ -96,7 +96,7 @@ describe("every server action checks the role on the server", () => {
     const actions = await loadActions();
     const names = actions.map((a) => a.name);
     // Adding an action changes this number on purpose: whoever adds one has to check its role and the lists below.
-    expect(names).toHaveLength(37);
+    expect(names).toHaveLength(38);
     expect(names).toEqual(expect.arrayContaining(OWNER_ONLY));
     expect(new Set(names).size).toBe(names.length);
   });
@@ -140,7 +140,7 @@ describe("every server action checks the role on the server", () => {
     }
   });
 
-  it("what HR must not do: finalize, unlock, edit rules, and load or switch off sample data", async () => {
+  it("what HR must not do: finalize, unlock, edit or delete rules", async () => {
     signedIn = { role: "hr" };
     const actions = await loadActions();
     for (const name of OWNER_ONLY) {

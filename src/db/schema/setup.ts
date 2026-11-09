@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   role: userRole("role").notNull().default("hr"),
+  /** The id of the newest What's new release this person has seen (src/lib/whats-new/releases.ts). Null until the first one. */
+  lastSeenRelease: text("last_seen_release"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

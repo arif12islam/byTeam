@@ -7,6 +7,7 @@ import {
   Timer,
   History,
   Settings,
+  Sparkles,
   SlidersHorizontal,
   Users,
   Wallet,
@@ -52,7 +53,10 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Records",
-    items: [{ href: "/audit", label: "Audit log", icon: History }],
+    items: [
+      { href: "/audit", label: "Audit log", icon: History },
+      { href: "/whats-new", label: "What's new", icon: Sparkles },
+    ],
   },
 ];
 

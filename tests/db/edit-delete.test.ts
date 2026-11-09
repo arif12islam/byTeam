@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
@@ -44,7 +44,8 @@ describe.skipIf(!testDatabaseUrl)("edit and delete", () => {
     await close();
   });
 
-  const logged = async (id: string) => (await db.select().from(auditLog).where(eq(auditLog.entityId, id))).map((l) => l.action);
+  // In the order they were written: without an order the database may hand rows back in any order.
+  const logged = async (id: string) => (await db.select().from(auditLog).where(eq(auditLog.entityId, id)).orderBy(asc(auditLog.createdAt))).map((l) => l.action);
   const newShift = async () => (await db.insert(shifts).values({ name: `Del shift ${randomUUID()}`, startTime: "09:00", endTime: "18:00" }).returning())[0];
   const newPerson = async (shiftId: string) =>
     (await db.insert(employees).values({ empCode: uniqueCode(), name: "Del person", joinDate: "2026-01-01", shiftId }).returning())[0];

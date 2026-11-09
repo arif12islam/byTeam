@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { MobileTabBar, MobileTopBar, Sidebar } from "@/components/sidebar";
 import { UserMenu } from "@/components/user-menu";
+import { WhatsNewGate } from "@/components/whats-new/gate";
 import { requireUser } from "@/lib/session";
 
 /**
@@ -43,6 +44,9 @@ export default function AdminLayout({ children }: LayoutProps<"/">) {
       </div>
       <Suspense fallback={null}>
         <MobileTabBar account={sheetAccount} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <WhatsNewGate />
       </Suspense>
     </div>
   );

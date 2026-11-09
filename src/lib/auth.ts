@@ -24,6 +24,7 @@ function createAuth() {
       modelName: "users",
       additionalFields: {
         role: { type: "string", required: true, defaultValue: "hr", input: false },
+        lastSeenRelease: { type: "string", required: false, input: false },
       },
     },
     session: { modelName: "sessions" },
