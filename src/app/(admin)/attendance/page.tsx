@@ -1,4 +1,4 @@
-import { Download, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -6,7 +6,6 @@ import { Suspense } from "react";
 
 import { DateRangeFilter } from "@/components/date-range-filter";
 import { PageHeader } from "@/components/page-header";
-import { buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { statusFill } from "@/components/status";
@@ -14,13 +13,14 @@ import { getDb } from "@/db";
 import type { AttendanceStatus } from "@/db/schema/attendance";
 import { cellText, statusLabel } from "@/lib/attendance/labels";
 import { loadPeriodGrid, type GridCell } from "@/lib/attendance/month";
-import { describePeriodNav, periodLabel, periodQuery, resolvePeriod } from "@/lib/period";
+import { describePeriodNav, periodLabel, resolvePeriod } from "@/lib/period";
 import { requireRole } from "@/lib/session";
 import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatMonth, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { AttendanceCards } from "./attendance-cards";
+import { ExportPanel } from "./export-panel";
 import { parseView, VIEW_COOKIE } from "./view";
 import { ViewToggle } from "./view-toggle";
 
@@ -81,11 +81,8 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
     <div className="mt-6 grid gap-5">
       <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/attendance" nav={describePeriodNav("/attendance", period, today)}>
         <ViewToggle view={view} />
-        <a href={`/attendance/export?${periodQuery(period)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-          <Download aria-hidden />
-          Download Excel
-        </a>
       </DateRangeFilter>
+      <ExportPanel grid={grid} trackLeavingPunch={trackLeavingPunch} />
       {notice ? (
         <Alert tone="info" icon={Info} className="py-2">
           {notice}

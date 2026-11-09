@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
 
 import type { DayResult } from "@/lib/attendance/compute-day";
-import { buildGridWorkbook } from "@/lib/attendance/export";
+import { buildGridCsv, buildGridWorkbook } from "@/lib/attendance/export";
 import { buildMonthGrid, buildPeriodGrid } from "@/lib/attendance/month";
 
 const day = (overrides: Partial<DayResult>): DayResult => ({
@@ -91,5 +91,42 @@ describe("buildGridWorkbook", () => {
     expect(row.slice(4, 8)).toEqual(["", "P", "L", ""]);
     expect(row[8]).toBe(2); // present, late days included
     expect(row[9]).toBe(1); // late
+  });
+});
+
+describe("buildGridCsv", () => {
+  const grid = buildMonthGrid("2026-10", [
+    {
+      employee: { id: "b", empCode: "20", name: "Bela, Md", department: "Sales" },
+      days: [
+        { date: "2026-10-01", result: day({ status: "present" }) },
+        { date: "2026-10-02", result: day({ status: "late", lateMinutes: 65, missingOut: true }) },
+      ],
+    },
+    { employee: { id: "a", empCode: "10", name: "=1+1", department: null }, days: [] },
+  ]);
+
+  it("writes the codes per day then the totals, quoting what needs it", () => {
+    const lines = buildGridCsv(grid).trimEnd().split("\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[0].startsWith("Code,Name,Department,2026-10-01,2026-10-02,")).toBe(true);
+    expect(lines[0].endsWith("Present,Late,Absent,Leave,Late minutes,Late (h:mm),No leaving punch,Worked on days off")).toBe(true);
+    expect(lines[1].startsWith("10,'=1+1,,")).toBe(true);
+    expect(lines[2].startsWith('20,"Bela, Md",Sales,P,L!,')).toBe(true);
+    expect(lines[2].endsWith("2,1,0,0,65,1:05,1,0")).toBe(true);
+  });
+
+  it("leaves out the leaving punch column when it is not used", () => {
+    const header = buildGridCsv(grid, { trackLeavingPunch: false }).split("\n")[0];
+    expect(header.endsWith("Late (h:mm),Worked on days off")).toBe(true);
+  });
+});
+
+describe("the filter note in the workbook", () => {
+  it("is added under the legend", async () => {
+    const grid = buildMonthGrid("2026-10", []);
+    const sheet = (await read(await buildGridWorkbook(grid, { filterNote: "Filtered: department Sales." }))).worksheets[0];
+    const last = sheet.getRow(sheet.rowCount).getCell(1).value;
+    expect(last).toBe("Filtered: department Sales.");
   });
 });

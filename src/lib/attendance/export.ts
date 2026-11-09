@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 
 import { periodLabel } from "@/lib/period";
+import { csvField } from "@/lib/reports/csv";
 import { formatHoursMinutes } from "@/lib/time";
 
 import { cellText } from "./labels";
@@ -22,7 +23,7 @@ function columnLetter(n: number): string {
  * with the same codes as the screen, then the totals. Names go in as plain
  * text, never as formulas.
  */
-export async function buildGridWorkbook(grid: MonthGrid, options: { trackLeavingPunch?: boolean } = {}): Promise<Buffer> {
+export async function buildGridWorkbook(grid: MonthGrid, options: { trackLeavingPunch?: boolean; filterNote?: string | null } = {}): Promise<Buffer> {
   // An office that does not use the leaving punch has no such column and no ! in the legend.
   const trackLeaving = options.trackLeavingPunch !== false;
   const TOTAL_HEADINGS = ALL_TOTAL_HEADINGS.filter((h) => trackLeaving || h !== NO_LEAVING_PUNCH);
@@ -77,7 +78,48 @@ export async function buildGridWorkbook(grid: MonthGrid, options: { trackLeaving
   ]);
   notes.getCell(1).font = { italic: true };
   sheet.mergeCells(`A${notes.number}:${columnLetter(3 + grid.dates.length + TOTAL_HEADINGS.length)}${notes.number}`);
+  if (options.filterNote) {
+    const filtered = sheet.addRow([options.filterNote]);
+    filtered.getCell(1).font = { italic: true };
+    sheet.mergeCells(`A${filtered.number}:${columnLetter(3 + grid.dates.length + TOTAL_HEADINGS.length)}${filtered.number}`);
+  }
 
   const data = await workbook.xlsx.writeBuffer();
   return Buffer.from(data);
+}
+
+/**
+ * The grid as CSV: one row per employee, one column per day with the same
+ * codes as the screen, then the totals. A cell starting with = + - or @ is
+ * quoted so a spreadsheet cannot run it as a formula.
+ */
+export function buildGridCsv(grid: MonthGrid, options: { trackLeavingPunch?: boolean } = {}): string {
+  const trackLeaving = options.trackLeavingPunch !== false;
+  const totalHeadings = ALL_TOTAL_HEADINGS.filter((h) => trackLeaving || h !== NO_LEAVING_PUNCH);
+  const lines = [["Code", "Name", "Department", ...grid.dates, ...totalHeadings].map(csvField).join(",")];
+  for (const row of grid.rows) {
+    const t = row.totals;
+    lines.push(
+      [
+        row.employee.empCode,
+        row.employee.name,
+        row.employee.department,
+        ...grid.dates.map((date) => {
+          const cell = row.cells.get(date);
+          return cell ? cellText(cell) : "";
+        }),
+        t.present,
+        t.late,
+        t.absent,
+        t.leave,
+        t.lateMinutes,
+        formatHoursMinutes(t.lateMinutes),
+        ...(trackLeaving ? [t.missingOut] : []),
+        t.workedOffDays,
+      ]
+        .map(csvField)
+        .join(","),
+    );
+  }
+  return `${lines.join("\n")}\n`;
 }
