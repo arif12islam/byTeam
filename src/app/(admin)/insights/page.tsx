@@ -28,7 +28,7 @@ export default function InsightsPage() {
 
 async function InsightsContent() {
   await requireRole("owner", "hr");
-  const { insights, madeAt } = await getInsights(getDb());
+  const { insights, madeAt, leftOut } = await getInsights(getDb());
 
   return (
     <div className="mt-6 grid max-w-3xl gap-5">
@@ -44,6 +44,11 @@ async function InsightsContent() {
           </Card>
         ))
       )}
+      {leftOut.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Left out of Insights: {leftOut.map((p) => p.name).join(", ")}. Change this on each employee&apos;s page.
+        </p>
+      ) : null}
       <p className="text-xs text-muted-foreground">Worked out {formatOfficeDateTime(madeAt)}.</p>
     </div>
   );

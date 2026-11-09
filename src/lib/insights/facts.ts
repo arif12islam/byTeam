@@ -107,6 +107,17 @@ export type InsightsInput = {
   payroll: readonly { month: string; net: number; people: number }[];
 };
 
+/** The same input without some people, as if they were not in the office: their days, their balances. Pay totals stay, since they are real. */
+export function withoutPeople(input: InsightsInput, ids: ReadonlySet<string>): InsightsInput {
+  if (ids.size === 0) return input;
+  return {
+    ...input,
+    current: { ...input.current, rows: input.current.rows.filter((row) => !ids.has(row.employee.id)) },
+    previous: { ...input.previous, rows: input.previous.rows.filter((row) => !ids.has(row.employee.id)) },
+    balances: input.balances.filter((b) => !ids.has(b.employeeId)),
+  };
+}
+
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const dayOfMonth = (date: string) => Number(date.slice(8));
 const top = <T,>(items: T[], by: (item: T) => number): T[] => [...items].sort((a, b) => by(b) - by(a)).slice(0, THRESHOLDS.perRule);

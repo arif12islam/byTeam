@@ -29,6 +29,7 @@ type Props = {
     joinDate: string;
     exitDate: string | null;
     shiftId: string;
+    excludeFromInsights: boolean;
   };
 };
 
@@ -144,6 +145,22 @@ export function EmployeeForm({ shifts, departments, employee, initialCode }: Pro
           </Select>
         </Field>
       </div>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-md border border-input bg-card p-3 text-sm">
+        <input
+          key={`${state.values ? "form" : "saved"}-${employee?.excludeFromInsights ?? false}`}
+          type="checkbox"
+          name="excludeFromInsights"
+          defaultChecked={state.values ? state.values.excludeFromInsights === "on" : Boolean(employee?.excludeFromInsights)}
+          className="mt-0.5 size-4 accent-primary"
+        />
+        <span>
+          <span className="font-medium">Leave out of Insights</span>
+          <span className="mt-0.5 block text-muted-foreground">
+            For management and anyone you do not want facts about. They still get attendance, leave and pay; Insights just does not mention or count them.
+          </span>
+        </span>
+      </label>
 
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" pending={pending}>
