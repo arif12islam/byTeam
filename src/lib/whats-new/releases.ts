@@ -37,6 +37,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    id: "2026-11-e",
+    title: "Insights shows the month at a glance",
+    date: "2026-11-10",
+    summary: "Numbers, charts and lists on top of the facts, so you see how the month is going in one look.",
+    items: [
+      {
+        id: "insights-glance",
+        title: "The month at a glance",
+        body: "Insights now opens with attendance, lates, absences and who is in today, compared with the same days last month. Below are the facts worth a look with a person and a clear next step, a chart of every day, lates by weekday, who is most on time, who needs a look, leave running low, the device, and net pay by month.",
+        visual: "insights",
+        steps: ["Open Insights and read the four numbers at the top.", "Tap a fact to open the person's calendar or the right page.", "Open Show as table under a chart for the numbers."],
+        href: "/insights",
+        tryLabel: "Open Insights",
+      },
+    ],
+  },
+  {
     id: "2026-11-d",
     title: "Back takes you where you were",
     date: "2026-11-09",

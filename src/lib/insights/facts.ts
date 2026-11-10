@@ -75,6 +75,8 @@ export type Fact = {
   href: string | null;
   /** The person (employee id) a fact is about, so facts about one person can be limited and ordered. */
   subject?: string;
+  /** The name of that person, for showing next to the sentence. */
+  subjectName?: string;
   /** Orders facts of the same tone: bigger is more worth reading. */
   weight: number;
 };
@@ -592,7 +594,9 @@ export type Insights = { facts: Fact[]; byCategory: { category: FactCategory; fa
 
 /** Every fact there is to say, ranked, and grouped for the Insights screen. */
 export function buildInsights(input: InsightsInput): Insights {
-  const facts = limitPerPerson(rankFacts(RULES.flatMap((rule) => rule(input))));
+  const names = new Map([...input.previous.rows, ...input.current.rows].map((row) => [row.employee.id, row.employee.name]));
+  for (const b of input.balances) names.set(b.employeeId, b.employeeName);
+  const facts = limitPerPerson(rankFacts(RULES.flatMap((rule) => rule(input)))).map((f) => (f.subject && names.has(f.subject) ? { ...f, subjectName: names.get(f.subject) } : f));
   const order: FactCategory[] = ["people", "attendance", "payroll", "office"];
   return {
     facts,
