@@ -16,6 +16,7 @@ import { listShifts } from "@/lib/shifts/shifts";
 import { shiftMonth, toOfficeDate } from "@/lib/time";
 
 import { buildInsights, withoutPeople, type Insights, type InsightsInput } from "./facts";
+import { buildSummary, type InsightsSummary } from "./summary";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -85,7 +86,7 @@ export async function loadInsightsInput(db: Db, now: Date, leftOut?: readonly Le
   }, left);
 }
 
-export type InsightsResult = { insights: Insights; madeAt: Date; leftOut: LeftOut[] };
+export type InsightsResult = { insights: Insights; summary: InsightsSummary; madeAt: Date; leftOut: LeftOut[] };
 
 /** How long a result is reused. The Today screen refreshes itself often, and these figures do not move that fast. */
 export const INSIGHTS_TTL_MS = 5 * 60 * 1000;
@@ -110,7 +111,8 @@ export async function getInsights(db: Db, now: Date = new Date()): Promise<Insig
   const cached = globalForInsights.byteamInsights;
   if (cached && cached.key === key && now.getTime() - cached.result.madeAt.getTime() < INSIGHTS_TTL_MS) return cached.result;
 
-  const result: InsightsResult = { insights: buildInsights(await loadInsightsInput(db, now, leftOut)), madeAt: now, leftOut };
+  const input = await loadInsightsInput(db, now, leftOut);
+  const result: InsightsResult = { insights: buildInsights(input), summary: buildSummary(input), madeAt: now, leftOut };
   globalForInsights.byteamInsights = { key, result };
   return result;
 }
