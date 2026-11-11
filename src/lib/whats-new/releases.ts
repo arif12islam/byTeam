@@ -37,6 +37,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    id: "2026-11-g",
+    title: "A bolder byTeam",
+    date: "2026-11-11",
+    summary: "A new violet look, and clearer Attendance, Leave, Payroll and Reports screens.",
+    items: [
+      {
+        id: "bold-look",
+        title: "A new look",
+        body: "byTeam has a violet accent for buttons and the menu. Status colours keep their meaning: green present, amber late, red absent, blue leave. Attendance, Leave, Payroll and Reports now open with a summary panel of the numbers that matter.",
+        visual: "app",
+        steps: ["Open Attendance to see the month at a glance and search people.", "Open Leave: requests and balances are now two tabs.", "Open Payroll: total net pay leads, and payslips open as a page you can print."],
+        href: "/attendance",
+        tryLabel: "Open Attendance",
+      },
+    ],
+  },
+  {
     id: "2026-11-f",
     title: "A clearer Today screen",
     date: "2026-11-11",
