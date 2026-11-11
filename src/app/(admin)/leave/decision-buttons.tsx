@@ -27,7 +27,7 @@ export function DecisionButtons({ id, status }: { id: string; status: "pending" 
     <form action={action} className="mt-3 flex flex-wrap items-center gap-2">
       <input type="hidden" name="id" value={id} />
       {shown.map((b) => (
-        <Button key={b.decision} type="submit" name="decision" value={b.decision} variant={b.variant} size="sm" disabled={pending}>
+        <Button key={b.decision} type="submit" name="decision" value={b.decision} variant={b.variant} size="sm" disabled={pending} className="max-sm:flex-1">
           {b.label}
         </Button>
       ))}

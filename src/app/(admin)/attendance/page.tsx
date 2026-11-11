@@ -7,19 +7,23 @@ import { Suspense } from "react";
 import { DateRangeFilter } from "@/components/date-range-filter";
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
+import { PeopleFilter } from "@/components/people-filter";
 import { Card } from "@/components/ui/card";
+import { HeroPanel } from "@/components/ui/hero-panel";
 import { statusFill } from "@/components/status";
 import { getDb } from "@/db";
 import type { AttendanceStatus } from "@/db/schema/attendance";
 import { cellText, statusLabel } from "@/lib/attendance/labels";
 import { loadPeriodGrid, type GridCell } from "@/lib/attendance/month";
 import { describePeriodNav, periodLabel, resolvePeriod } from "@/lib/period";
+import { buildAttendanceReport } from "@/lib/reports/attendance-report";
 import { requireRole } from "@/lib/session";
 import { getCompanySettings } from "@/lib/settings/company";
 import { formatDuration, formatMonth, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
-import { AttendanceCards } from "./attendance-cards";
+import { AttendanceCards, AttendanceLegend } from "./attendance-cards";
+import { AttendanceSummary } from "./attendance-summary";
 import { ExportPanel } from "./export-panel";
 import { parseView, VIEW_COOKIE } from "./view";
 import { ViewToggle } from "./view-toggle";
@@ -55,6 +59,11 @@ function describeCell(date: string, cell: GridCell): string {
   return parts.join(", ");
 }
 
+/** Adds the search box and department list above the people when there are enough of them to need it. */
+function Filterable({ showFilter, departments, children }: { showFilter: boolean; departments: string[]; children: React.ReactNode }) {
+  return showFilter ? <PeopleFilter departments={departments}>{children}</PeopleFilter> : <>{children}</>;
+}
+
 /** Reads the current time and the database, so it renders after the session check, inside Suspense. */
 async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/attendance">["searchParams"] }) {
   await requireRole("owner", "hr");
@@ -68,6 +77,9 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
 
   const [grid, company] = await Promise.all([loadPeriodGrid(getDb(), period, today), getCompanySettings(getDb())]);
   const trackLeavingPunch = company.trackLeavingPunch;
+  const report = buildAttendanceReport(grid);
+  const departments = [...new Set(grid.rows.flatMap((row) => (row.employee.department ? [row.employee.department] : [])))].sort((a, b) => a.localeCompare(b));
+  const showFilter = grid.rows.length > 6;
   // Dates grouped by month, for the heading row over a long period.
   const monthSpans: { month: string; days: number }[] = [];
   for (const date of grid.dates) {
@@ -79,10 +91,17 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
 
   return (
     <div className="mt-6 grid gap-5">
-      <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/attendance" nav={describePeriodNav("/attendance", period, today)}>
-        <ViewToggle view={view} />
-      </DateRangeFilter>
-      <ExportPanel grid={grid} trackLeavingPunch={trackLeavingPunch} />
+      <HeroPanel>
+        <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/attendance" nav={describePeriodNav("/attendance", period, today)}>
+          <ViewToggle view={view} />
+          <ExportPanel grid={grid} trackLeavingPunch={trackLeavingPunch} />
+        </DateRangeFilter>
+        {grid.rows.length > 0 ? (
+          <div className="mt-5">
+            <AttendanceSummary report={report} />
+          </div>
+        ) : null}
+      </HeroPanel>
       {notice ? (
         <Alert tone="info" icon={Info} className="py-2">
           {notice}
@@ -92,22 +111,24 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
       {grid.rows.length === 0 ? (
         <Card className="border-dashed text-sm text-muted-foreground shadow-none">
           Nobody was employed in {label}.{" "}
-          <Link href="/employees" className="font-medium text-primary underline underline-offset-2">
+          <Link href="/employees" className="font-medium text-brand underline underline-offset-2">
             Add employees on the Employees screen
           </Link>
           , or pick other dates.
         </Card>
       ) : (
         <>
+          <AttendanceLegend />
+          <Filterable showFilter={showFilter} departments={departments}>
           <div className={cn(view === "table" && "md:hidden")}>
-            <AttendanceCards grid={grid} trackLeavingPunch={trackLeavingPunch} />
+            <AttendanceCards grid={grid} trackLeavingPunch={trackLeavingPunch} today={today} />
           </div>
-          <div className={cn("hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card", view === "table" && "md:block")}>
+          <div className={cn("hidden max-h-[75vh] overflow-auto rounded-xl border border-border bg-card shadow-card", view === "table" && "md:block")}>
             <table className="w-full border-collapse text-sm">
-              <thead>
+              <thead className="sticky top-0 z-20 bg-card shadow-[0_1px_0_var(--border)]">
                 {monthSpans.length > 1 ? (
                   <tr className="text-xs text-muted-foreground">
-                    <th colSpan={5} className="sticky left-0 z-10 bg-card" aria-hidden />
+                    <th colSpan={5} className="sticky left-0 z-20 bg-card" aria-hidden />
                     {monthSpans.map((span) => (
                       <th key={span.month} colSpan={span.days} scope="colgroup" className="border-l border-border bg-secondary/50 px-2 py-1 text-left font-medium">
                         {formatMonth(span.month)}
@@ -116,7 +137,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                   </tr>
                 ) : null}
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th scope="col" className="sticky left-0 z-10 min-w-32 bg-card px-3 py-2 font-medium">
+                  <th scope="col" className="sticky left-0 z-20 min-w-32 bg-card px-3 py-2 font-medium">
                     Employee
                   </th>
                   {["Present", "Late", "Absent", "Leave"].map((name, i) => (
@@ -133,8 +154,14 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
               </thead>
               <tbody>
                 {grid.rows.map((row) => (
-                  <tr key={row.employee.id} className="border-b border-border last:border-b-0">
-                    <th scope="row" className="sticky left-0 z-10 bg-card px-3 py-2 text-left font-medium">
+                  <tr
+                    key={row.employee.id}
+                    data-person={row.employee.id}
+                    data-name={row.employee.name}
+                    data-department={row.employee.department ?? ""}
+                    className="border-b border-border bg-card last:border-b-0 even:bg-[color-mix(in_srgb,var(--muted)_40%,var(--card))]"
+                  >
+                    <th scope="row" className="sticky left-0 z-10 bg-inherit px-3 py-2 text-left font-medium">
                       {row.employee.name}
                       <span className="block text-xs font-normal text-muted-foreground">Code {row.employee.empCode}</span>
                     </th>
@@ -151,7 +178,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
                             href={`/attendance/${row.employee.id}/${date}`}
                             aria-label={describeCell(date, cell)}
                             title={describeCell(date, cell)}
-                            className={cn("block rounded px-0.5 py-1.5 text-[11px] hover:ring-1 hover:ring-primary", cellStyle(cell.status))}
+                            className={cn("block rounded-md px-0.5 py-1.5 text-[11px] hover:ring-1 hover:ring-brand", cellStyle(cell.status))}
                           >
                             {cellText(cell)}
                           </Link>
@@ -163,6 +190,7 @@ async function AttendanceContent({ searchParams }: { searchParams: PageProps<"/a
               </tbody>
             </table>
           </div>
+          </Filterable>
         </>
       )}
 

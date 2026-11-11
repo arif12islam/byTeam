@@ -90,7 +90,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
                     aria-current={preset.active ? "true" : undefined}
                     className={cn(
                       "flex h-full items-start gap-1.5 rounded-md border px-2.5 py-2 text-sm transition-colors",
-                      preset.active ? "border-primary bg-accent text-accent-foreground" : "border-border hover:bg-secondary",
+                      preset.active ? "border-brand bg-brand-soft text-brand-soft-foreground" : "border-border hover:bg-secondary",
                     )}
                   >
                     <span className="min-w-0 flex-1">
@@ -141,7 +141,7 @@ export function DateRangeFilter({ basePath, nav, children }: { basePath: string;
           </div>
         ) : null}
       </div>
-      {children ? <div className="flex items-center gap-2 sm:ml-auto">{children}</div> : null}
+      {children ? <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">{children}</div> : null}
     </div>
   );
 }

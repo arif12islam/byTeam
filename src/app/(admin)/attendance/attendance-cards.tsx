@@ -19,6 +19,39 @@ function describeCell(date: string, cell: GridCell): string {
   return parts.join(", ");
 }
 
+/** The colors, in one quiet row. */
+export function AttendanceLegend({ className }: { className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground", className)} aria-label="Colors">
+      {(
+        [
+          ["success", "Present"],
+          ["warning", "Late"],
+          ["danger", "Absent"],
+          ["info", "Leave"],
+          ["off", "Day off"],
+        ] as const
+      ).map(([tone, text]) => (
+        <li key={text} className="flex items-center gap-1.5">
+          <span aria-hidden className={cn("size-2.5 rounded-[4px]", toneClasses[tone].solid)} />
+          {text}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** One figure in the row under a name: a dot, the number and the word. Zero is muted. */
+function InlineStat({ tone, value, word }: { tone: "success" | "warning" | "danger" | "info"; value: number; word: string }) {
+  return (
+    <li className={cn("flex items-center gap-1.5 tabular-nums", value === 0 && "text-muted-foreground")}>
+      <span aria-hidden className={cn("size-2 rounded-full", value === 0 ? "bg-muted-foreground/30" : toneClasses[tone].solid)} />
+      <span className={cn(value > 0 && "font-semibold text-foreground")}>{value}</span>
+      {word}
+    </li>
+  );
+}
+
 /**
  * One card per person with a small calendar, each day colored by what
  * happened. Tap a day to see the punches behind it. One column on phones,
@@ -28,11 +61,14 @@ export function AttendanceCards({
   grid,
   trackLeavingPunch = true,
   dayQuery = "",
+  today,
 }: {
   grid: MonthGrid;
   trackLeavingPunch?: boolean;
   /** Added to each day link, for example "?from=person" so the day page knows where to go back to. */
   dayQuery?: string;
+  /** Today's date, to ring today's day. */
+  today?: string;
 }) {
   // One small calendar per month the period touches. A single month shows no month heading.
   const months: { month: string; dates: string[] }[] = [];
@@ -45,26 +81,15 @@ export function AttendanceCards({
 
   return (
     <div className="grid gap-3">
-      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-label="Colors">
-        {(
-          [
-            ["success", "Present"],
-            ["warning", "Late"],
-            ["danger", "Absent"],
-            ["info", "Leave"],
-            ["off", "Day off"],
-          ] as const
-        ).map(([tone, text]) => (
-          <li key={text} className="flex items-center gap-1.5">
-            <span aria-hidden className={cn("size-2.5 rounded-sm", toneClasses[tone].solid)} />
-            {text}
-          </li>
-        ))}
-      </ul>
-
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {grid.rows.map((row) => (
-        <section key={row.employee.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <section
+          key={row.employee.id}
+          data-person={row.employee.id}
+          data-name={row.employee.name}
+          data-department={row.employee.department ?? ""}
+          className="rounded-xl border border-border bg-card p-4 shadow-card transition-colors hover:border-brand-border"
+        >
           <div className="flex items-center gap-3">
             <Avatar name={row.employee.name} />
             <div className="min-w-0 flex-1">
@@ -76,29 +101,17 @@ export function AttendanceCards({
             </div>
           </div>
 
-          <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
-            {(
-              [
-                ["Present", row.totals.present, "success"],
-                ["Late", row.totals.late, "warning"],
-                ["Absent", row.totals.absent, "danger"],
-                ["Leave", row.totals.leave, "info"],
-              ] as const
-            ).map(([label, value, tone]) => (
-              <div key={label} className="rounded-lg border px-1 py-1.5">
-                <dd className="text-base font-semibold leading-none tabular-nums">{value}</dd>
-                <dt className="mt-1 flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
-                  <span aria-hidden className={cn("size-1.5 rounded-full", toneClasses[tone].solid)} />
-                  {label}
-                </dt>
-              </div>
-            ))}
-          </dl>
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label={`${row.employee.name}, totals`}>
+            <InlineStat tone="success" value={row.totals.present} word="present" />
+            <InlineStat tone="warning" value={row.totals.late} word="late" />
+            <InlineStat tone="danger" value={row.totals.absent} word="absent" />
+            <InlineStat tone="info" value={row.totals.leave} word="leave" />
+          </ul>
 
           {months.map(({ month, dates }) => (
             <div key={month} className="mt-3">
               {months.length > 1 ? <p className="pb-1 text-xs font-semibold text-muted-foreground">{formatMonth(month)}</p> : null}
-              <div className="grid grid-cols-7 gap-1" role="group" aria-label={`${row.employee.name}, ${formatMonth(month)}`}>
+              <div className="grid grid-cols-7 gap-0.5" role="group" aria-label={`${row.employee.name}, ${formatMonth(month)}`}>
                 {weekdayInitials.map((initial, i) => (
                   <span key={i} aria-hidden className="pb-0.5 text-center text-[10px] text-muted-foreground">
                     {initial}
@@ -131,7 +144,9 @@ export function AttendanceCards({
                         "relative grid aspect-square place-items-center rounded-lg text-[11px] tabular-nums",
                         statusFill[cell.status],
                         "font-semibold",
-                        cell.missingOut && "ring-2 ring-amber-300 ring-offset-1 ring-offset-card",
+                        date === today
+                          ? "ring-2 ring-brand ring-offset-1 ring-offset-card"
+                          : cell.missingOut && "ring-2 ring-amber-300 ring-offset-1 ring-offset-card",
                       )}
                     >
                       {day}
@@ -146,7 +161,7 @@ export function AttendanceCards({
       ))}
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        {trackLeavingPunch ? "An outlined day has no leaving punch. " : ""}A dot means corrected by hand. A dashed day has no record.
+        {trackLeavingPunch ? "An outlined day has no leaving punch. " : ""}A dot means corrected by hand. A dashed day has no record.{today ? " The ringed day is today." : ""}
       </p>
     </div>
   );

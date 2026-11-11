@@ -7,14 +7,17 @@ import { BackLink } from "@/components/back-link";
 import { MonthNav } from "@/components/month-nav";
 import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
+import { HeroPanel } from "@/components/ui/hero-panel";
 import { getDb } from "@/db";
 import { loadPeriodGrid } from "@/lib/attendance/month";
 import { monthPeriod } from "@/lib/period";
+import { buildAttendanceReport } from "@/lib/reports/attendance-report";
 import { requireRole } from "@/lib/session";
 import { getCompanySettings } from "@/lib/settings/company";
 import { formatMonth, isValidMonth, toOfficeDate, toOfficeMonth } from "@/lib/time";
 
-import { AttendanceCards } from "../attendance-cards";
+import { AttendanceCards, AttendanceLegend } from "../attendance-cards";
+import { AttendanceSummary } from "../attendance-summary";
 
 export const metadata: Metadata = { title: "Attendance for one person" };
 
@@ -69,8 +72,14 @@ async function PersonContent({
         }
       />
       <div className="mt-6 grid max-w-xl gap-4">
-        <MonthNav basePath={`/attendance/${employee.id}`} month={month} thisMonth={thisMonth} />
-        <AttendanceCards grid={grid} trackLeavingPunch={company.trackLeavingPunch} dayQuery="?from=person" />
+        <HeroPanel>
+          <MonthNav basePath={`/attendance/${employee.id}`} month={month} thisMonth={thisMonth} />
+          <div className="mt-5">
+            <AttendanceSummary report={buildAttendanceReport(grid)} compact />
+          </div>
+        </HeroPanel>
+        <AttendanceLegend />
+        <AttendanceCards grid={grid} trackLeavingPunch={company.trackLeavingPunch} dayQuery="?from=person" today={today} />
       </div>
     </>
   );
