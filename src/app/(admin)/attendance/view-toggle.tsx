@@ -35,8 +35,8 @@ export function ViewToggle({ view }: { view: AttendanceView }) {
           aria-pressed={view === value}
           onClick={() => choose(value)}
           className={cn(
-            "flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition-colors",
-            view === value ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+            "flex h-9 items-center gap-1.5 rounded-md px-3 text-sm transition-colors",
+            view === value ? "bg-brand font-medium text-brand-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <Icon className="size-4" aria-hidden />

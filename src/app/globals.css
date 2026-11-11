@@ -3,21 +3,25 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  byTeam palette: modern, minimal and neutral.
+  byTeam palette: modern and confident.
 
-  Greys do almost all the work: white surfaces, zinc text and thin borders,
-  and a near-black primary for buttons and the active menu item. There are no
-  colored panels or gradients.
+  Greys give structure: white surfaces, zinc text and thin borders. A violet
+  brand colour carries action and emphasis: primary buttons, the active menu
+  item, focus rings, hero panels and charts that are not a status. Violet is
+  the one hue no status uses.
 
-  Color only ever means a status, and it stays quiet: a small dot, a soft
-  tint behind a word, a thin bar in a chart. Present is green, late is amber,
-  absent is red, leave is blue and a day off is grey. Each has a text color
-  and a soft background.
+  Status colours stay small and always come with a word. Present is green,
+  late is amber, absent is red, leave is blue and a day off is grey. Each has
+  a text colour and a soft background. Brand never means a status, a
+  destructive action or body text.
+
+  The only gradient is the soft tint inside HeroPanel. No other gradients or
+  colour panels.
 */
 
 :root {
   color-scheme: light;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
   --background: #fafafa;
   --foreground: #09090b;
@@ -36,7 +40,13 @@
   --destructive: #dc2626;
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --ring: #a1a1aa;
+  --ring: #a78bfa;
+
+  --brand: #6d28d9;
+  --brand-foreground: #ffffff;
+  --brand-soft: #f5f3ff;
+  --brand-soft-foreground: #5b21b6;
+  --brand-border: #ddd6fe;
 
   --success: #15803d;
   --success-soft: #f0fdf4;
@@ -49,7 +59,7 @@
   --off: #71717a;
   --off-soft: #f4f4f5;
 
-  --elevation: 0 1px 2px rgb(9 9 11 / 0.04);
+  --elevation: 0 1px 2px rgb(9 9 11 / 0.04), 0 4px 16px -4px rgb(9 9 11 / 0.06);
 
   --sidebar: #fafafa;
   --sidebar-foreground: #3f3f46;
@@ -76,7 +86,13 @@
     --destructive: #f87171;
     --border: #27272a;
     --input: #3f3f46;
-    --ring: #52525b;
+    --ring: #7c3aed;
+
+    --brand: #a78bfa;
+    --brand-foreground: #1e1033;
+    --brand-soft: #1c1530;
+    --brand-soft-foreground: #c4b5fd;
+    --brand-border: #3b2d63;
 
     --success: #4ade80;
     --success-soft: #052e16;
@@ -89,7 +105,7 @@
     --off: #a1a1aa;
     --off-soft: #27272a;
 
-    --elevation: 0 1px 2px rgb(0 0 0 / 0.3);
+    --elevation: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px -4px rgb(0 0 0 / 0.35);
 
     --sidebar: #0c0c0e;
     --sidebar-foreground: #d4d4d8;
@@ -118,6 +134,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-soft-foreground: var(--brand-soft-foreground);
+  --color-brand-border: var(--brand-border);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-border: var(--sidebar-border);
@@ -174,5 +195,20 @@
   input::-webkit-date-and-time-value {
     margin: 0;
     text-align: left;
+  }
+}
+
+/* Printing a payslip: no navigation, no shadows, plain white paper. */
+@media print {
+  aside,
+  header[class*="sticky"],
+  nav[aria-label="Main"] {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  * {
+    box-shadow: none !important;
   }
 }

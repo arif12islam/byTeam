@@ -11,11 +11,13 @@ type StatTileProps = {
   tone?: Tone;
   hint?: string;
   href?: string;
+  /** The one key number on a screen: a larger number and a brand icon chip. */
+  emphasis?: boolean;
   className?: string;
 };
 
 /** A number with a label, for the top of a screen. The status shows as a small dot, the rest stays neutral. */
-export function StatTile({ label, value, icon: Icon, tone = "neutral", hint, href, className }: StatTileProps) {
+export function StatTile({ label, value, icon: Icon, tone = "neutral", hint, href, emphasis = false, className }: StatTileProps) {
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -23,9 +25,15 @@ export function StatTile({ label, value, icon: Icon, tone = "neutral", hint, hre
           {tone !== "neutral" ? <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", toneClasses[tone].solid)} /> : null}
           <span className="truncate">{label}</span>
         </p>
-        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        {emphasis ? (
+          <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
+            <Icon className="size-4" />
+          </span>
+        ) : (
+          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        )}
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      <p className={cn("mt-2 font-semibold tracking-tight tabular-nums", emphasis ? "text-3xl" : "text-2xl")}>{value}</p>
       {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
     </>
   );

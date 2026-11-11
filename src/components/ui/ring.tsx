@@ -12,7 +12,7 @@ export function Ring({
   segments,
   size = 148,
   thickness = 14,
-  track = "stroke-secondary",
+  track = "stroke-muted",
   className,
   children,
 }: {

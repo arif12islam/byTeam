@@ -4,6 +4,7 @@ import {
   Banknote,
   CalendarCheck,
   CalendarOff,
+  Clock,
   ChartColumn,
   Download,
   Medal,
@@ -26,11 +27,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { HeroPanel } from "@/components/ui/hero-panel";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { StatTile } from "@/components/ui/stat-tile";
 import type { Tone } from "@/components/ui/tone";
 import { getDb } from "@/db";
+import { personMonthHref } from "@/lib/attendance/links";
 import { loadPeriodGrid } from "@/lib/attendance/month";
 import { describePeriodNav, periodLabel, periodMonths, periodQuery, resolvePeriod, wholeMonthsIn } from "@/lib/period";
 import { listPayrollRuns, loadPayrollSheet } from "@/lib/payroll/runs";
@@ -68,6 +71,7 @@ function PeopleCard({
   people,
   detail,
   tone,
+  month,
 }: {
   icon: LucideIcon;
   title: string;
@@ -75,6 +79,8 @@ function PeopleCard({
   people: readonly PersonFigure[];
   detail: (person: PersonFigure) => string;
   tone: Tone;
+  /** The month the person links open, YYYY-MM. */
+  month: string;
 }) {
   return (
     <Card>
@@ -86,10 +92,10 @@ function PeopleCard({
       ) : (
         <ul className="mt-2 divide-y divide-border">
           {people.map((person) => (
-            <li key={person.employeeId} className="flex items-center gap-3 py-2.5">
+            <li key={person.employeeId} className="flex min-h-16 items-center gap-3 py-2">
               <Avatar name={person.name} className="size-9 text-xs" />
               <div className="min-w-0 flex-1">
-                <Link href={`/employees/${person.employeeId}`} className="block truncate text-sm font-medium hover:underline">
+                <Link href={personMonthHref(person.employeeId, month)} className="block truncate text-sm font-medium hover:text-brand hover:underline">
                   {person.name}
                 </Link>
                 <p className="truncate text-xs text-muted-foreground">
@@ -97,7 +103,7 @@ function PeopleCard({
                   {person.department ? `, ${person.department}` : ""}
                 </p>
               </div>
-              <Badge tone={tone}>{detail(person)}</Badge>
+              <Badge tone={tone} className="shrink-0">{detail(person)}</Badge>
             </li>
           ))}
         </ul>
@@ -134,29 +140,30 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
   const { totals } = report;
   const leaveDays = totals.leavePaid + totals.leaveUnpaid;
 
-  const nav = (
+  const picker = (
     <>
       <DateRangeFilter key={`${period.from}-${period.to}`} basePath="/reports" nav={describePeriodNav("/reports", period, today)}>
-        <a href={`/reports/export?${periodQuery(period)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <a href={`/reports/export?${periodQuery(period)}`} className={buttonVariants({ variant: "outline" })}>
           <Download aria-hidden />
           Download CSV
         </a>
       </DateRangeFilter>
-      {notice ? (
-        <Alert tone="info" icon={Info} className="py-2">
-          {notice}
-        </Alert>
-      ) : null}
     </>
   );
+  const noticeAlert = notice ? (
+    <Alert tone="info" icon={Info} className="py-2">
+      {notice}
+    </Alert>
+  ) : null;
 
   if (report.people === 0) {
     return (
       <div className="mt-6 grid gap-5">
-        {nav}
+        <HeroPanel>{picker}</HeroPanel>
+        {noticeAlert}
         <Card className="border-dashed text-sm text-muted-foreground shadow-none">
           Nobody was employed in {label}.{" "}
-          <Link href="/employees" className="font-medium text-primary underline underline-offset-2">
+          <Link href="/employees" className="font-medium text-brand underline underline-offset-2">
             Add employees on the Employees screen
           </Link>
           , or pick other dates.
@@ -177,14 +184,12 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
 
   return (
     <div className="mt-6 grid gap-5">
-      {nav}
-
-      <div className="grid gap-3 md:grid-cols-[18rem_1fr] md:gap-5">
-        <section className="flex items-center gap-5 rounded-xl border border-border bg-card p-5 shadow-card">
+      <HeroPanel>
+        {picker}
+        <div className="mt-5 flex items-center gap-5 rounded-xl border border-border bg-card/80 p-4">
           <Ring
-            size={96}
-            thickness={8}
-            track="stroke-secondary"
+            size={104}
+            thickness={9}
             segments={[
               { value: totals.present - totals.late, tone: "success", label: "On time" },
               { value: totals.late, tone: "warning", label: "Late" },
@@ -194,37 +199,49 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
             <p className="text-xl font-semibold tabular-nums">{formatRate(report.attendanceRate)}</p>
           </Ring>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-muted-foreground">Attendance rate</p>
-            <p className="mt-1 text-sm">
+            <p className="text-sm font-medium text-muted-foreground">Attendance rate for {label}</p>
+            <p className="mt-1 text-lg font-semibold leading-snug tracking-tight sm:text-xl">
               {plural(totals.present, "day")} attended, {plural(totals.absent, "day")} absent
               {report.workingDays > 0 ? `, over ${plural(report.workingDays, "working day")}` : ""}.
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">Leave does not count against the rate.</p>
           </div>
-        </section>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile
-            label="On time"
-            value={formatRate(report.punctualityRate)}
-            icon={CalendarCheck}
-            tone={rateTone(report.punctualityRate)}
-            hint="of arrivals"
-          />
-          <StatTile
-            label="Late"
-            value={totals.late}
-            icon={AlarmClock}
-            tone="warning"
-            hint={totals.lateMinutes > 0 ? `days, ${formatDuration(totals.lateMinutes)} in all` : "days"}
-          />
-          <StatTile label="Absent" value={totals.absent} icon={UserX} tone="danger" hint="days" />
-          <StatTile
-            label="On leave"
-            value={leaveDays}
-            icon={Plane}
-            tone="info"
-            hint={leaveDays > 0 ? `${totals.leavePaid} paid, ${totals.leaveUnpaid} unpaid` : undefined}
-          />
         </div>
+      </HeroPanel>
+      {noticeAlert}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <StatTile
+          emphasis
+          label="Present days"
+          value={totals.present}
+          icon={CalendarCheck}
+          tone="success"
+          hint="Late days included"
+          className="col-span-2 md:col-span-1"
+        />
+        <StatTile
+          label="On time"
+          value={formatRate(report.punctualityRate)}
+          icon={Clock}
+          tone={rateTone(report.punctualityRate)}
+          hint="of arrivals"
+        />
+        <StatTile
+          label="Late"
+          value={totals.late}
+          icon={AlarmClock}
+          tone="warning"
+          hint={totals.lateMinutes > 0 ? `days, ${formatDuration(totals.lateMinutes)} in all` : "days"}
+        />
+        <StatTile label="Absent" value={totals.absent} icon={UserX} tone="danger" hint="days" />
+        <StatTile
+          label="On leave"
+          value={leaveDays}
+          icon={Plane}
+          tone="info"
+          hint={leaveDays > 0 ? `${totals.leavePaid} paid, ${totals.leaveUnpaid} unpaid` : "days"}
+        />
       </div>
 
       <Card>
@@ -298,7 +315,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
           ) : (
             <p className="mt-3 text-sm text-muted-foreground">
               No payroll run for {payMonths.length === 1 ? formatMonth(payMonths[0]) : "these months"} yet.{" "}
-              <Link href={`/payroll?month=${payMonths[0]}`} className="font-medium text-primary underline underline-offset-2">
+              <Link href={`/payroll?month=${payMonths[0]}`} className="font-medium text-brand underline underline-offset-2">
                 Create the draft on the Payroll screen
               </Link>
               .
@@ -322,7 +339,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
         ) : (
           <p className="text-sm text-muted-foreground">
             No payroll runs in these months yet. Create one on the{" "}
-            <Link href="/payroll" className="font-medium text-primary underline underline-offset-2">
+            <Link href="/payroll" className="font-medium text-brand underline underline-offset-2">
               Payroll screen
             </Link>{" "}
             and it will show here.
@@ -337,6 +354,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
           empty="Nobody was late."
           people={report.mostLate}
           tone="warning"
+          month={months[0]}
           detail={(p) => `${plural(p.late, "time")}, ${formatDuration(p.lateMinutes)}`}
         />
         <PeopleCard
@@ -345,6 +363,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
           empty="Nobody was absent."
           people={report.mostAbsent}
           tone="danger"
+          month={months[0]}
           detail={(p) => plural(p.absent, "day")}
         />
         <PeopleCard
@@ -353,6 +372,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
           empty="Nobody has a clean month yet."
           people={report.perfect.slice(0, 5)}
           tone="success"
+          month={months[0]}
           detail={(p) => plural(p.present, "day")}
         />
       </div>
@@ -361,8 +381,8 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
         <CardTitle icon={TriangleAlert}>Worth a look</CardTitle>
         <ul className="mt-3 grid gap-2 sm:grid-cols-3">
           {checks.map((check) => (
-            <li key={check.text} className="flex items-center gap-3 rounded-xl bg-secondary px-3.5 py-3 text-sm">
-              <span className="text-xl font-semibold tabular-nums">{check.count}</span>
+            <li key={check.text} className="flex min-h-16 items-center gap-3 rounded-xl border border-border bg-secondary/50 px-3.5 py-3 text-sm">
+              <span className="text-2xl font-semibold tabular-nums">{check.count}</span>
               <span className="text-muted-foreground">
                 {check.count === 1 ? "day" : "days"} {check.text}
               </span>
@@ -372,7 +392,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
         <p className="mt-3 text-sm text-muted-foreground">
           <CalendarOff className="mr-1.5 inline size-4 align-text-bottom" aria-hidden />
           Open{" "}
-          <Link href={`/attendance?${periodQuery(period)}`} className="font-medium text-primary underline underline-offset-2">
+          <Link href={`/attendance?${periodQuery(period)}`} className="font-medium text-brand underline underline-offset-2">
             Attendance
           </Link>{" "}
           to fix a missing punch or correct a day.

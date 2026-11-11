@@ -15,8 +15,8 @@ export function PageHeader({ title, description, avatar, actions }: PageHeaderPr
       <div className="flex min-w-0 items-center gap-3">
         {avatar ? <Avatar name={avatar} className="size-10" /> : null}
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
+          <p className="mt-1 max-w-[65ch] text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
       {actions}

@@ -4,6 +4,9 @@ import { Suspense } from "react";
 
 import { BackLink } from "@/components/back-link";
 import { PageHeader } from "@/components/page-header";
+import { statusTone } from "@/components/status";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { listDayAdjustments, type DayAdjustment } from "@/lib/attendance/adjustments";
 import { personMonthHref } from "@/lib/attendance/links";
@@ -35,11 +38,11 @@ function describeAdjustment(a: DayAdjustment): string {
   return `Set ${what} to ${formatOfficeTime(new Date(a.newValue))}`;
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium">{value}</dd>
+      <dd className="mt-1 text-sm font-medium">{value}</dd>
     </div>
   );
 }
@@ -78,7 +81,7 @@ async function DayContent({
       />
 
       <div className="mt-6 grid max-w-3xl gap-6">
-        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <Card>
           <h2 className="text-base font-semibold">The day</h2>
           {date > today ? (
             <p className="mt-3 text-sm text-muted-foreground">That day has not happened yet.</p>
@@ -88,7 +91,15 @@ async function DayContent({
             </p>
           ) : (
             <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-              <Fact label="Status" value={statusLabel[result.status] + (result.isManual ? " (corrected by hand)" : "")} />
+              <Fact
+                label="Status"
+                value={
+                  <>
+                    <Badge tone={statusTone[result.status]}>{statusLabel[result.status]}</Badge>
+                    {result.isManual ? <span className="ml-1.5 text-xs font-normal text-muted-foreground">corrected by hand</span> : null}
+                  </>
+                }
+              />
               <Fact label="Came in" value={result.firstIn ? formatOfficeTime(result.firstIn) : "No punch"} />
               {company.trackLeavingPunch ? (
                 <Fact label="Left" value={result.lastOut ? formatOfficeTime(result.lastOut) : result.firstIn ? "No leaving punch" : "No punch"} />
@@ -101,9 +112,9 @@ async function DayContent({
               {result.workedOnOffDay ? <Fact label="Day off" value="Came in on a day off" /> : null}
             </dl>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+        <Card>
           <h2 className="text-base font-semibold">
             Punches <span className="font-normal text-muted-foreground">({punches.length})</span>
           </h2>
@@ -122,10 +133,10 @@ async function DayContent({
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
         {result !== null && date <= today ? (
-          <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <Card>
             <h2 className="text-base font-semibold">Correct this day</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Use this when the device missed a punch or the status is wrong. The punches stay as they are; your change
@@ -134,11 +145,11 @@ async function DayContent({
             <div className="mt-5">
               <AdjustForm employeeId={employee.id} date={date} />
             </div>
-          </section>
+          </Card>
         ) : null}
 
         {adjustments.length > 0 ? (
-          <section className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <Card>
             <h2 className="text-base font-semibold">
               Changes made by hand <span className="font-normal text-muted-foreground">({adjustments.length})</span>
             </h2>
@@ -153,7 +164,7 @@ async function DayContent({
                 </li>
               ))}
             </ul>
-          </section>
+          </Card>
         ) : null}
       </div>
     </>

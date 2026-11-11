@@ -27,6 +27,13 @@ describe("Button", () => {
     expect(html({})).not.toContain("aria-busy");
   });
 
+  it("uses the brand colour and a 40px height by default", () => {
+    const out = html({});
+    expect(out).toContain("bg-brand");
+    expect(out).toContain("h-10");
+    expect(out).not.toContain("bg-primary");
+  });
+
   it("stays off when asked to be, saving or not", () => {
     expect(html({ disabled: true })).toContain('disabled=""');
     expect(html({ disabled: true, pending: false })).toContain('disabled=""');

@@ -194,4 +194,22 @@ describe.skipIf(!testDatabaseUrl)("unmatched punch codes", () => {
     await db.insert(employees).values({ empCode: code, name: "Now Known", joinDate: "2026-10-01", shiftId: shift.id });
     expect((await listUnmatchedCodes(db)).find((u) => u.empCode === code)).toBeUndefined();
   });
+
+  it("returns a code that punched today even when 50 or more other codes have later punches", async () => {
+    const sn = uniqueSerial();
+    await addTestDevice(db, sn);
+    const row = (empCode: string, iso: string) => ({ deviceSn: sn, empCode, punchedAt: new Date(iso), statusCode: 0, verifyCode: 1, rawLine: "x" });
+    // Year 2048 is used by no other test. 51 codes with later punches fill the plain list.
+    await savePunches(db, Array.from({ length: 51 }, () => row(uniqueCode(), "2048-01-05T03:00:00Z")));
+    const today = uniqueCode();
+    await savePunches(db, [row(today, "2048-01-01T03:00:00Z"), row(today, "2048-01-01T09:00:00Z")]);
+
+    expect((await listUnmatchedCodes(db)).find((u) => u.empCode === today)).toBeUndefined();
+    const bounded = await listUnmatchedCodes(db, {
+      lastPunchFrom: new Date("2048-01-01T00:00:00Z"),
+      lastPunchBefore: new Date("2048-01-02T00:00:00Z"),
+    });
+    expect(bounded.find((u) => u.empCode === today)).toMatchObject({ punches: 2, devices: [sn] });
+    expect(bounded.every((u) => u.lastPunchAt < new Date("2048-01-02T00:00:00Z"))).toBe(true);
+  });
 });
