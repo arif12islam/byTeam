@@ -5,21 +5,14 @@ import { Suspense } from "react";
 
 import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
-import type { Tone } from "@/components/ui/tone";
 import { getDb } from "@/db";
-import {
-  arrivalBuckets,
-  buildPunchFeed,
-  groupPunchesByCode,
-  loadDayPunches,
-  loadTodayBoard,
-  type TodayEntry,
-} from "@/lib/attendance/today";
+import { arrivalBuckets, buildPunchFeed, groupPunchesByCode, loadDayPunches, loadTodayBoard } from "@/lib/attendance/today";
+import { arrivalStats, describeFeedItem, describeTodayEntry, mainShiftStart, sortBoardEntries, todaySummary } from "@/lib/attendance/today-summary";
 import { deviceStatus, listDevices } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { requireRole } from "@/lib/session";
 import { getCompanySettings } from "@/lib/settings/company";
-import { formatDuration, formatOfficeDate, formatOfficeTime, toOfficeDate } from "@/lib/time";
+import { formatOfficeTime, officeMinuteOfDay, toOfficeDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { InsightsCard } from "@/components/insights/insights-card";
@@ -27,34 +20,16 @@ import { InsightsCard } from "@/components/insights/insights-card";
 import { ArrivalsChart } from "./arrivals-chart";
 import { TodayBoard, type BoardEntry } from "./board";
 import { PunchFeed } from "./punch-feed";
+import { TodaySkeleton } from "./today-skeleton";
 
 export const metadata: Metadata = { title: "Today" };
 
 export default function TodayPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-muted-foreground">Loading today</p>}>
+    <Suspense fallback={<TodaySkeleton />}>
       <TodayContent />
     </Suspense>
   );
-}
-
-/** The badge and the time text on the right of a person's row. */
-function describeEntry(entry: TodayEntry, trackLeavingPunch: boolean): { tone: Tone; badge: string; detail: string } {
-  if (entry.group === "in" || entry.group === "worked_off_day") {
-    const arrived = entry.firstIn ? `In ${formatOfficeTime(entry.firstIn)}` : "";
-    const left = !trackLeavingPunch ? "" : entry.lastOut ? `, out ${formatOfficeTime(entry.lastOut)}` : ", not out yet";
-    const late = entry.status === "late";
-    return {
-      tone: late ? "warning" : "success",
-      badge: late ? `${formatDuration(entry.lateMinutes)} late` : "On time",
-      detail: `${arrived}${left}`,
-    };
-  }
-  if (entry.group === "on_leave") {
-    return { tone: "info", badge: entry.status === "leave_unpaid" ? "Unpaid leave" : "Paid leave", detail: "" };
-  }
-  if (entry.group === "absent") return { tone: "danger", badge: "Absent", detail: `Shift ${entry.shiftLabel}` };
-  return { tone: "off", badge: "Not in yet", detail: `Shift ${entry.shiftLabel}` };
 }
 
 /** Reads the current time and the database, so it renders after the session check, inside Suspense. */
@@ -74,13 +49,18 @@ async function TodayContent() {
   const devices = deviceList.filter((d) => d.active);
   const offlineDevices = devices.filter((d) => deviceStatus(d.lastSeenAt, now) === "offline");
   const { counts } = board;
+  const nowMinute = officeMinuteOfDay(now);
+  const summary = todaySummary(board, nowMinute);
   const onTime = counts.in - counts.late;
-  const expected = counts.in + counts.notInYet + counts.absent + counts.onLeave;
-  const buckets = arrivalBuckets(board.entries);
+  const shiftStart = mainShiftStart(board.entries);
+  const buckets = arrivalBuckets(board.entries, 15, { around: shiftStart });
+  const startLabel = shiftStart === null ? null : `${String(Math.floor(shiftStart / 60)).padStart(2, "0")}:${String(Math.floor((shiftStart % 60) / 15) * 15).padStart(2, "0")}`;
   const punchTimes = groupPunchesByCode(dayPunches);
-  const feed = buildPunchFeed(dayPunches, board.entries);
-  const entries: BoardEntry[] = board.entries.map((entry) => {
-    const { tone, badge, detail } = describeEntry(entry, company.trackLeavingPunch);
+  const entryByCode = new Map(board.entries.map((e) => [e.empCode, e]));
+  const feed = buildPunchFeed(dayPunches, board.entries, 6).map((item) => ({ ...item, line: describeFeedItem(item, entryByCode.get(item.empCode), devices.length) }));
+  // Sorted here, on the server, so the list is final when it arrives and never reorders in the browser.
+  const entries: BoardEntry[] = sortBoardEntries(board.entries, nowMinute).map((entry) => {
+    const view = describeTodayEntry(entry, company.trackLeavingPunch, nowMinute);
     return {
       id: entry.id,
       empCode: entry.empCode,
@@ -88,34 +68,20 @@ async function TodayContent() {
       department: entry.department,
       group: entry.group,
       late: entry.status === "late",
-      tone,
-      badge,
-      detail,
+      ...view,
       shiftLabel: entry.shiftLabel,
       punches: (punchTimes.get(entry.empCode) ?? []).map(formatOfficeTime),
       missingOut: entry.missingOut,
     };
   });
 
-  const headline =
-    expected === 0
-      ? board.offDay
-        ? "A day off for the office"
-        : "No one expected today"
-      : counts.absent > 0
-        ? `${counts.absent} absent, ${counts.in} in`
-        : counts.late > 0
-          ? `${counts.in} in, ${counts.late} late`
-          : counts.in === expected
-            ? "Everyone is in"
-            : `${counts.in} in so far`;
-  const title = `Today, ${formatOfficeDate(today)}${board.offDay === "holiday" ? ", office holiday" : board.offDay === "weekly_off" ? ", weekly off day" : ""}`;
+  const dateLine = `${longDate(today)}${board.offDay === "holiday" ? ", office holiday" : board.offDay === "weekly_off" ? ", weekly off day" : ""}`;
 
   // One slim line about the device, instead of a card of its own.
   const online = devices.filter((d) => deviceStatus(d.lastSeenAt, now) === "online").length;
   const deviceNote =
     devices.length === 0 ? null : (
-      <Link href="/devices" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+      <Link href="/devices" className="-mb-2 inline-flex min-h-10 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
         <span
           aria-hidden
           className={cn("size-1.5 rounded-full", online === devices.length ? "bg-green-500" : online > 0 ? "bg-amber-400" : "bg-red-500")}
@@ -158,20 +124,23 @@ async function TodayContent() {
     </>
   );
 
+  const insights = (
+    <Suspense fallback={null}>
+      <InsightsCard />
+    </Suspense>
+  );
+
   const aside = (
     <>
-      <Suspense fallback={null}>
-        <InsightsCard />
-      </Suspense>
-      <PunchFeed items={feed} now={now} />
       {buckets.length > 0 ? (
-        <Card className="p-3 sm:p-3.5">
+        <Card className="p-4">
           <CardTitle icon={Sunrise}>Arrivals</CardTitle>
           <div className="mt-3">
-            <ArrivalsChart buckets={buckets} />
+            <ArrivalsChart buckets={buckets} stats={arrivalStats(board.entries)} startLabel={startLabel} />
           </div>
         </Card>
       ) : null}
+      <PunchFeed items={feed} now={now} />
     </>
   );
 
@@ -181,21 +150,33 @@ async function TodayContent() {
       counts={counts}
       date={today}
       hero={{
-        title,
-        headline,
-        expected,
+        dateLine,
+        inCount: summary.inCount,
+        due: summary.due,
+        percent: summary.percent,
+        subline: summary.subline,
+        allGood: summary.allGood,
         generatedAt: now.getTime(),
         segments: [
           { value: onTime, tone: "success", label: "On time" },
           { value: counts.late, tone: "warning", label: "Late" },
-          { value: counts.onLeave, tone: "info", label: "On leave" },
           { value: counts.notInYet, tone: "off", label: "Not in yet" },
           { value: counts.absent, tone: "danger", label: "Absent" },
         ],
       }}
       deviceNote={deviceNote}
       notices={notices}
+      insights={insights}
       aside={aside}
     />
   );
+}
+
+const longDateFormatter = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "short", year: "numeric" });
+
+/** "Wednesday, 11 Nov 2026" from an office date. */
+function longDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const parts = Object.fromEntries(longDateFormatter.formatToParts(new Date(Date.UTC(y, m - 1, d))).map((p) => [p.type, p.value]));
+  return `${parts.weekday}, ${parts.day} ${parts.month} ${parts.year}`;
 }

@@ -37,6 +37,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    id: "2026-11-f",
+    title: "A clearer Today screen",
+    date: "2026-11-11",
+    summary: "See how many are in at a glance, who is past their start time, and when people arrived.",
+    items: [
+      {
+        id: "today-redesign",
+        title: "Today, at a glance",
+        body: "Today now opens with one big number: how many are in, out of how many are due. People who are past their start time are flagged and listed first, arrival times are easy to read, and the arrivals chart shows where the shift starts.",
+        visual: "app",
+        steps: ["Open Today and read the number at the top.", "Tap In, Late, Not in yet, Absent or On leave to filter the list.", "Tap a person to see their punches and open the day."],
+        href: "/today",
+        tryLabel: "Open Today",
+      },
+    ],
+  },
+  {
     id: "2026-11-e",
     title: "Insights shows the month at a glance",
     date: "2026-11-10",

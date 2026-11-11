@@ -49,35 +49,34 @@ export function LiveRefresh({ generatedAt }: { generatedAt: number }) {
 
   const seconds = Math.max(0, Math.floor((now - generatedAt) / 1000));
 
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className="relative flex size-2 shrink-0" aria-hidden>
-        {!paused ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-500 opacity-40 motion-reduce:animate-none" /> : null}
-        <span className={cn("relative inline-flex size-2 rounded-full", paused ? "bg-zinc-300" : "bg-green-500")} />
-      </span>
+  const control = "grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-      <button
-        type="button"
-        onClick={() => startTransition(() => router.refresh())}
-        aria-label="Refresh now"
-        title="Refresh now"
-        className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
-      >
-        <RefreshCw className={cn("size-3.5", pending && "animate-spin")} aria-hidden />
+  return (
+    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+      <span className="mr-1 flex items-center gap-2">
+        <span className="relative flex size-2 shrink-0" aria-hidden>
+          {!paused ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-500 opacity-40 motion-reduce:animate-none" /> : null}
+          <span className={cn("relative inline-flex size-2 rounded-full", paused ? "bg-zinc-300" : "bg-green-500")} />
+        </span>
+        {/* Fixed width, so the text changing from "just now" to "12 s ago" never moves the buttons. */}
+        <span role="status" aria-live="off" className="tabular-nums sm:min-w-[6.5rem]">
+          <span className="font-medium text-foreground">{paused ? "Paused" : "Live"}</span>
+          <span className="hidden sm:inline">, {describeAge(seconds)}</span>
+        </span>
+      </span>
+      <button type="button" onClick={() => startTransition(() => router.refresh())} aria-label="Refresh now" title="Refresh now" className={control}>
+        <RefreshCw className={cn("size-4", pending && "animate-spin motion-reduce:animate-none")} aria-hidden />
       </button>
       <button
         type="button"
         onClick={() => setPaused((p) => !p)}
         aria-label={paused ? "Resume live updates" : "Pause live updates"}
         title={paused ? "Resume live updates" : "Pause live updates"}
-        className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+        aria-pressed={paused}
+        className={control}
       >
-        {paused ? <Play className="size-3.5" aria-hidden /> : <Pause className="size-3.5" aria-hidden />}
+        {paused ? <Play className="size-4" aria-hidden /> : <Pause className="size-4" aria-hidden />}
       </button>
-      {/* After the buttons, so the text changing from "just now" to "12 s ago" never moves them. */}
-      <span role="status" aria-live="off" className="tabular-nums">
-        {paused ? "Paused" : "Live"}, {describeAge(seconds)}
-      </span>
     </div>
   );
 }

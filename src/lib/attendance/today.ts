@@ -32,6 +32,9 @@ export type TodayEntry = {
   group: TodayGroup;
   status: AttendanceStatus;
   shiftLabel: string;
+  /** When the shift starts, as HH:MM and as minutes into the office day. */
+  shiftStart: string;
+  shiftStartMinute: number | null;
   firstIn: Date | null;
   lastOut: Date | null;
   lateMinutes: number;
@@ -71,6 +74,8 @@ export function buildTodayBoard(inputs: readonly TodayInput[], now: Date): Today
     group: groupOf(input, nowMinute),
     status: input.result.status,
     shiftLabel: `${input.shift.startTime.slice(0, 5)} to ${input.shift.endTime.slice(0, 5)}`,
+    shiftStart: input.shift.startTime.slice(0, 5),
+    shiftStartMinute: timeToMinutes(input.shift.startTime),
     firstIn: input.result.firstIn,
     lastOut: input.result.lastOut,
     lateMinutes: input.result.lateMinutes,
@@ -127,17 +132,24 @@ export type ArrivalBucket = {
 /**
  * How arrivals spread over the morning: first punches grouped in buckets of
  * `bucketMinutes`. Buckets run without gaps from the first arrival to the last
- * so a quiet stretch shows as an empty bar. Pure.
+ * so a quiet stretch shows as an empty bar. `around` is a minute of the day
+ * (the shift start) the buckets are widened to cover. Pure.
  */
-export function arrivalBuckets(entries: readonly TodayEntry[], bucketMinutes = 15): ArrivalBucket[] {
+export function arrivalBuckets(entries: readonly TodayEntry[], bucketMinutes = 15, options: { around?: number | null; pad?: number } = {}): ArrivalBucket[] {
   const arrivals = entries
     .filter((e) => e.firstIn !== null && (e.group === "in" || e.group === "worked_off_day"))
     .map((e) => ({ minute: officeMinuteOfDay(e.firstIn as Date), late: e.status === "late" }));
   if (arrivals.length === 0) return [];
 
   const start = (minute: number) => Math.floor(minute / bucketMinutes) * bucketMinutes;
-  const first = Math.min(...arrivals.map((a) => start(a.minute)));
-  const last = Math.max(...arrivals.map((a) => start(a.minute)));
+  let first = Math.min(...arrivals.map((a) => start(a.minute)));
+  let last = Math.max(...arrivals.map((a) => start(a.minute)));
+  // With a shift start to show, the chart covers some time either side of it, so a single bar has context.
+  if (options.around !== undefined && options.around !== null) {
+    const pad = options.pad ?? 45;
+    first = Math.min(first, start(Math.max(0, options.around - pad)));
+    last = Math.max(last, start(Math.min(24 * 60 - bucketMinutes, options.around + pad)));
+  }
 
   const buckets: ArrivalBucket[] = [];
   for (let minute = first; minute <= last; minute += bucketMinutes) {
