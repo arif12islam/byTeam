@@ -24,11 +24,11 @@ export async function InsightsCard() {
   if (facts.length === 0) return null;
 
   return (
-    <Card className="p-3 sm:p-3.5">
+    <Card className="p-4">
       <CardTitle
         icon={Lightbulb}
         action={
-          <Link href="/insights" className="text-xs font-medium text-primary underline-offset-4 hover:underline">
+          <Link href="/insights" className="-my-3 inline-flex min-h-10 items-center text-xs font-medium text-primary underline-offset-4 hover:underline">
             See all
           </Link>
         }
