@@ -2,6 +2,8 @@
 
 Attendance, leave and payroll for a small office, fed by a ZKTeco face and fingerprint device. Built by Bykorp, first used at the Sand'Sun Holidays office in Dhaka.
 
+byTeam is part of the byTeam family. Its sibling, [byBlock](https://byblock.bykorp.com), is used by the sales and reservations team; the side menu and the phone More sheet link to it.
+
 - Design: [`docs/DESIGN.md`](docs/DESIGN.md)
 - Build plan and milestones: [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md)
 
