@@ -197,3 +197,18 @@
     text-align: left;
   }
 }
+
+/* Printing a payslip: no navigation, no shadows, plain white paper. */
+@media print {
+  aside,
+  header[class*="sticky"],
+  nav[aria-label="Main"] {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  * {
+    box-shadow: none !important;
+  }
+}

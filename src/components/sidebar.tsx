@@ -19,7 +19,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
+    <aside className="print:hidden sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
       <div className="px-3">
         <Wordmark />
       </div>
@@ -68,7 +68,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
 /** The slim bar at the top of a phone screen. */
 export function MobileTopBar() {
   return (
-    <header className="sticky top-0 z-20 flex items-center border-b border-border bg-background/90 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
+    <header className="print:hidden sticky top-0 z-20 flex items-center border-b border-border bg-background/90 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
       <Wordmark />
     </header>
   );
@@ -156,7 +156,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="print:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-around px-1">
           {tabs.map((item) => {
