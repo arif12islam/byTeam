@@ -1,4 +1,5 @@
 import {
+  CalendarCheck,
   CalendarDays,
   CalendarMinus,
   ChartColumn,
@@ -61,6 +62,11 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+/** Another app in the byTeam family, on its own address. Not a screen of this app, so it is kept apart from the nav items. */
+export type FamilyApp = { name: string; description: string; url: string; icon: LucideIcon };
+
+export const familyApps: FamilyApp[] = [{ name: "byBlock", description: "Sales and reservations", url: "https://byblock.bykorp.com", icon: CalendarCheck }];
 
 /** The four screens on the phone tab bar. Everything else is under More. */
 export const primaryTabHrefs = ["/today", "/attendance", "/leave", "/payroll"] as const;

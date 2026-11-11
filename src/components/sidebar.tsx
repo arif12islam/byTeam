@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Wordmark } from "@/components/brand";
+import { FamilyLinks } from "@/components/family-links";
 import { allNavItems, navGroups, primaryTabHrefs } from "@/components/nav";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
         <Wordmark />
       </div>
 
-      <nav aria-label="Main" className="mt-8 flex flex-col gap-5">
+      <nav aria-label="Main" className="mt-6 flex flex-col gap-4">
         {navGroups.map((group) => (
           <div key={group.label}>
             <p className="px-2.5 pb-1.5 text-xs font-medium text-muted-foreground">{group.label}</p>
@@ -53,6 +54,10 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
           </div>
         ))}
       </nav>
+
+      <div className="mt-5">
+        <FamilyLinks variant="sidebar" />
+      </div>
 
       <div className="mt-auto border-t border-sidebar-border px-1 pt-4">{account}</div>
     </aside>
@@ -140,6 +145,9 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                 );
               })}
             </ul>
+            <div className="mt-5 border-t border-border pt-4">
+              <FamilyLinks variant="sheet" />
+            </div>
             <div className="mt-5 border-t border-border pt-4">{account}</div>
           </div>
         </div>
