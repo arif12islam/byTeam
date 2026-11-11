@@ -1,4 +1,4 @@
-import { and, desc, eq, max, min, ne, notExists, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, max, min, ne, notExists, sql, type SQL } from "drizzle-orm";
 
 import type { getDb } from "@/db";
 import { employees, rawPunches } from "@/db/schema";
@@ -23,8 +23,19 @@ const LIMIT = 50;
  * Usually someone enrolled at the device who has not been added in the app yet.
  * The punches are kept: once an employee with that code exists they count.
  * Punches of the retired sample device are left out.
+ *
+ * `lastPunchFrom` and `lastPunchBefore` keep only codes whose latest punch falls in that range (from is
+ * inclusive, before is exclusive). The counts still cover all of the code's punches. Without them, codes with
+ * punches dated in the future can fill the list and push out a code that punched today.
  */
-export async function listUnmatchedCodes(db: Db): Promise<UnmatchedCode[]> {
+export async function listUnmatchedCodes(
+  db: Db,
+  options: { lastPunchFrom?: Date; lastPunchBefore?: Date } = {},
+): Promise<UnmatchedCode[]> {
+  const latest = max(rawPunches.punchedAt);
+  const bounds: SQL[] = [];
+  if (options.lastPunchFrom) bounds.push(gte(latest, sql`${options.lastPunchFrom.toISOString()}::timestamptz`));
+  if (options.lastPunchBefore) bounds.push(lt(latest, sql`${options.lastPunchBefore.toISOString()}::timestamptz`));
   const rows = await db
     .select({
       empCode: rawPunches.empCode,
@@ -41,7 +52,8 @@ export async function listUnmatchedCodes(db: Db): Promise<UnmatchedCode[]> {
       ),
     )
     .groupBy(rawPunches.empCode)
-    .orderBy(desc(max(rawPunches.punchedAt)))
+    .having(bounds.length ? and(...bounds) : undefined)
+    .orderBy(desc(latest))
     .limit(LIMIT);
 
   return rows.map((r) => ({

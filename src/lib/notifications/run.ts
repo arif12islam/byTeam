@@ -6,7 +6,7 @@ import { loadTodayBoard } from "@/lib/attendance/today";
 import { listDevices } from "@/lib/devices/devices";
 import { listUnmatchedCodes } from "@/lib/punches/unmatched";
 import { listShifts } from "@/lib/shifts/shifts";
-import { officeMinuteOfDay } from "@/lib/time";
+import { nextDate, officeDateTimeToInstant, officeMinuteOfDay, toOfficeDate } from "@/lib/time";
 
 import { getOrCreateVapidKeys } from "./keys";
 import { deviceAlerts, morningSummary, officeWindow, SUMMARY_HOUR, unmatchedAlerts, withinWindow, type Alert } from "./rules";
@@ -74,7 +74,13 @@ export async function runNotificationChecks(db: Db, now: Date, webPush: WebPushL
     }
   }
 
-  const unmatched = unmatchedAlerts(await listUnmatchedCodes(db), now, notified);
+  // Only codes that punched today matter, and punches dated in the future must not fill the list first.
+  const today = toOfficeDate(now);
+  const codes = await listUnmatchedCodes(db, {
+    lastPunchFrom: officeDateTimeToInstant(today, "00:00") ?? undefined,
+    lastPunchBefore: officeDateTimeToInstant(nextDate(today), "00:00") ?? undefined,
+  });
+  const unmatched = unmatchedAlerts(codes, now, notified);
   for (const alert of unmatched) await announce(alert);
   summary.unmatched = unmatched.length;
 
