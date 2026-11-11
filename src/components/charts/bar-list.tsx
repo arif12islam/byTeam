@@ -35,7 +35,7 @@ export function BarList({ items, max }: { items: readonly BarItem[]; max?: numbe
             className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-secondary"
           >
             <div
-              className={cn("h-full rounded-full", item.brand ? "bg-primary" : toneClasses[item.tone ?? "success"].solid)}
+              className={cn("h-full rounded-full", item.brand ? "bg-brand" : toneClasses[item.tone ?? "success"].solid)}
               style={{ width: `${Math.min(100, Math.max(0, (item.value / top) * 100))}%` }}
             />
           </div>

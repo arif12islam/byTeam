@@ -14,7 +14,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** The green side menu on tablets and desktops. */
+/** The side menu on tablets and desktops. */
 export function Sidebar({ account }: { account: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -38,12 +38,13 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                        "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
                         active
-                          ? "bg-secondary font-medium text-foreground"
+                          ? "bg-brand-soft font-medium text-brand-soft-foreground"
                           : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
                       )}
                     >
+                      {active ? <span aria-hidden className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand" /> : null}
                       <Icon className="size-4 shrink-0" aria-hidden />
                       {item.label}
                     </Link>
@@ -64,7 +65,7 @@ export function Sidebar({ account }: { account: React.ReactNode }) {
   );
 }
 
-/** The slim green bar at the top of a phone screen. */
+/** The slim bar at the top of a phone screen. */
 export function MobileTopBar() {
   return (
     <header className="sticky top-0 z-20 flex items-center border-b border-border bg-background/90 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
@@ -135,10 +136,10 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                       aria-current={active ? "page" : undefined}
                       className={cn(
                         "flex h-full flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-center text-sm",
-                        active ? "border-foreground/20 bg-secondary font-medium" : "border-border",
+                        active ? "border-brand-border bg-brand-soft font-medium text-brand-soft-foreground" : "border-border",
                       )}
                     >
-                      <Icon className="size-5 text-muted-foreground" aria-hidden />
+                      <Icon className={cn("size-5", active ? "text-brand" : "text-muted-foreground")} aria-hidden />
                       {item.label}
                     </Link>
                   </li>
@@ -168,7 +169,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[11px]",
-                    active ? "font-medium text-foreground" : "text-muted-foreground",
+                    active ? "font-medium text-brand" : "text-muted-foreground",
                   )}
                 >
                   <Icon className="size-5" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
@@ -185,7 +186,7 @@ export function MobileTabBar({ account }: { account: React.ReactNode }) {
               onClick={() => setOpenOn(pathname)}
               className={cn(
                 "flex w-full flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[11px]",
-                moreActive ? "font-medium text-foreground" : "text-muted-foreground",
+                moreActive ? "font-medium text-brand" : "text-muted-foreground",
               )}
             >
               <Ellipsis className="size-5" aria-hidden />

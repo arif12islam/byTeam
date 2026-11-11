@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { TabLinks } from "@/components/ui/tab-links";
 import { getDb } from "@/db";
 import { listRecentOutages } from "@/lib/attendance/outages";
 import { listDepartments } from "@/lib/employees/departments";
@@ -54,25 +54,11 @@ export default function SettingsPage(props: PageProps<"/settings">) {
 
 function TabBar({ active }: { active: TabId }) {
   return (
-    <nav aria-label="Settings sections" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <ul className="flex w-max gap-1 border-b border-border">
-        {TABS.map((tab) => (
-          <li key={tab.id}>
-            <Link
-              href={`/settings?tab=${tab.id}`}
-              aria-current={tab.id === active ? "page" : undefined}
-              className={`-mb-px flex min-h-10 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap ${
-                tab.id === active
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <TabLinks
+      ariaLabel="Settings sections"
+      active={`/settings?tab=${active}`}
+      tabs={TABS.map((tab) => ({ href: `/settings?tab=${tab.id}`, label: tab.label }))}
+    />
   );
 }
 
