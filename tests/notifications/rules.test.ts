@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { TodayBoard } from "@/lib/attendance/today";
 import type { DeviceRow } from "@/lib/devices/devices";
 import { isPushEndpoint } from "@/lib/notifications/endpoints";
-import { deviceAlerts, morningSummary, officeWindow, unmatchedAlerts, withinWindow } from "@/lib/notifications/rules";
+import { dailyBrief, deviceAlerts, morningSummary, officeWindow, unmatchedAlerts, withinWindow } from "@/lib/notifications/rules";
 import type { UnmatchedCode } from "@/lib/punches/unmatched";
 import { officeDateTimeToInstant } from "@/lib/time";
 
@@ -94,6 +94,32 @@ describe("morningSummary", () => {
   it("leaves out the parts that are zero", () => {
     const note = morningSummary(board({ counts: { in: 5, late: 0, onLeave: 0, notInYet: 0, absent: 1 } }), at("10:05"), none);
     expect(note?.body).toBe("5 in, 1 absent.");
+  });
+});
+
+describe("dailyBrief", () => {
+  const board = (over: Partial<TodayBoard> = {}): TodayBoard => ({
+    offDay: null,
+    counts: { in: 18, late: 2, onLeave: 1, notInYet: 2, absent: 1 },
+    entries: [],
+    ...over,
+  });
+
+  it("is sent from 21:00, counts people who never punched as absent, and is sent once", () => {
+    const note = dailyBrief(board(), at("21:10"), none);
+    expect(note).toMatchObject({ kind: "summary", stateKey: "brief:2026-11-10", title: "Today's wrap-up" });
+    expect(note?.body).toBe("18 in (2 late), 3 absent, 1 on leave.");
+    expect(dailyBrief(board(), at("20:55"), none)).toBeNull();
+    expect(dailyBrief(board(), at("21:10"), new Map([["brief:2026-11-10", "sent"]]))).toBeNull();
+  });
+
+  it("is skipped on a day off and when nobody was expected", () => {
+    expect(dailyBrief(board({ offDay: "holiday" }), at("21:10"), none)).toBeNull();
+    expect(dailyBrief(board({ counts: { in: 0, late: 0, onLeave: 0, notInYet: 0, absent: 0 } }), at("21:10"), none)).toBeNull();
+  });
+
+  it("does not let the morning summary go out in the evening", () => {
+    expect(morningSummary(board(), at("21:10"), none)).toBeNull();
   });
 });
 

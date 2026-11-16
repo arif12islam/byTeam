@@ -32,9 +32,9 @@ describe("the scheduler request", () => {
     expect(run).toHaveBeenCalledOnce();
   });
 
-  it("answers at once, without the checks, outside 07:00 to 21:00", async () => {
+  it("answers at once, without the checks, outside 07:00 to 22:30", async () => {
     const run = vi.fn(async () => summary);
-    for (const time of ["02:00", "06:59", "21:01", "23:30"]) {
+    for (const time of ["02:00", "06:59", "22:31", "23:30"]) {
       const response = await call({ authorization: "Bearer s3cret" }, { secret: "s3cret", now: () => at(time), run });
       expect(await response.json(), time).toMatchObject({ ok: true, skipped: expect.any(String) });
     }

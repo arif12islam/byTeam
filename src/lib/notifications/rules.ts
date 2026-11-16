@@ -28,6 +28,9 @@ export type Alert = {
 /** A first summary is sent at the first check at or after this hour (office time) on a working day. */
 export const SUMMARY_HOUR = 10;
 
+/** The daily brief is sent at the first check at or after this hour (office time), after office hours. */
+export const BRIEF_HOUR = 21;
+
 /** Office hours for alerts: from the earliest shift start to the latest shift end. Null when there are no shifts. */
 export function officeWindow(shifts: readonly { startTime: string; endTime: string }[]): { from: number; to: number } | null {
   const starts = shifts.map((s) => timeToMinutes(s.startTime)).filter((m): m is number => m !== null);
@@ -100,7 +103,8 @@ export function morningSummary(board: TodayBoard, now: Date, notified: ReadonlyM
   const today = toOfficeDate(now);
   const stateKey = `summary:${today}`;
   if (board.offDay !== null || notified.has(stateKey)) return null;
-  if (officeMinuteOfDay(now) < summaryHour * 60) return null;
+  const minute = officeMinuteOfDay(now);
+  if (minute < summaryHour * 60 || minute >= BRIEF_HOUR * 60) return null;
 
   const { counts } = board;
   const expected = counts.in + counts.notInYet + counts.absent + counts.onLeave;
@@ -115,6 +119,35 @@ export function morningSummary(board: TodayBoard, now: Date, notified: ReadonlyM
     stateKey,
     stateValue: now.toISOString(),
     title: "Today at the office",
+    body: `${parts.join(", ")}.`,
+    url: "/today",
+    tag: stateKey,
+  };
+}
+
+/**
+ * The 9 pm daily brief: how the day ended, once on each working day. Anyone
+ * who never punched by now counts as absent. Null on a day off, before the
+ * time, when already sent, or when nobody was expected.
+ */
+export function dailyBrief(board: TodayBoard, now: Date, notified: ReadonlyMap<string, string>, briefHour = BRIEF_HOUR): Alert | null {
+  const today = toOfficeDate(now);
+  const stateKey = `brief:${today}`;
+  if (board.offDay !== null || notified.has(stateKey)) return null;
+  if (officeMinuteOfDay(now) < briefHour * 60) return null;
+
+  const { counts } = board;
+  const absent = counts.absent + counts.notInYet;
+  if (counts.in + absent + counts.onLeave === 0) return null;
+
+  const parts = [`${counts.in} in${counts.late > 0 ? ` (${counts.late} late)` : ""}`];
+  if (absent > 0) parts.push(`${absent} absent`);
+  if (counts.onLeave > 0) parts.push(`${counts.onLeave} on leave`);
+  return {
+    kind: "summary",
+    stateKey,
+    stateValue: now.toISOString(),
+    title: "Today's wrap-up",
     body: `${parts.join(", ")}.`,
     url: "/today",
     tag: stateKey,

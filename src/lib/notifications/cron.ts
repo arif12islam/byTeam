@@ -5,7 +5,7 @@ import { runNotificationChecks, type RunSummary } from "./run";
 
 /** Hours (office time) outside of which a check does nothing and does not touch the database. */
 export const CHECK_FROM_MINUTE = 7 * 60;
-export const CHECK_TO_MINUTE = 21 * 60;
+export const CHECK_TO_MINUTE = 22 * 60 + 30;
 
 type Deps = {
   now?: () => Date;
@@ -15,7 +15,7 @@ type Deps = {
 
 /**
  * The scheduler's request. It must carry the CRON_SECRET, like the nightly job.
- * Outside 07:00 to 21:00 office time it answers at once without asking the
+ * Outside 07:00 to 22:30 office time it answers at once without asking the
  * database anything, so a scheduler left running all night costs nothing.
  */
 export async function handleNotifyRequest(request: Request, deps: Deps = {}): Promise<Response> {

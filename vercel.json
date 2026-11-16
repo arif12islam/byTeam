@@ -3,6 +3,7 @@
   "buildCommand": "npm run db:migrate && npm run build",
   "crons": [
     { "path": "/api/cron/recalc", "schedule": "0 20 * * *" },
-    { "path": "/api/cron/notify", "schedule": "5 4 * * *" }
+    { "path": "/api/cron/notify", "schedule": "5 5 * * *" },
+    { "path": "/api/cron/notify?run=evening", "schedule": "5 15 * * *" }
   ]
 }

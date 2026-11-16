@@ -19,7 +19,7 @@ type Support = "checking" | "unsupported" | "needs_home_screen" | "denied" | "re
 
 const CHOICES: { key: keyof Prefs; label: string; hint: string }[] = [
   { key: "onOffline", label: "Fingerprint device offline", hint: "When the device or the office laptop has gone quiet in office hours, and when it is back." },
-  { key: "onSummary", label: "Morning summary", hint: "Who is in, late, absent or on leave, once each working day at about 10:00." },
+  { key: "onSummary", label: "Daily summaries", hint: "Who is in, late, absent or on leave: a summary in the morning and a wrap-up at about 9 pm, each working day." },
   { key: "onUnmatched", label: "Unknown code punched", hint: "When someone punches with a code that is not linked to an employee." },
 ];
 
