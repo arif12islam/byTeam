@@ -19,7 +19,11 @@ Nothing is sent on a holiday or weekly off day (summary) or outside office hours
 2. Sign in, open Settings, find **Notifications** and tap **Turn on notifications on this device**. Allow notifications when asked.
 3. Tap **Send a test**. It should appear within a few seconds.
 
-## The scheduler (one-time, free)
+## The built-in daily check
+
+`vercel.json` runs `/api/cron/notify` once a day at 10:05 office time (04:05 UTC), with no setup. That is enough for the morning summary and a check for a quiet device or unknown code at that moment. Vercel's free plan may start it any time within that hour. For hourly device alerts, add the scheduler below as well.
+
+## The hourly scheduler (one-time, free)
 
 byTeam cannot check by itself whether the device has gone quiet, because nothing reaches it while the device is off. A free scheduler has to ask it. Vercel's free plan can only run a job once a day, so use cron-job.org (free, no card):
 
