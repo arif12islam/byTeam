@@ -21,7 +21,7 @@ Nothing is sent on a holiday or weekly off day (summary) or outside office hours
 
 ## The built-in daily check
 
-`vercel.json` runs `/api/cron/notify` once a day at 10:05 office time (04:05 UTC), with no setup. That is enough for the morning summary and a check for a quiet device or unknown code at that moment. Vercel's free plan may start it any time within that hour. For hourly device alerts, add the scheduler below as well.
+`vercel.json` runs `/api/cron/notify` once a day at 11:05 office time (05:05 UTC), with no setup. That is enough for the morning summary and a check for a quiet device or unknown code at that moment. Vercel's free plan may start it any time between 11:00 and 12:00. For hourly device alerts, add the scheduler below as well.
 
 ## The hourly scheduler (one-time, free)
 
