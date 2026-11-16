@@ -9,7 +9,7 @@ import { listShifts } from "@/lib/shifts/shifts";
 import { nextDate, officeDateTimeToInstant, officeMinuteOfDay, toOfficeDate } from "@/lib/time";
 
 import { getOrCreateVapidKeys } from "./keys";
-import { deviceAlerts, morningSummary, officeWindow, SUMMARY_HOUR, unmatchedAlerts, withinWindow, type Alert } from "./rules";
+import { BRIEF_HOUR, dailyBrief, deviceAlerts, morningSummary, officeWindow, SUMMARY_HOUR, unmatchedAlerts, withinWindow, type Alert } from "./rules";
 import { realWebPush, sendAlert, vapidSubject, type WebPushLike } from "./sender";
 import { forgetState, pruneState, readState, writeState } from "./state";
 
@@ -40,7 +40,10 @@ export async function runNotificationChecks(db: Db, now: Date, webPush: WebPushL
   if (devicesOn === 0) return { ...NOTHING, skipped: "no device has notifications on" };
 
   const shifts = await listShifts(db);
-  if (!withinWindow(now, officeWindow(shifts))) return { ...NOTHING, skipped: "outside office hours" };
+  // The evening brief is sent after office hours; everything else only during them.
+  const inOffice = withinWindow(now, officeWindow(shifts));
+  const evening = officeMinuteOfDay(now) >= BRIEF_HOUR * 60;
+  if (!inOffice && !evening) return { ...NOTHING, skipped: "outside office hours" };
 
   const keys = await getOrCreateVapidKeys(db);
   const deps = { webPush, keys, subject: vapidSubject() };
@@ -54,24 +57,32 @@ export async function runNotificationChecks(db: Db, now: Date, webPush: WebPushL
     if (result.recipients === 0 || result.delivered > 0 || result.removed === result.recipients) await writeState(db, alert.stateKey, alert.stateValue);
   };
 
-  const devices = await listDevices(db);
-  const found = deviceAlerts(devices, now, notified);
-  for (const alert of found.alerts) await announce(alert);
-  summary.offline = found.alerts.length;
-  for (const { stateKey, alert } of found.recovered) {
-    await sendAlert(db, alert, deps);
-    await forgetState(db, stateKey);
+  if (inOffice) {
+    const devices = await listDevices(db);
+    const found = deviceAlerts(devices, now, notified);
+    for (const alert of found.alerts) await announce(alert);
+    summary.offline = found.alerts.length;
+    for (const { stateKey, alert } of found.recovered) {
+      await sendAlert(db, alert, deps);
+      await forgetState(db, stateKey);
+    }
+    summary.recovered = found.recovered.length;
   }
-  summary.recovered = found.recovered.length;
 
-  // The summary needs the whole board, so only work it out when it is due.
-  if (officeMinuteOfDay(now) >= SUMMARY_HOUR * 60) {
+  // The summaries need the whole board, so only work it out when one is due.
+  const summaryDue = (inOffice && officeMinuteOfDay(now) >= SUMMARY_HOUR * 60 && officeMinuteOfDay(now) < BRIEF_HOUR * 60) || evening;
+  if (summaryDue) {
     const board = await loadTodayBoard(db, now);
-    const note = morningSummary(board, now, notified);
+    const note = evening ? dailyBrief(board, now, notified) : morningSummary(board, now, notified);
     if (note) {
       await announce(note);
       summary.summary = true;
     }
+  }
+
+  if (!inOffice) {
+    await pruneState(db, now);
+    return summary;
   }
 
   // Only codes that punched today matter, and punches dated in the future must not fill the list first.

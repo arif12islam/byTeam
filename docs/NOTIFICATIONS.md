@@ -7,7 +7,7 @@ Free alerts on a phone or computer, even when byTeam is closed. They use the bro
 Each device chooses its own, in Settings, Notifications:
 
 - **Fingerprint device offline.** When the device or the office laptop has gone quiet during office hours, once, and a "back" notice when it returns.
-- **Morning summary.** Who is in, late, absent or on leave, once each working day at about 10:00.
+- **Daily summaries.** Who is in, late, absent or on leave: a morning summary (first check after 10:00; the built-in daily check sends it at about 11:00) and a wrap-up at about 9 pm, once each working day. In the wrap-up, anyone who never punched counts as absent. Both use the same on/off choice.
 - **Unknown code punched.** When someone punches with a code that is not linked to an employee, once a day for each code.
 
 Nothing is sent on a holiday or weekly off day (summary) or outside office hours (the earliest shift start to the latest shift end).
@@ -21,7 +21,7 @@ Nothing is sent on a holiday or weekly off day (summary) or outside office hours
 
 ## The built-in daily check
 
-`vercel.json` runs `/api/cron/notify` once a day at 11:05 office time (05:05 UTC), with no setup. That is enough for the morning summary and a check for a quiet device or unknown code at that moment. Vercel's free plan may start it any time between 11:00 and 12:00. For hourly device alerts, add the scheduler below as well.
+`vercel.json` runs `/api/cron/notify` twice a day, at 11:05 and 21:05 office time (05:05 and 15:05 UTC), with no setup. That is enough for the morning summary and a check for a quiet device or unknown code at that moment. Vercel's free plan may start each between 11:00 and 12:00, and 21:00 and 22:00. For hourly device alerts, add the scheduler below as well.
 
 ## The hourly scheduler (one-time, free)
 
