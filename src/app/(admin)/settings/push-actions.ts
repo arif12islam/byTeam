@@ -79,7 +79,7 @@ export async function sendTestPushAction(formData: FormData): Promise<PushResult
   const result = await sendToSubscriptions(
     db,
     [row],
-    { title: "byTeam notifications work", body: "You will see alerts like this one on this device.", url: "/settings?tab=notifications", tag: "test" },
+    { title: "Notifications are on", body: "This device will receive your daily summaries and alerts.", url: "/settings?tab=notifications", tag: "test" },
     { webPush: realWebPush, keys: await getOrCreateVapidKeys(db), subject: vapidSubject() },
   );
   if (result.delivered === 0) {
